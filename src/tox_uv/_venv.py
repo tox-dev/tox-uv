@@ -27,6 +27,16 @@ class UvVenv(Python, ABC):
         self._installer: UvInstaller | None = None
         super().__init__(create_args)
 
+    def register_config(self) -> None:
+        super().register_config()
+        desc = "add seed packages to the created venv"
+        self.conf.add_config(keys=["uv_seed"], of_type=bool, default=False, desc=desc)
+
+    def python_cache(self) -> dict[str, Any]:
+        result = super().python_cache()
+        result["seed"] = self.conf["uv_seed"]
+        return result
+
     @property
     def executor(self) -> Execute:
         if self._executor is None:
@@ -94,7 +104,10 @@ class UvVenv(Python, ABC):
 
     def create_python_env(self) -> None:
         base = self.base_python
-        cmd = [self.uv, "venv", "-p", base.version_dot, "--seed", str(self.venv_dir)]
+        cmd = [self.uv, "venv", "-p", base.version_dot]
+        if self.conf["uv_seed"]:
+            cmd.append("--seed")
+        cmd.append(str(self.venv_dir))
         outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="venv", show=False)
         outcome.assert_success()
 
