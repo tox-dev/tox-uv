@@ -1,0 +1,12 @@
+/magic
+.idea
+*.egg-info
+.tox/
+.coverage*
+coverage.xml
+.*_cache
+__pycache__
+**.pyc
+/build
+dist
+src/tox_uv/version.py
