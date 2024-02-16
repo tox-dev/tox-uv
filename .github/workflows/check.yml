@@ -15,7 +15,7 @@ concurrency:
 jobs:
   test:
     name: test ${{ matrix.py }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -25,6 +25,10 @@ jobs:
           - "3.10"
           - "3.9"
           - "3.8"
+        os:
+          - ubuntu-latest
+#          - windows-latest # not yet supported
+          - macos-latest
     steps:
       - name: setup python for tox
         uses: actions/setup-python@v5
