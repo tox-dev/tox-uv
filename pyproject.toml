@@ -44,7 +44,7 @@ dependencies = [
 optional-dependencies.test = [
   "covdefaults>=2.3",
   "devpi-process>=1",
-  "pytest>=8",
+  "pytest>=8.0.1",
   "pytest-cov>=4.1",
   "pytest-mock>=3.12",
 ]
@@ -104,7 +104,7 @@ html.show_contexts = true
 html.skip_covered = false
 paths.source = ["src", ".tox/*/.venv/lib/*/site-packages", ".tox\\*\\.venv\\Lib\\site-packages", "**/src", "**\\src"]
 paths.other = [".", "*/tox_uv", "*\\tox_uv"]
-report.fail_under = 96
+report.fail_under = 100
 run.parallel = true
 run.plugins = ["covdefaults"]
 

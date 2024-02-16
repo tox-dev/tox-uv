@@ -12,5 +12,11 @@ Simply install `tox-uv` into the environment your tox is installed and will repl
 run environments with uv.
 
 Note: currently we haven't implemented uv support for packaging environments, so only your run tox environments will
-use uv. Also, uv does not have at the moment a `pip freeze/list` like feature, so we still install pip into the
-environment to perform this operation via pip.
+use uv.
+
+## Configuration
+
+### uv_seed
+
+This flag controls if the created virtual environment injects pip/setuptools/wheel into the created virtual environment
+or not. By default, is off.

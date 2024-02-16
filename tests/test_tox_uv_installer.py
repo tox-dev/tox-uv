@@ -12,7 +12,17 @@ def test_uv_install_in_ci_list(tox_project: ToxProjectCreator, monkeypatch: pyte
     project = tox_project({"tox.ini": "[testenv]\ndeps = tomli\npackage=skip"})
     result = project.run()
     result.assert_success()
-    assert "tomli==" in result.out
+    report = {i.split("=")[0] for i in result.out.splitlines()[-3][4:].split(",")}
+    assert report == {"tomli"}
+
+
+def test_uv_install_in_ci_seed(tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("CI", "1")
+    project = tox_project({"tox.ini": "[testenv]\npackage=skip\nuv_seed = true"})
+    result = project.run()
+    result.assert_success()
+    report = {i.split("=")[0] for i in result.out.splitlines()[-3][4:].split(",")}
+    assert report == {"pip", "setuptools", "wheel"}
 
 
 def test_uv_install_with_pre(tox_project: ToxProjectCreator) -> None:
