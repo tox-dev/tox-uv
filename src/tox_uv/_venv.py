@@ -63,7 +63,7 @@ class UvVenv(Python, ABC):
                 )
             spec = PythonSpec.from_string_spec(base)
             return PythonInfo(
-                implementation=spec.implementation,
+                implementation=spec.implementation or "CPython",
                 version_info=VersionInfo(
                     major=spec.major,
                     minor=spec.minor,
