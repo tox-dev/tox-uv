@@ -6,9 +6,10 @@ import logging
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Sequence
+from typing import TYPE_CHECKING, Any, Sequence, cast
 
 from packaging.requirements import Requirement
+from tox.config.of_type import ConfigDynamicDefinition
 from tox.config.types import Command
 from tox.execute.request import StdinSource
 from tox.tox_env.errors import Recreate
@@ -23,6 +24,12 @@ if TYPE_CHECKING:
 
 class UvInstaller(Pip):
     """Pip is a python installer that can install packages as defined by PEP-508 and PEP-517."""
+
+    def _register_config(self) -> None:
+        super()._register_config()
+        if self._with_list_deps:  # pragma: no branch
+            conf = cast(ConfigDynamicDefinition[Command], self._env.conf._defined["list_dependencies_command"])  # noqa: SLF001
+            conf.default = Command([self.uv, "pip", "freeze"])
 
     @property
     def uv(self) -> str:
