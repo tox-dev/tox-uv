@@ -5,4 +5,12 @@
 [![check](https://github.com/tox-dev/tox-uv/actions/workflows/check.yml/badge.svg)](https://github.com/tox-dev/tox-uv/actions/workflows/check.yml)
 [![Downloads](https://static.pepy.tech/badge/tox-uv/month)](https://pepy.tech/project/tox-uv)
 
-**tox-uv** is a tox plugin which replaces pip with uv in tox.
+**tox-uv** is a tox plugin which replaces virtualenv and pip with uv your tox environments.
+Note that you will get both the benefits (performance) or downsides (bugs) of uv.
+
+Simply install `tox-uv` into the environment your tox is installed and will replace virtualenv and pip in the tox
+run environments with uv.
+
+Note: currently we haven't implemented uv support for packaging environments, so only your run tox environments will
+use uv. Also, uv does not have at the moment a `pip freeze/list` like feature, so we still install pip into the
+environment to perform this operation via pip.

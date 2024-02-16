@@ -7,7 +7,7 @@ requires = [
 
 [project]
 name = "tox-uv"
-description = "Integration of uv into GitHub Actions."
+description = "Integration of uv with tox."
 readme = "README.md"
 keywords = [
   "environments",
