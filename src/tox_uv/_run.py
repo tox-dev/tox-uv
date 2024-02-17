@@ -19,11 +19,11 @@ class UvVenvRunner(UvVenv, PythonRun):
 
     @property
     def _package_tox_env_type(self) -> str:
-        return "virtualenv-pep-517"
+        return "uv-venv-pep-517"
 
     @property
     def _external_pkg_tox_env_type(self) -> str:
-        return "virtualenv-cmd-builder"  # pragma: no cover
+        return "uv-venv-cmd-builder"  # pragma: no cover
 
     @property
     def default_pkg_type(self) -> str:
