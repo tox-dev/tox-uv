@@ -27,4 +27,4 @@ python -m tox r -e py312 # will use uv
 
 This flag, set on a tox environment level, controls if the created virtual environment injects pip/setuptools/wheel into
 the created virtual environment or not. By default, is off. You will need to set this if you have a project that uses
-the old legacy editable mode, or your project does not support the `pyprooject.toml` powered isolated build model.
+the old legacy editable mode, or your project does not support the `pypooject.toml` powered isolated build model.
