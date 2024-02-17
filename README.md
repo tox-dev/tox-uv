@@ -13,7 +13,7 @@ Note that you will get both the benefits (performance) or downsides (bugs) of uv
 Install `tox-uv` into the environment of your tox and it will replace virtualenv and pip for all runs:
 
 ```bash
-python -m pip install tox tox-uv
+python -m pip install tox-uv
 python -m tox r -e py312 # will use uv
 ```
 
