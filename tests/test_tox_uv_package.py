@@ -33,7 +33,9 @@ def test_uv_package_editable(tox_project: ToxProjectCreator, package: str, demo_
 
 
 def test_uv_package_editable_legacy(tox_project: ToxProjectCreator, demo_pkg_setuptools: Path) -> None:
-    project = tox_project({"tox.ini": "[testenv]\npackage=editable-legacy"}, base=demo_pkg_setuptools)
+    project = tox_project(
+        {"tox.ini": "[testenv]\npackage=editable-legacy\n[testenv:.pkg]\nuv_seed=true"}, base=demo_pkg_setuptools
+    )
     result = project.run()
     result.assert_success()
 

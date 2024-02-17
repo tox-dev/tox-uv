@@ -38,7 +38,7 @@ dynamic = [
   "version",
 ]
 dependencies = [
-  "tox<5,>=4.12.1",
+  "tox<5,>=4.13",
   "uv<1,>=0.1.2",
 ]
 optional-dependencies.test = [
