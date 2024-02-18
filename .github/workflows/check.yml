@@ -27,7 +27,7 @@ jobs:
           - "3.8"
         os:
           - ubuntu-latest
-#          - windows-latest # not yet supported
+#          - windows-latest
           - macos-latest
     steps:
       - name: setup python for tox
@@ -50,7 +50,7 @@ jobs:
                file_handler.write(env)
         shell: python
       - name: setup test suite
-        run: tox -vv --notest
+        run: tox -vvv --notest
       - name: run test suite
         run: tox --skip-pkg-install
 

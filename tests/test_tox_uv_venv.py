@@ -20,6 +20,13 @@ def test_uv_venv_spec(tox_project: ToxProjectCreator) -> None:
     result.assert_success()
 
 
+def test_uv_venv_spec_major_only(tox_project: ToxProjectCreator) -> None:
+    ver = sys.version_info
+    project = tox_project({"tox.ini": f"[testenv]\npackage=skip\nbase_python={ver.major}"})
+    result = project.run("-vv")
+    result.assert_success()
+
+
 def test_uv_venv_na(tox_project: ToxProjectCreator) -> None:
     project = tox_project({"tox.ini": "[testenv]\npackage=skip\nbase_python=1.0"})
     result = project.run("-vv")

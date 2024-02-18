@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, cast
 from tox.execute.local_sub_process import LocalSubProcessExecutor
 from tox.execute.request import StdinSource
 from tox.tox_env.python.api import Python, PythonInfo, VersionInfo
+from uv.__main__ import find_uv_bin  # noqa: PLC2701
 from virtualenv.discovery.py_spec import PythonSpec
 
 from ._installer import UvInstaller
@@ -90,7 +91,7 @@ class UvVenv(Python, ABC):
 
     @property
     def uv(self) -> str:
-        return str(Path(sys.executable).parent / "uv")
+        return cast(str, find_uv_bin())
 
     @property
     def venv_dir(self) -> Path:
@@ -103,12 +104,15 @@ class UvVenv(Python, ABC):
         return env
 
     def create_python_env(self) -> None:
-        base = self.base_python
-        cmd = [self.uv, "venv", "-p", base.version_dot]
+        base = self.base_python.version_info
+        version_spec = f"{base.major}.{base.minor}" if base.minor else f"{base.major}"
+        cmd: list[str] = [self.uv, "venv", "-p", version_spec]
+        if self.options.verbosity > 2:  # noqa: PLR2004
+            cmd.append("-v")
         if self.conf["uv_seed"]:
             cmd.append("--seed")
         cmd.append(str(self.venv_dir))
-        outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="venv", show=False)
+        outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="venv", show=None)
         outcome.assert_success()
 
     @property
@@ -134,6 +138,8 @@ class UvVenv(Python, ABC):
         if sys.platform == "win32":  # pragma: win32 cover
             return self.venv_dir / "Lib" / "site-packages"
         # pragma: win32 no cover
+        assert self.base_python.version_info.major is not None  # noqa: S101
+        assert self.base_python.version_info.minor is not None  # noqa: S101
         return self.venv_dir / "lib" / f"python{self.base_python.version_dot}" / "site-packages"
 
 
