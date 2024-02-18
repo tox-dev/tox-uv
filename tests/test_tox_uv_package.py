@@ -26,10 +26,7 @@ def test_uv_package_use_default_from_file(tox_project: ToxProjectCreator) -> Non
 def test_uv_package_editable(tox_project: ToxProjectCreator, package: str, demo_pkg_inline: Path) -> None:
     project = tox_project({"tox.ini": f"[testenv]\npackage={package}"}, base=demo_pkg_inline)
     result = project.run()
-    if package == "sdist":
-        result.assert_failed(code=2)
-    else:
-        result.assert_success()
+    result.assert_success()
 
 
 def test_uv_package_editable_legacy(tox_project: ToxProjectCreator, demo_pkg_setuptools: Path) -> None:
