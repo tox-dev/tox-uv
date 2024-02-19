@@ -42,7 +42,7 @@ jobs:
       - name: Active uv for global env
         run: echo "VIRTUAL_ENV=${Python_ROOT_DIR}" >> $GITHUB_ENV
       - name: Install self
-        run: uv pip install tox-uv@. --reinstall
+        run: uv pip install tox-uv@.
       - name: setup python for test ${{ matrix.py }}
         uses: actions/setup-python@v5
         with:
@@ -83,6 +83,6 @@ jobs:
       - name: Active uv for global env
         run: echo "VIRTUAL_ENV=${Python_ROOT_DIR}" >> $GITHUB_ENV
       - name: Install self
-        run: uv pip install tox-uv@. --reinstall
+        run: uv pip install tox-uv@.
       - name: run check for ${{ matrix.tox_env }}
         run: python -m tox -e ${{ matrix.tox_env }}
