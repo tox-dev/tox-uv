@@ -39,7 +39,7 @@ dynamic = [
 ]
 dependencies = [
   "tox<5,>=4.13",
-  "uv<1,>=0.1.2",
+  "uv<1,>=0.1.4",
 ]
 optional-dependencies.test = [
   "covdefaults>=2.3",
@@ -112,4 +112,4 @@ run.plugins = ["covdefaults"]
 python_version = "3.11"
 show_error_codes = true
 strict = true
-overrides = [{ module = ["virtualenv.*"], ignore_missing_imports = true }]
+overrides = [{ module = ["virtualenv.*", "uv.*"], ignore_missing_imports = true }]

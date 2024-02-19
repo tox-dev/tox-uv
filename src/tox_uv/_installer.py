@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 import logging
-import sys
 from collections import defaultdict
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Sequence, cast
 
 from packaging.requirements import Requirement
@@ -16,6 +14,7 @@ from tox.tox_env.errors import Recreate
 from tox.tox_env.python.package import EditableLegacyPackage, EditablePackage, SdistPackage, WheelPackage
 from tox.tox_env.python.pip.pip_install import Pip
 from tox.tox_env.python.pip.req_file import PythonDeps
+from uv.__main__ import find_uv_bin  # noqa: PLC2701
 
 if TYPE_CHECKING:
     from tox.config.main import Config
@@ -33,10 +32,13 @@ class UvInstaller(Pip):
 
     @property
     def uv(self) -> str:
-        return str(Path(sys.executable).parent / "uv")
+        return cast(str, find_uv_bin())
 
     def default_install_command(self, conf: Config, env_name: str | None) -> Command:  # noqa: ARG002
-        return Command([self.uv, "pip", "install", "{opts}", "{packages}"])
+        cmd = [self.uv, "pip", "install", "{opts}", "{packages}"]
+        if self._env.options.verbosity > 2:  # noqa: PLR2004
+            cmd.append("-v")
+        return Command(cmd)
 
     def post_process_install_command(self, cmd: Command) -> Command:
         install_command = cmd.args
