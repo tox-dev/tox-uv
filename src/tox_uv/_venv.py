@@ -127,8 +127,8 @@ class UvVenv(Python, ABC):
     def env_bin_dir(self) -> Path:
         if sys.platform == "win32":  # pragma: win32 cover
             return self.venv_dir / "Scripts"
-        # pragma: win32 no cover
-        return self.venv_dir / "bin"
+        else:  # pragma: win32 no cover # noqa: RET505
+            return self.venv_dir / "bin"
 
     def env_python(self) -> Path:
         suffix = ".exe" if sys.platform == "win32" else ""
@@ -137,10 +137,10 @@ class UvVenv(Python, ABC):
     def env_site_package_dir(self) -> Path:
         if sys.platform == "win32":  # pragma: win32 cover
             return self.venv_dir / "Lib" / "site-packages"
-        # pragma: win32 no cover
-        assert self.base_python.version_info.major is not None  # noqa: S101
-        assert self.base_python.version_info.minor is not None  # noqa: S101
-        return self.venv_dir / "lib" / f"python{self.base_python.version_dot}" / "site-packages"
+        else:  # pragma: win32 no cover # noqa: RET505
+            assert self.base_python.version_info.major is not None  # noqa: S101
+            assert self.base_python.version_info.minor is not None  # noqa: S101
+            return self.venv_dir / "lib" / f"python{self.base_python.version_dot}" / "site-packages"
 
 
 __all__ = [
