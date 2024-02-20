@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -22,7 +23,10 @@ def test_uv_install_in_ci_seed(tox_project: ToxProjectCreator, monkeypatch: pyte
     result = project.run()
     result.assert_success()
     report = {i.split("=")[0] for i in result.out.splitlines()[-3][4:].split(",")}
-    assert report == {"pip", "setuptools", "wheel"}
+    if sys.version_info >= (3, 12):  # pragma: >=3.12 cover
+        assert report == {"pip"}
+    else:  # pragma: <3.12 cover
+        assert report == {"pip", "setuptools", "wheel"}
 
 
 def test_uv_install_with_pre(tox_project: ToxProjectCreator) -> None:
