@@ -39,7 +39,7 @@ dynamic = [
 ]
 dependencies = [
   "tox<5,>=4.13",
-  "uv<1,>=0.1.4",
+  "uv<1,>=0.1.5",
 ]
 optional-dependencies.test = [
   "covdefaults>=2.3",
