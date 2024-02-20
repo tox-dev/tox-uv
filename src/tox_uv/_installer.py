@@ -14,7 +14,7 @@ from tox.tox_env.errors import Recreate
 from tox.tox_env.python.package import EditableLegacyPackage, EditablePackage, SdistPackage, WheelPackage
 from tox.tox_env.python.pip.pip_install import Pip
 from tox.tox_env.python.pip.req_file import PythonDeps
-from uv.__main__ import find_uv_bin  # noqa: PLC2701
+from uv import find_uv_bin
 
 if TYPE_CHECKING:
     from tox.config.main import Config
@@ -32,7 +32,7 @@ class UvInstaller(Pip):
 
     @property
     def uv(self) -> str:
-        return cast(str, find_uv_bin())
+        return find_uv_bin()
 
     def default_install_command(self, conf: Config, env_name: str | None) -> Command:  # noqa: ARG002
         cmd = [self.uv, "pip", "install", "{opts}", "{packages}"]

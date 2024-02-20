@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, cast
 from tox.execute.local_sub_process import LocalSubProcessExecutor
 from tox.execute.request import StdinSource
 from tox.tox_env.python.api import Python, PythonInfo, VersionInfo
-from uv.__main__ import find_uv_bin  # noqa: PLC2701
+from uv import find_uv_bin
 from virtualenv.discovery.py_spec import PythonSpec
 
 from ._installer import UvInstaller
@@ -91,7 +91,7 @@ class UvVenv(Python, ABC):
 
     @property
     def uv(self) -> str:
-        return cast(str, find_uv_bin())
+        return find_uv_bin()
 
     @property
     def venv_dir(self) -> Path:
