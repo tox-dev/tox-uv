@@ -103,6 +103,14 @@ class UvVenv(Python, ABC):
         env["VIRTUAL_ENV"] = str(self.venv_dir)
         return env
 
+    def _default_pass_env(self) -> list[str]:
+        env = super()._default_pass_env()
+        env.append("UV_*")  # accept uv env vars
+        if sys.platform == "darwin":  # pragma: darwin cover
+            env.append("MACOSX_DEPLOYMENT_TARGET")  # needed for macOS binary builds
+        env.append("PKG_CONFIG_PATH")  # needed for binary builds
+        return env
+
     def create_python_env(self) -> None:
         base = self.base_python.version_info
         version_spec = f"{base.major}.{base.minor}" if base.minor else f"{base.major}"

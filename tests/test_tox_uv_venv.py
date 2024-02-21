@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from configparser import ConfigParser
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -11,6 +12,21 @@ def test_uv_venv_self(tox_project: ToxProjectCreator) -> None:
     project = tox_project({"tox.ini": "[testenv]\npackage=skip"})
     result = project.run("-vv")
     result.assert_success()
+
+
+def test_uv_venv_pass_env(tox_project: ToxProjectCreator) -> None:
+    project = tox_project({"tox.ini": "[testenv]\npackage=skip"})
+    result = project.run("c", "-k", "pass_env")
+    result.assert_success()
+
+    parser = ConfigParser()
+    parser.read_string(result.out)
+    pass_through = set(parser["testenv:py"]["pass_env"].splitlines())
+
+    if sys.platform == "darwin":  # pragma: darwin cover
+        assert "MACOSX_DEPLOYMENT_TARGET" in pass_through
+    assert "UV_*" in pass_through
+    assert "PKG_CONFIG_PATH" in pass_through
 
 
 def test_uv_venv_spec(tox_project: ToxProjectCreator) -> None:
