@@ -38,13 +38,13 @@ dynamic = [
   "version",
 ]
 dependencies = [
-  "tox<5,>=4.13",
-  "uv<1,>=0.1.6",
+  "tox<5,>=4.14",
+  "uv<1,>=0.1.15",
 ]
 optional-dependencies.test = [
   "covdefaults>=2.3",
   "devpi-process>=1",
-  "pytest>=8.0.1",
+  "pytest>=8.0.2",
   "pytest-cov>=4.1",
   "pytest-mock>=3.12",
 ]
