@@ -20,6 +20,11 @@ def demo_pkg_inline(root: Path) -> Path:
     return root / "demo_pkg_inline"
 
 
+@pytest.fixture(scope="session")
+def demo_with_dash(root: Path) -> Path:
+    return root / "demo_with_dash"
+
+
 pytest_plugins = [
     "tox.pytest",
 ]

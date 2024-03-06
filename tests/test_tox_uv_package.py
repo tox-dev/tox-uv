@@ -30,6 +30,13 @@ def test_uv_package_editable(tox_project: ToxProjectCreator, package: str, demo_
     result.assert_success()
 
 
+@pytest.mark.parametrize("package", ["sdist", "wheel", "editable"])
+def test_uv_package_with_dash(tox_project: ToxProjectCreator, package: str, demo_with_dash: Path) -> None:
+    project = tox_project({"tox.ini": f"[testenv]\npackage={package}"}, base=demo_with_dash)
+    result = project.run()
+    result.assert_success()
+
+
 def test_uv_package_editable_legacy(tox_project: ToxProjectCreator, demo_pkg_setuptools: Path) -> None:
     ini = f"""
     [testenv]
