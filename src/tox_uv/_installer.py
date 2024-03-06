@@ -85,7 +85,7 @@ class UvInstaller(Pip):
                 groups["req"].append(str(arg))  # pragma: no cover
             elif isinstance(arg, (WheelPackage, SdistPackage, EditablePackage)):
                 groups["req"].extend(str(i) for i in arg.deps)
-                name = arg.path.name.split("-")[0]
+                name = "-".join(arg.path.name.split("-")[:-1])
                 groups["pkg"].append(f"{name}@{arg.path}")
             elif isinstance(arg, EditableLegacyPackage):
                 groups["req"].extend(str(i) for i in arg.deps)
