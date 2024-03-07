@@ -38,6 +38,7 @@ dynamic = [
   "version",
 ]
 dependencies = [
+  "packaging>=23.2",
   "tox<5,>=4.14",
   "uv<1,>=0.1.15",
 ]
