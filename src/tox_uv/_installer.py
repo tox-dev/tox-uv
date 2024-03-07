@@ -7,6 +7,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Sequence, cast
 
 from packaging.requirements import Requirement
+from packaging.utils import parse_sdist_filename, parse_wheel_filename
 from tox.config.of_type import ConfigDynamicDefinition
 from tox.config.types import Command
 from tox.execute.request import StdinSource
@@ -85,7 +86,8 @@ class UvInstaller(Pip):
                 groups["req"].append(str(arg))  # pragma: no cover
             elif isinstance(arg, (WheelPackage, SdistPackage, EditablePackage)):
                 groups["req"].extend(str(i) for i in arg.deps)
-                name = arg.path.name.split("-")[0]
+                parser = parse_sdist_filename if isinstance(arg, SdistPackage) else parse_wheel_filename
+                name, *_ = parser(arg.path.name)
                 groups["pkg"].append(f"{name}@{arg.path}")
             elif isinstance(arg, EditableLegacyPackage):
                 groups["req"].extend(str(i) for i in arg.deps)
