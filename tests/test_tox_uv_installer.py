@@ -60,3 +60,31 @@ def test_uv_install_without_pre_custom_install_cmd(tox_project: ToxProjectCreato
     })
     result = project.run("-vv")
     result.assert_success()
+
+
+def test_uv_install_with_resolution_strategy(tox_project: ToxProjectCreator) -> None:
+    project = tox_project({
+        "tox.ini": """
+    [testenv]
+    deps = tomli
+    package = skip
+    uv_resolution = lowest
+    """
+    })
+    result = project.run("-vv")
+    result.assert_success()
+
+
+def test_uv_install_with_resolution_strategy_custom_install_cmd(tox_project: ToxProjectCreator) -> None:
+    project = tox_project({
+        "tox.ini": """
+    [testenv]
+    deps = tomli
+    pip_pre = true
+    package = skip
+    uv_resolution = lowest
+    install_command = uv pip install {packages}
+    """
+    })
+    result = project.run("-vv")
+    result.assert_success()

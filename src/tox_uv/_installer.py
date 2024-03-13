@@ -27,6 +27,12 @@ class UvInstaller(Pip):
 
     def _register_config(self) -> None:
         super()._register_config()
+        self._env.conf.add_config(
+            keys=["uv_resolution"],
+            of_type=str,
+            default="",
+            desc="Define the resolution strategy for uv",
+        )
         if self._with_list_deps:  # pragma: no branch
             conf = cast(ConfigDynamicDefinition[Command], self._env.conf._defined["list_dependencies_command"])  # noqa: SLF001
             conf.default = Command([self.uv, "--color", "never", "pip", "freeze"])
@@ -44,16 +50,22 @@ class UvInstaller(Pip):
     def post_process_install_command(self, cmd: Command) -> Command:
         install_command = cmd.args
         pip_pre: bool = self._env.conf["pip_pre"]
+        uv_resolution: str = self._env.conf["uv_resolution"]
         try:
             opts_at = install_command.index("{opts}")
         except ValueError:
             if pip_pre:
                 install_command.extend(("--prerelease", "allow"))
+            if uv_resolution:
+                install_command.extend(("--resolution", uv_resolution))
         else:
             if pip_pre:
                 install_command[opts_at] = "--prerelease"
                 install_command.insert(opts_at + 1, "allow")
-            else:
+            if uv_resolution:
+                install_command[opts_at] = "--resolution"
+                install_command.insert(opts_at + 1, uv_resolution)
+            if not (pip_pre or uv_resolution):
                 install_command.pop(opts_at)
         return cmd
 
