@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Sequence, cast
+from typing import TYPE_CHECKING, Any, Literal, Sequence, cast
 
 from packaging.requirements import Requirement
 from packaging.utils import parse_sdist_filename, parse_wheel_filename
@@ -29,8 +29,8 @@ class UvInstaller(Pip):
         super()._register_config()
         self._env.conf.add_config(
             keys=["uv_resolution"],
-            of_type=str,
-            default="",
+            of_type=Literal["highest", "lowest", "lowest-direct"],
+            default=None,  # type: ignore[arg-type]
             desc="Define the resolution strategy for uv",
         )
         if self._with_list_deps:  # pragma: no branch
