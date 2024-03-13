@@ -29,7 +29,7 @@ class UvInstaller(Pip):
         super()._register_config()
         if self._with_list_deps:  # pragma: no branch
             conf = cast(ConfigDynamicDefinition[Command], self._env.conf._defined["list_dependencies_command"])  # noqa: SLF001
-            conf.default = Command([self.uv, "pip", "freeze"])
+            conf.default = Command([self.uv, "--color", "never", "pip", "freeze"])
 
     @property
     def uv(self) -> str:
