@@ -28,3 +28,17 @@ python -m tox r -e py312 # will use uv
 This flag, set on a tox environment level, controls if the created virtual environment injects pip/setuptools/wheel into
 the created virtual environment or not. By default, is off. You will need to set this if you have a project that uses
 the old legacy editable mode, or your project does not support the `pyproject.toml` powered isolated build model.
+
+### uv_resolution
+
+This flag, set on a tox environment level, informs uv of the desired [resolution strategy]:
+
+- `highest` - (default) selects the highest version of a package that satisfies the constraints
+- `lowest` - install the **lowest** compatible versions for all dependencies, both **direct** and **transitive**
+- `lowest-direct` - opt for the **lowest** compatible versions for all **direct** dependencies, while using the
+  **latest** compatible versions for all **transitive** dependencies
+
+This is a uv specific feature that may be used as an alternative to frozen constraints for test environments, if the
+intention is to validate the lower bounds of your dependencies during test executions.
+
+[resolution strategy]: https://github.com/astral-sh/uv/blob/0.1.20/README.md#resolution-strategy
