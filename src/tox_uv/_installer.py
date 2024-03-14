@@ -4,14 +4,14 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Literal, Sequence, cast
+from typing import TYPE_CHECKING, Any, Sequence, cast
 
 from packaging.requirements import Requirement
 from packaging.utils import parse_sdist_filename, parse_wheel_filename
 from tox.config.of_type import ConfigDynamicDefinition
 from tox.config.types import Command
 from tox.execute.request import StdinSource
-from tox.tox_env.errors import Recreate
+from tox.tox_env.errors import Fail, Recreate
 from tox.tox_env.python.package import EditableLegacyPackage, EditablePackage, SdistPackage, WheelPackage
 from tox.tox_env.python.pip.pip_install import Pip
 from tox.tox_env.python.pip.req_file import PythonDeps
@@ -27,11 +27,20 @@ class UvInstaller(Pip):
 
     def _register_config(self) -> None:
         super()._register_config()
+
+        def uv_resolution_post_process(value: str) -> str:
+            valid_opts = {"highest", "lowest", "lowest-direct"}
+            if value and value not in valid_opts:
+                msg = f"Invalid value for uv_resolution: {value!r}. Valid options are: {', '.join(valid_opts)}."
+                raise Fail(msg)
+            return value
+
         self._env.conf.add_config(
             keys=["uv_resolution"],
-            of_type=Literal["highest", "lowest", "lowest-direct"],
-            default=None,  # type: ignore[arg-type]
+            of_type=str,
+            default="",
             desc="Define the resolution strategy for uv",
+            post_process=uv_resolution_post_process,
         )
         if self._with_list_deps:  # pragma: no branch
             conf = cast(ConfigDynamicDefinition[Command], self._env.conf._defined["list_dependencies_command"])  # noqa: SLF001
