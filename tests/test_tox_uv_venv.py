@@ -4,7 +4,7 @@ import importlib.util
 import os
 import os.path
 import pathlib
-import subprocess
+import subprocess  # noqa: S404
 import sys
 from configparser import ConfigParser
 from typing import TYPE_CHECKING
