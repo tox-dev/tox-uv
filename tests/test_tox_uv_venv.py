@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+import importlib.util
+import os
+import os.path
+import pathlib
+import subprocess  # noqa: S404
 import sys
 from configparser import ConfigParser
 from typing import TYPE_CHECKING
@@ -86,3 +91,28 @@ def test_uv_env_site_package_dir(tox_project: ToxProjectCreator) -> None:
     else:  # pragma: win32 no cover
         path = str(env_dir / "lib" / f"python{ver.major}.{ver.minor}" / "site-packages")
     assert path in result.out
+
+
+def test_uv_env_python_not_in_path(tox_project: ToxProjectCreator) -> None:
+    # Make sure there is no pythonX.Y in the search path
+    ver = sys.version_info
+    exe_ext = ".exe" if sys.platform == "win32" else ""
+    python_exe = f"python{ver.major}.{ver.minor}{exe_ext}"
+    env = dict(os.environ)
+    env["PATH"] = os.path.pathsep.join(
+        path for path in env["PATH"].split(os.path.pathsep) if not (pathlib.Path(path) / python_exe).is_file()
+    )
+
+    # Make sure the Python interpreter can find our Tox module
+    tox_spec = importlib.util.find_spec("tox")
+    assert tox_spec is not None
+    tox_lines = subprocess.check_output(
+        [sys.executable, "-c", "import tox; print(tox.__file__);"], encoding="UTF-8", env=env
+    ).splitlines()
+    assert tox_lines == [tox_spec.origin]
+
+    # Now use that Python interpreter to run Tox
+    project = tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python -c 'print(\"{env_python}\")'"})
+    tox_ini = project.path / "tox.ini"
+    assert tox_ini.is_file()
+    subprocess.check_call([sys.executable, "-m", "tox", "-c", tox_ini], env=env)

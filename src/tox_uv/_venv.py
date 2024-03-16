@@ -113,7 +113,13 @@ class UvVenv(Python, ABC):
 
     def create_python_env(self) -> None:
         base = self.base_python.version_info
-        version_spec = f"{base.major}.{base.minor}" if base.minor else f"{base.major}"
+        version_spec = (
+            sys.executable
+            if (base.major, base.minor) == sys.version_info[:2]
+            else f"{base.major}.{base.minor}"
+            if base.minor
+            else f"{base.major}"
+        )
         cmd: list[str] = [self.uv, "venv", "-p", version_spec]
         if self.options.verbosity > 2:  # noqa: PLR2004
             cmd.append("-v")
