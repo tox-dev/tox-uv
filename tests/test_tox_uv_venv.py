@@ -104,10 +104,12 @@ def test_uv_env_python_not_in_path(tox_project: ToxProjectCreator) -> None:
     )
 
     # Make sure the Python interpreter can find our Tox module
+    tox_spec = importlib.util.find_spec("tox")
+    assert tox_spec is not None
     tox_lines = subprocess.check_output(
         [sys.executable, "-c", "import tox; print(tox.__file__);"], encoding="UTF-8", env=env
     ).splitlines()
-    assert tox_lines == [importlib.util.find_spec("tox").origin]
+    assert tox_lines == [tox_spec.origin]
 
     # Now use that Python interpreter to run Tox
     project = tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python -c 'print(\"{env_python}\")'"})
