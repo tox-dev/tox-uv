@@ -34,3 +34,6 @@ repos:
     hooks:
       - id: check-hooks-apply
       - id: check-useless-excludes
+
+ci:
+  autoupdate_schedule: quarterly
