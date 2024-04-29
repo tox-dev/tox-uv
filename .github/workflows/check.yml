@@ -29,6 +29,11 @@ jobs:
           - ubuntu-latest
           - windows-latest
           - macos-latest
+        include:
+           - { os: ubuntu-latest, py: "pypy3.10" }
+           - { os: ubuntu-latest, py: "pypy3.8" }
+           - { os: windows-latest, py: "pypy3.10" }
+           - { os: windows-latest, py: "pypy3.8" }
     steps:
       - name: setup python for tox
         uses: actions/setup-python@v5
