@@ -2,7 +2,7 @@
 build-backend = "hatchling.build"
 requires = [
   "hatch-vcs>=0.4",
-  "hatchling>=1.21.1",
+  "hatchling>=1.24.2",
 ]
 
 [project]
@@ -16,7 +16,9 @@ keywords = [
   "virtual",
 ]
 license = "MIT"
-maintainers = [{ name = "Bernát Gábor", email = "gaborjbernat@gmail.com" }]
+maintainers = [
+  { name = "Bernát Gábor", email = "gaborjbernat@gmail.com" },
+]
 requires-python = ">=3.8"
 classifiers = [
   "Development Status :: 5 - Production/Stable",
@@ -38,17 +40,19 @@ dynamic = [
   "version",
 ]
 dependencies = [
-  "packaging>=23.2",
-  "tox<5,>=4.14",
-  "uv<1,>=0.1.15",
+  'importlib_resources>=6.4; python_version < "3.9"',
+  "packaging>=24",
+  "tox<5,>=4.15",
+  "uv<1,>=0.1.39",
 ]
 optional-dependencies.test = [
   "covdefaults>=2.3",
   "devpi-process>=1",
-  "pytest>=8.0.2",
-  "pytest-cov>=4.1",
-  "pytest-mock>=3.12",
+  "pytest>=8.2",
+  "pytest-cov>=5",
+  "pytest-mock>=3.14",
 ]
+urls.Changelog = "https://github.com/tox-dev/tox-uv/releases"
 urls.Documentation = "https://github.com/tox-dev/tox-uv#tox-uv"
 urls.Homepage = "https://github.com/tox-dev/tox-uv"
 urls.Source = "https://github.com/tox-dev/tox-uv"
@@ -57,7 +61,10 @@ entry-points.tox = {"tox-uv" = "tox_uv.plugin"}
 
 [tool.hatch]
 build.hooks.vcs.version-file = "src/tox_uv/version.py"
-build.targets.sdist.include = ["/src", "/tests"]
+build.targets.sdist.include = [
+  "/src",
+  "/tests",
+]
 version.source = "vcs"
 
 [tool.black]
@@ -66,8 +73,15 @@ line-length = 120
 [tool.ruff]
 line-length = 120
 target-version = "py38"
-lint.isort = { known-first-party = ["tox_uv", "tests"], required-imports = ["from __future__ import annotations"] }
-lint.select = ["ALL"]
+lint.isort = { known-first-party = [
+  "tox_uv",
+  "tests",
+], required-imports = [
+  "from __future__ import annotations",
+] }
+lint.select = [
+  "ALL",
+]
 lint.ignore = [
   "ANN101", # Missing type annotation for `self` in method
   "D301",   #  Use `r"""` if any backslashes in a docstring
@@ -103,14 +117,34 @@ count = true
 [tool.coverage]
 html.show_contexts = true
 html.skip_covered = false
-paths.source = ["src", ".tox/*/.venv/lib/*/site-packages", ".tox\\*\\.venv\\Lib\\site-packages", "**/src", "**\\src"]
-paths.other = [".", "*/tox_uv", "*\\tox_uv"]
+paths.source = [
+  "src",
+  ".tox/*/.venv/lib/*/site-packages",
+  ".tox\\*\\.venv\\Lib\\site-packages",
+  "**/src",
+  "**\\src",
+]
+paths.other = [
+  ".",
+  "*/tox_uv",
+  "*\\tox_uv",
+]
+report.omit = [
+  "src/tox_uv/_venv_query.py",
+]
 report.fail_under = 100
 run.parallel = true
-run.plugins = ["covdefaults"]
+run.plugins = [
+  "covdefaults",
+]
 
 [tool.mypy]
 python_version = "3.11"
 show_error_codes = true
 strict = true
-overrides = [{ module = ["virtualenv.*", "uv.*"], ignore_missing_imports = true }]
+overrides = [
+  { module = [
+    "virtualenv.*",
+    "uv.*",
+  ], ignore_missing_imports = true },
+]

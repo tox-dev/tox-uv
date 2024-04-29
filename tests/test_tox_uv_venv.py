@@ -79,7 +79,7 @@ def test_uv_env_python(tox_project: ToxProjectCreator) -> None:
     assert env_bin_dir in result.out
 
 
-def test_uv_env_site_package_dir(tox_project: ToxProjectCreator) -> None:
+def test_uv_env_site_package_dir_run(tox_project: ToxProjectCreator) -> None:
     project = tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python -c 'print(\"{envsitepackagesdir}\")'"})
     result = project.run("-vv")
     result.assert_success()
@@ -89,7 +89,23 @@ def test_uv_env_site_package_dir(tox_project: ToxProjectCreator) -> None:
     if sys.platform == "win32":  # pragma: win32 cover
         path = str(env_dir / "Lib" / "site-packages")
     else:  # pragma: win32 no cover
-        path = str(env_dir / "lib" / f"python{ver.major}.{ver.minor}" / "site-packages")
+        impl = "pypy" if sys.implementation.name.lower() == "pypy" else "python"
+        path = str(env_dir / "lib" / f"{impl}{ver.major}.{ver.minor}" / "site-packages")
+    assert path in result.out
+
+
+def test_uv_env_site_package_dir_conf(tox_project: ToxProjectCreator) -> None:
+    project = tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands={envsitepackagesdir}"})
+    result = project.run("c", "-e", "py", "-k", "commands")
+    result.assert_success()
+
+    env_dir = project.path / ".tox" / "py" / ".venv"
+    ver = sys.version_info
+    if sys.platform == "win32":  # pragma: win32 cover
+        path = str(env_dir / "Lib" / "site-packages")
+    else:  # pragma: win32 no cover
+        impl = "pypy" if sys.implementation.name.lower() == "pypy" else "python"
+        path = str(env_dir / "lib" / f"{impl}{ver.major}.{ver.minor}" / "site-packages")
     assert path in result.out
 
 

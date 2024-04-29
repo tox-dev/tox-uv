@@ -2,8 +2,17 @@
 
 from __future__ import annotations
 
+import json
 import sys
 from abc import ABC
+from functools import cached_property
+
+if sys.version_info >= (3, 9):  # pragma: no cover (py39+)
+    from importlib.resources import as_file, files
+else:  # pragma: no cover (py38+)
+    from importlib_resources import as_file, files
+
+
 from pathlib import Path
 from platform import python_implementation
 from typing import TYPE_CHECKING, Any, cast
@@ -26,6 +35,7 @@ class UvVenv(Python, ABC):
     def __init__(self, create_args: ToxEnvCreateArgs) -> None:
         self._executor: Execute | None = None
         self._installer: UvInstaller | None = None
+        self._created = False
         super().__init__(create_args)
 
     def register_config(self) -> None:
@@ -112,14 +122,12 @@ class UvVenv(Python, ABC):
         return env
 
     def create_python_env(self) -> None:
-        base = self.base_python.version_info
-        version_spec = (
-            sys.executable
-            if (base.major, base.minor) == sys.version_info[:2]
-            else f"{base.major}.{base.minor}"
-            if base.minor
-            else f"{base.major}"
-        )
+        base, imp = self.base_python.version_info, self.base_python.impl_lower
+        if (base.major, base.minor) == sys.version_info[:2] and (sys.implementation.name.lower() == imp):
+            version_spec = sys.executable
+        else:
+            uv_imp = "python" if (imp and imp == "cpython") else imp
+            version_spec = f"{uv_imp or ''}{base.major}.{base.minor}" if base.minor else f"{uv_imp or ''}{base.major}"
         cmd: list[str] = [self.uv, "venv", "-p", version_spec]
         if self.options.verbosity > 2:  # noqa: PLR2004
             cmd.append("-v")
@@ -128,6 +136,7 @@ class UvVenv(Python, ABC):
         cmd.append(str(self.venv_dir))
         outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="venv", show=None)
         outcome.assert_success()
+        self._created = True
 
     @property
     def _allow_externals(self) -> list[str]:
@@ -152,9 +161,34 @@ class UvVenv(Python, ABC):
         if sys.platform == "win32":  # pragma: win32 cover
             return self.venv_dir / "Lib" / "site-packages"
         else:  # pragma: win32 no cover # noqa: RET505
-            assert self.base_python.version_info.major is not None  # noqa: S101
-            assert self.base_python.version_info.minor is not None  # noqa: S101
-            return self.venv_dir / "lib" / f"python{self.base_python.version_dot}" / "site-packages"
+            py = self._py_info
+            impl = "pypy" if py.implementation == "pypy" else "python"
+            return self.venv_dir / "lib" / f"{impl}{py.version_dot}" / "site-packages"
+
+    @cached_property
+    def _py_info(self) -> PythonInfo:  # pragma: win32 no cover
+        if not (self._created or self.env_dir.exists()):  # called during config, no environment setup
+            self.create_python_env()
+            self._paths = self.prepend_env_var_path()
+        with as_file(files("tox_uv") / "_venv_query.py") as filename:
+            cmd = [str(self.env_python()), str(filename)]
+            outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="venv-query", show=False)
+        outcome.assert_success()
+        res = json.loads(outcome.out)
+        return PythonInfo(
+            implementation=res["implementation"],
+            version_info=VersionInfo(
+                major=res["version_info"][0],
+                minor=res["version_info"][1],
+                micro=res["version_info"][2],
+                releaselevel=res["version_info"][3],
+                serial=res["version_info"][4],
+            ),
+            version=res["version"],
+            is_64=res["is_64"],
+            platform=sys.platform,
+            extra={},
+        )
 
 
 __all__ = [
