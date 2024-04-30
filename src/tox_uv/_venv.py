@@ -167,7 +167,7 @@ class UvVenv(Python, ABC):
 
     @cached_property
     def _py_info(self) -> PythonInfo:  # pragma: win32 no cover
-        if not (self._created or self.env_dir.exists()):  # called during config, no environment setup
+        if not self._created and not self.env_python().exists():  # called during config, no environment setup
             self.create_python_env()
             self._paths = self.prepend_env_var_path()
         with as_file(files("tox_uv") / "_venv_query.py") as filename:
