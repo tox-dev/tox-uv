@@ -40,7 +40,7 @@ dynamic = [
   "version",
 ]
 dependencies = [
-  'importlib_resources>=6.4; python_version < "3.9"',
+  "importlib-resources>=6.4; python_version<'3.9'",
   "packaging>=24",
   "tox<5,>=4.15",
   "uv<1,>=0.1.39",
@@ -57,7 +57,7 @@ urls.Documentation = "https://github.com/tox-dev/tox-uv#tox-uv"
 urls.Homepage = "https://github.com/tox-dev/tox-uv"
 urls.Source = "https://github.com/tox-dev/tox-uv"
 urls.Tracker = "https://github.com/tox-dev/tox-uv/issues"
-entry-points.tox = {"tox-uv" = "tox_uv.plugin"}
+entry-points.tox.tox-uv = "tox_uv.plugin"
 
 [tool.hatch]
 build.hooks.vcs.version-file = "src/tox_uv/version.py"
