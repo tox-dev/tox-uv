@@ -98,9 +98,7 @@ jobs:
         run: python -m pip install uv
       - name: Uninstall pip
         run: python -m pip uninstall pip -y
-      - name: Allow uv to use the global Python
-        run: echo "UV_SYSTEM_PYTHON=1" >> $GITHUB_ENV
       - name: Install self
-        run: uv pip install tox-uv@.
+        run: uv pip install --system tox-uv@.
       - name: run check for ${{ matrix.tox_env }}
         run: python -m tox -e ${{ matrix.tox_env }}
