@@ -43,12 +43,12 @@ dependencies = [
   "importlib-resources>=6.4; python_version<'3.9'",
   "packaging>=24",
   "tox<5,>=4.15",
-  "uv<1,>=0.1.39",
+  "uv<1,>=0.2.5",
 ]
 optional-dependencies.test = [
   "covdefaults>=2.3",
   "devpi-process>=1",
-  "pytest>=8.2",
+  "pytest>=8.2.1",
   "pytest-cov>=5",
   "pytest-mock>=3.14",
 ]
@@ -118,8 +118,8 @@ html.show_contexts = true
 html.skip_covered = false
 paths.source = [
   "src",
-  ".tox/*/.venv/lib/*/site-packages",
-  ".tox\\*\\.venv\\Lib\\site-packages",
+  ".tox/*/lib/*/site-packages",
+  ".tox\\*\\Lib\\site-packages",
   "**/src",
   "**\\src",
 ]

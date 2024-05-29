@@ -7,6 +7,7 @@ import pathlib
 import subprocess  # noqa: S404
 import sys
 from configparser import ConfigParser
+from importlib.metadata import version
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -65,8 +66,17 @@ def test_uv_env_bin_dir(tox_project: ToxProjectCreator) -> None:
     result = project.run("-vv")
     result.assert_success()
 
-    env_bin_dir = str(project.path / ".tox" / "py" / ".venv" / ("Scripts" if sys.platform == "win32" else "bin"))
+    env_bin_dir = str(project.path / ".tox" / "py" / ("Scripts" if sys.platform == "win32" else "bin"))
     assert env_bin_dir in result.out
+
+
+def test_uv_env_has_access_to_plugin_uv(tox_project: ToxProjectCreator) -> None:
+    project = tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=uv --version"})
+    result = project.run()
+
+    result.assert_success()
+    ver = version("uv")
+    assert f"uv {ver}" in result.out
 
 
 def test_uv_env_python(tox_project: ToxProjectCreator) -> None:
@@ -75,7 +85,7 @@ def test_uv_env_python(tox_project: ToxProjectCreator) -> None:
     result.assert_success()
 
     exe = "python.exe" if sys.platform == "win32" else "python"
-    env_bin_dir = str(project.path / ".tox" / "py" / ".venv" / ("Scripts" if sys.platform == "win32" else "bin") / exe)
+    env_bin_dir = str(project.path / ".tox" / "py" / ("Scripts" if sys.platform == "win32" else "bin") / exe)
     assert env_bin_dir in result.out
 
 
@@ -84,7 +94,7 @@ def test_uv_env_site_package_dir_run(tox_project: ToxProjectCreator) -> None:
     result = project.run("-vv")
     result.assert_success()
 
-    env_dir = project.path / ".tox" / "py" / ".venv"
+    env_dir = project.path / ".tox" / "py"
     ver = sys.version_info
     if sys.platform == "win32":  # pragma: win32 cover
         path = str(env_dir / "Lib" / "site-packages")
@@ -99,7 +109,7 @@ def test_uv_env_site_package_dir_conf(tox_project: ToxProjectCreator) -> None:
     result = project.run("c", "-e", "py", "-k", "commands")
     result.assert_success()
 
-    env_dir = project.path / ".tox" / "py" / ".venv"
+    env_dir = project.path / ".tox" / "py"
     ver = sys.version_info
     if sys.platform == "win32":  # pragma: win32 cover
         path = str(env_dir / "Lib" / "site-packages")

@@ -46,6 +46,7 @@ class UvVenv(Python, ABC):
     def python_cache(self) -> dict[str, Any]:
         result = super().python_cache()
         result["seed"] = self.conf["uv_seed"]
+        result["venv"] = str(self.venv_dir.relative_to(self.env_dir))
         return result
 
     @property
@@ -105,7 +106,7 @@ class UvVenv(Python, ABC):
 
     @property
     def venv_dir(self) -> Path:
-        return cast(Path, self.conf["env_dir"]) / ".venv"
+        return cast(Path, self.conf["env_dir"])
 
     @property
     def environment_variables(self) -> dict[str, str]:
@@ -128,7 +129,7 @@ class UvVenv(Python, ABC):
         else:
             uv_imp = "" if (imp and imp == "cpython") else imp
             version_spec = f"{uv_imp or ''}{base.major}.{base.minor}" if base.minor else f"{uv_imp or ''}{base.major}"
-        cmd: list[str] = [self.uv, "venv", "-p", version_spec]
+        cmd: list[str] = [self.uv, "venv", "-p", version_spec, "--allow-existing"]
         if self.options.verbosity > 2:  # noqa: PLR2004
             cmd.append("-v")
         if self.conf["uv_seed"]:
@@ -145,7 +146,7 @@ class UvVenv(Python, ABC):
         return result
 
     def prepend_env_var_path(self) -> list[Path]:
-        return [self.env_bin_dir()]
+        return [self.env_bin_dir(), Path(self.uv).parent]
 
     def env_bin_dir(self) -> Path:
         if sys.platform == "win32":  # pragma: win32 cover
