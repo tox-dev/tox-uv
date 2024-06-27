@@ -111,6 +111,7 @@ class UvVenv(Python, ABC):
     @property
     def environment_variables(self) -> dict[str, str]:
         env = super().environment_variables
+        env.pop("UV_PYTHON", None)  # UV_PYTHON takes precedence over VIRTUAL_ENV
         env["VIRTUAL_ENV"] = str(self.venv_dir)
         return env
 

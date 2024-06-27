@@ -23,7 +23,6 @@ repos:
     rev: "2.1.3"
     hooks:
       - id: pyproject-fmt
-        additional_dependencies: ["tox>=4.15"]
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: "v0.4.9"
     hooks:
