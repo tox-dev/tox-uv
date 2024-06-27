@@ -11,6 +11,7 @@ from importlib.metadata import version
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    import pytest
     from tox.pytest import ToxProjectCreator
 
 
@@ -142,3 +143,12 @@ def test_uv_env_python_not_in_path(tox_project: ToxProjectCreator) -> None:
     tox_ini = project.path / "tox.ini"
     assert tox_ini.is_file()
     subprocess.check_call([sys.executable, "-m", "tox", "-c", tox_ini], env=env)
+
+
+def test_uv_python_set(tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("UV_PYTHON", sys.executable)
+    project = tox_project({
+        "tox.ini": "[testenv]\npackage=skip\ndeps=setuptools\ncommands=python -c 'import setuptools'"
+    })
+    result = project.run("-vv")
+    result.assert_success()
