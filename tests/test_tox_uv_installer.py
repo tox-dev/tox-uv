@@ -99,3 +99,32 @@ def test_uv_install_with_resolution_strategy_custom_install_cmd(tox_project: Tox
     result.assert_success()
 
     assert execute_calls.call_args[0][3].cmd[2:] == ["install", "tomli>=2.0.1", "--resolution", "lowest-direct"]
+
+def test_uv_install_no_keep_pip(tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("CI", "1")
+    project = tox_project({"tox.ini": "[testenv]\ndeps = tomli\npackage=skip"})
+    result = project.run()
+    result.assert_success()
+    report = {i.split("=")[0] for i in result.out.splitlines()[-3][4:].split(",")}
+    assert report == {"tomli"}
+
+
+def test_uv_install_keep_pip(tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("CI", "1")
+    monkeypatch.setenv("KEEP_PIP", "yes")
+    project = tox_project({"tox.ini": "[testenv]\ndeps = tomli\npackage=skip"})
+    result = project.run()
+    result.assert_success()
+    report = {i.split("=")[0] for i in result.out.splitlines()[-3][4:].split(",")}
+    assert report == {"tomli", "pip"}
+
+
+def test_uv_install_keep_pip_special_version(tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("CI", "1")
+    monkeypatch.setenv("KEEP_PIP", "==24.1")
+    project = tox_project({"tox.ini": "[testenv]\ndeps = tomli\npackage=skip"})
+    result = project.run()
+    result.assert_success()
+    report = {i.split("=")[0]: i.split("=")[-1] for i in result.out.splitlines()[-3][4:].split(",")}
+    assert set(report.keys()) == {"tomli", "pip"}
+    assert report["pip"] == "24.1"

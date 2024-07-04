@@ -42,3 +42,9 @@ This is a uv specific feature that may be used as an alternative to frozen const
 intention is to validate the lower bounds of your dependencies during test executions.
 
 [resolution strategy]: https://github.com/astral-sh/uv/blob/0.1.20/README.md#resolution-strategy
+
+### KEEP_PIP
+This flag if set on a tox environment level, will keep pip beside uv. This is useful if your CI/CD pipeline relies on pip for some operations or not all your developers have tox-uv installed.
+
+- `yes` this will install the newest compatible pip version
+- `==24.1` this will install the specified pip version also `>=` or `<=` should be supported

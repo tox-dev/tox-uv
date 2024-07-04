@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Sequence, cast
 
@@ -92,6 +93,17 @@ class UvInstaller(Pip):
         else:  # pragma: no cover
             logging.warning("uv cannot install %r", arguments)  # pragma: no cover
             raise SystemExit(1)  # pragma: no cover
+
+        # Handle if the user wants to keep pip for compatibility with old ci/cd
+        if os.environ.get("KEEP_PIP"):
+            requirements_string = "pip"
+            pip_version = os.environ["KEEP_PIP"]
+            # the user wants to keep a special pip version
+            if pip_version != "yes":
+                requirements_string += f"{pip_version}"
+            groups: dict[str, list[str]] = defaultdict(list)
+            groups["req"].append(requirements_string)
+            self._execute_installer([requirements_string], of_type)
 
     def _install_list_of_deps(  # noqa: C901
         self,
