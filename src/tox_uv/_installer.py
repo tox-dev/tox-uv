@@ -101,8 +101,6 @@ class UvInstaller(Pip):
             # the user wants to keep a special pip version
             if pip_version != "yes":
                 requirements_string += f"{pip_version}"
-            groups: dict[str, list[str]] = defaultdict(list)
-            groups["req"].append(requirements_string)
             self._execute_installer([requirements_string], of_type)
 
     def _install_list_of_deps(  # noqa: C901
