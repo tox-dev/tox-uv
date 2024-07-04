@@ -100,6 +100,7 @@ def test_uv_install_with_resolution_strategy_custom_install_cmd(tox_project: Tox
 
     assert execute_calls.call_args[0][3].cmd[2:] == ["install", "tomli>=2.0.1", "--resolution", "lowest-direct"]
 
+
 def test_uv_install_no_keep_pip(tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("CI", "1")
     project = tox_project({"tox.ini": "[testenv]\ndeps = tomli\npackage=skip"})
