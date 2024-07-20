@@ -4,14 +4,16 @@ import importlib.util
 import os
 import os.path
 import pathlib
+import platform
 import subprocess  # noqa: S404
 import sys
 from configparser import ConfigParser
 from importlib.metadata import version
 from typing import TYPE_CHECKING
 
+import pytest
+
 if TYPE_CHECKING:
-    import pytest
     from tox.pytest import ToxProjectCreator
 
 
@@ -48,6 +50,66 @@ def test_uv_venv_spec_major_only(tox_project: ToxProjectCreator) -> None:
     project = tox_project({"tox.ini": f"[testenv]\npackage=skip\nbase_python={ver.major}"})
     result = project.run("-vv")
     result.assert_success()
+
+
+@pytest.fixture()
+def other_interpreter_exe() -> pathlib.Path:
+    """Returns an interpreter executable path that is not the exact same as `sys.executable`.
+
+    Necessary because `sys.executable` gets short-circuited when used as `base_python`."""
+
+    exe = pathlib.Path(sys.executable)
+    base_python: pathlib.Path | None = None
+    if exe.name == "python":
+        # python -> pythonX.Y
+        ver = sys.version_info
+        base_python = exe.with_name(f"python{ver.major}.{ver.minor}")
+    elif exe.name[-1].isdigit():
+        # python X[.Y] -> python
+        base_python = exe.with_name(exe.stem[:-1])
+    elif exe.suffix == ".exe":
+        # python.exe <-> pythonw.exe
+        base_python = exe.with_stem(exe.stem[:-1]) if exe.stem.endswith("w") else exe.with_stem(exe.stem + "w")
+    if not base_python or not base_python.is_file():
+        pytest.fail("Tried to pick a base_python that is not sys.executable, but failed.")
+    return base_python
+
+
+def test_uv_venv_spec_abs_path(tox_project: ToxProjectCreator, other_interpreter_exe: pathlib.Path) -> None:
+    project = tox_project({"tox.ini": f"[testenv]\npackage=skip\nbase_python={other_interpreter_exe}"})
+    result = project.run("-vv")
+    result.assert_success()
+
+
+def test_uv_venv_spec_abs_path_conflict_ver(
+    tox_project: ToxProjectCreator, other_interpreter_exe: pathlib.Path
+) -> None:
+    # py27 is long gone, but still matches the testenv capture regex, so we know it will fail
+    project = tox_project({"tox.ini": f"[testenv:py27]\npackage=skip\nbase_python={other_interpreter_exe}"})
+    result = project.run("-vv", "-e", "py27")
+    result.assert_failed()
+    assert f"failed with env name py27 conflicting with base python {other_interpreter_exe}" in result.out
+
+
+def test_uv_venv_spec_abs_path_conflict_impl(
+    tox_project: ToxProjectCreator, other_interpreter_exe: pathlib.Path
+) -> None:
+    env = "pypy" if platform.python_implementation() == "CPython" else "cpython"
+    project = tox_project({"tox.ini": f"[testenv:{env}]\npackage=skip\nbase_python={other_interpreter_exe}"})
+    result = project.run("-vv", "-e", env)
+    result.assert_failed()
+    assert f"failed with env name {env} conflicting with base python {other_interpreter_exe}" in result.out
+
+
+def test_uv_venv_spec_abs_path_conflict_platform(
+    tox_project: ToxProjectCreator, other_interpreter_exe: pathlib.Path
+) -> None:
+    ver = sys.version_info
+    env = f"py{ver.major}{ver.minor}-linux" if sys.platform == "win32" else f"py{ver.major}{ver.minor}-win32"
+    project = tox_project({"tox.ini": f"[testenv:{env}]\npackage=skip\nbase_python={other_interpreter_exe}"})
+    result = project.run("-vv", "-e", env)
+    result.assert_failed()
+    assert f"failed with env name {env} conflicting with base python {other_interpreter_exe}" in result.out
 
 
 def test_uv_venv_na(tox_project: ToxProjectCreator) -> None:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from abc import ABC
 from functools import cached_property
@@ -21,6 +22,8 @@ from tox.execute.local_sub_process import LocalSubProcessExecutor
 from tox.execute.request import StdinSource
 from tox.tox_env.python.api import Python, PythonInfo, VersionInfo
 from uv import find_uv_bin
+from virtualenv import app_data
+from virtualenv.discovery import cached_py_info
 from virtualenv.discovery.py_spec import PythonSpec
 
 from ._installer import UvInstaller
@@ -83,6 +86,18 @@ class UvVenv(Python, ABC):
                     platform=sys.platform,
                     extra={},
                 )
+            if Path(base).is_absolute():
+                info = cached_py_info.from_exe(
+                    cached_py_info.PythonInfo, app_data.make_app_data(None, read_only=False, env=os.environ), base
+                )
+                return PythonInfo(
+                    implementation=info.implementation,
+                    version_info=VersionInfo(*info.version_info),
+                    version=info.version,
+                    is_64=info.architecture == 64,  # noqa: PLR2004
+                    platform=info.platform,
+                    extra={"executable": base},
+                )
             spec = PythonSpec.from_string_spec(base)
             return PythonInfo(
                 implementation=spec.implementation or "CPython",
@@ -124,9 +139,13 @@ class UvVenv(Python, ABC):
         return env
 
     def create_python_env(self) -> None:
-        base, imp = self.base_python.version_info, self.base_python.impl_lower
+        base = self.base_python.version_info
+        imp = self.base_python.impl_lower
+        executable = self.base_python.extra.get("executable")
         if (base.major, base.minor) == sys.version_info[:2] and (sys.implementation.name.lower() == imp):
             version_spec = sys.executable
+        elif executable:
+            version_spec = executable
         else:
             uv_imp = "" if (imp and imp == "cpython") else imp
             version_spec = f"{uv_imp or ''}{base.major}.{base.minor}" if base.minor else f"{uv_imp or ''}{base.major}"
