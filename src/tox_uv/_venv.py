@@ -142,10 +142,10 @@ class UvVenv(Python, ABC):
         base = self.base_python.version_info
         imp = self.base_python.impl_lower
         executable = self.base_python.extra.get("executable")
-        if (base.major, base.minor) == sys.version_info[:2] and (sys.implementation.name.lower() == imp):
-            version_spec = sys.executable
-        elif executable:
+        if executable:
             version_spec = executable
+        elif (base.major, base.minor) == sys.version_info[:2] and (sys.implementation.name.lower() == imp):
+            version_spec = sys.executable
         else:
             uv_imp = "" if (imp and imp == "cpython") else imp
             version_spec = f"{uv_imp or ''}{base.major}.{base.minor}" if base.minor else f"{uv_imp or ''}{base.major}"
