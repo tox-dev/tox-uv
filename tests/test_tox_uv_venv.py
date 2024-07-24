@@ -69,7 +69,9 @@ def other_interpreter_exe() -> pathlib.Path:  # pragma: no cover
         base_python = exe.with_name(exe.stem[:-1])
     elif exe.suffix == ".exe":
         # python.exe <-> pythonw.exe
-        base_python = exe.with_stem(exe.stem[:-1]) if exe.stem.endswith("w") else exe.with_stem(exe.stem + "w")
+        base_python = (
+            exe.with_name(exe.stem[:-1] + ".exe") if exe.stem.endswith("w") else exe.with_name(exe.stem + "w.exe")
+        )
     if not base_python or not base_python.is_file():
         pytest.fail("Tried to pick a base_python that is not sys.executable, but failed.")
     return base_python
