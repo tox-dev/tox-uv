@@ -53,7 +53,7 @@ def test_uv_venv_spec_major_only(tox_project: ToxProjectCreator) -> None:
 
 
 @pytest.fixture()
-def other_interpreter_exe() -> pathlib.Path:
+def other_interpreter_exe() -> pathlib.Path:  # pragma: no cover
     """Returns an interpreter executable path that is not the exact same as `sys.executable`.
 
     Necessary because `sys.executable` gets short-circuited when used as `base_python`."""
