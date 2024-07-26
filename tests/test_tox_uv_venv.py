@@ -154,6 +154,25 @@ def test_uv_env_python(tox_project: ToxProjectCreator) -> None:
     assert env_bin_dir in result.out
 
 
+def test_uv_env_python_preference(tox_project: ToxProjectCreator) -> None:
+    project = tox_project(
+        {
+            "tox.ini": (
+                "[testenv]\n"
+                "package=skip\n"
+                "uv_python_preference=only-managed\n"
+                "commands=python -c 'print(\"{env_python}\")'"
+            )
+        }
+    )
+    result = project.run("-vv")
+    result.assert_success()
+
+    exe = "python.exe" if sys.platform == "win32" else "python"
+    env_bin_dir = str(project.path / ".tox" / "py" / ("Scripts" if sys.platform == "win32" else "bin") / exe)
+    assert env_bin_dir in result.out
+
+
 def test_uv_env_site_package_dir_run(tox_project: ToxProjectCreator) -> None:
     project = tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python -c 'print(\"{envsitepackagesdir}\")'"})
     result = project.run("-vv")
