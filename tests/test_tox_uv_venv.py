@@ -155,16 +155,14 @@ def test_uv_env_python(tox_project: ToxProjectCreator) -> None:
 
 
 def test_uv_env_python_preference(tox_project: ToxProjectCreator) -> None:
-    project = tox_project(
-        {
-            "tox.ini": (
-                "[testenv]\n"
-                "package=skip\n"
-                "uv_python_preference=only-managed\n"
-                "commands=python -c 'print(\"{env_python}\")'"
-            )
-        }
-    )
+    project = tox_project({
+        "tox.ini": (
+            "[testenv]\n"
+            "package=skip\n"
+            "uv_python_preference=only-managed\n"
+            "commands=python -c 'print(\"{env_python}\")'"
+        )
+    })
     result = project.run("-vv")
     result.assert_success()
 
