@@ -157,7 +157,7 @@ class UvVenv(Python, ABC):
         if self.conf["uv_seed"]:
             cmd.append("--seed")
         cmd.append(str(self.venv_dir))
-        outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="venv", show=False)
+        outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="venv", show=None)
         try:
             outcome.assert_success()
         except SystemExit as e:
