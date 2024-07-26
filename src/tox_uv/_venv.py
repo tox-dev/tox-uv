@@ -46,20 +46,10 @@ class UvVenv(Python, ABC):
         super().register_config()
         desc = "add seed packages to the created venv"
         self.conf.add_config(keys=["uv_seed"], of_type=bool, default=False, desc=desc)
-        self.conf.add_config(
-            keys=["skip_missing_interpreters"],
-            of_type=bool,
-            default=False,
-            desc=(
-                "Setting this to true will force tox to return success even if"
-                " some of the specified environments were missing."
-            ),
-        )
 
     def python_cache(self) -> dict[str, Any]:
         result = super().python_cache()
         result["seed"] = self.conf["uv_seed"]
-        result["skip_missing_interpreters"] = self.conf["skip_missing_interpreters"]
         result["venv"] = str(self.venv_dir.relative_to(self.env_dir))
         return result
 
@@ -171,7 +161,7 @@ class UvVenv(Python, ABC):
         try:
             outcome.assert_success()
         except SystemExit as e:
-            if self.conf["skip_missing_interpreters"]:
+            if self.core["skip_missing_interpreters"]:
                 msg = f"could not find python interpreter with spec(s): {version_spec}"
                 raise Skip(msg) from e
 
