@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 from tox.execute.local_sub_process import LocalSubProcessExecutor
 from tox.execute.request import StdinSource
+from tox.tox_env.errors import Fail, Skip
 from tox.tox_env.python.api import Python, PythonInfo, VersionInfo
 from uv import find_uv_bin
 from virtualenv import app_data
@@ -45,10 +46,20 @@ class UvVenv(Python, ABC):
         super().register_config()
         desc = "add seed packages to the created venv"
         self.conf.add_config(keys=["uv_seed"], of_type=bool, default=False, desc=desc)
+        self.conf.add_config(
+            keys=["skip_missing_interpreters"],
+            of_type=bool,
+            default=False,
+            desc=(
+                "Setting this to true will force tox to return success even if"
+                " some of the specified environments were missing."
+            ),
+        )
 
     def python_cache(self) -> dict[str, Any]:
         result = super().python_cache()
         result["seed"] = self.conf["uv_seed"]
+        result["skip_missing_interpreters"] = self.conf["skip_missing_interpreters"]
         result["venv"] = str(self.venv_dir.relative_to(self.env_dir))
         return result
 
@@ -149,14 +160,23 @@ class UvVenv(Python, ABC):
         else:
             uv_imp = "" if (imp and imp == "cpython") else imp
             version_spec = f"{uv_imp or ''}{base.major}.{base.minor}" if base.minor else f"{uv_imp or ''}{base.major}"
+
         cmd: list[str] = [self.uv, "venv", "-p", version_spec, "--allow-existing"]
         if self.options.verbosity > 2:  # noqa: PLR2004
             cmd.append("-v")
         if self.conf["uv_seed"]:
             cmd.append("--seed")
         cmd.append(str(self.venv_dir))
-        outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="venv", show=None)
-        outcome.assert_success()
+        outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="venv", show=False)
+        try:
+            outcome.assert_success()
+        except SystemExit as e:
+            if self.conf["skip_missing_interpreters"]:
+                msg = f"could not find python interpreter with spec(s): {version_spec}"
+                raise Skip(msg) from e
+
+            raise
+
         self._created = True
 
     @property
