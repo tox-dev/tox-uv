@@ -42,3 +42,14 @@ This is a uv specific feature that may be used as an alternative to frozen const
 intention is to validate the lower bounds of your dependencies during test executions.
 
 [resolution strategy]: https://github.com/astral-sh/uv/blob/0.1.20/README.md#resolution-strategy
+
+### uv_python_preference
+
+This flag, set on a tox environement level, controls how uv select the Python
+interpreter.
+
+By default, uv will attempt to use Python versions found on the system and only
+download managed interpreters when necessary. However, It's possible to adjust
+uv's Python version selection preference with the
+[python-preference](https://docs.astral.sh/uv/python-versions/#adjusting-python-version-preferences)
+option.
