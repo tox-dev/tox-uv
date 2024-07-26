@@ -50,7 +50,7 @@ class UvVenv(Python, ABC):
             desc="add seed packages to the created venv",
         )
         self.conf.add_config(
-            keys=["python_fetch"],
+            keys=["uv_python_fetch"],
             of_type=str,
             default="no",
             desc="Whether to automatically download Python when required [possible values: no, automatic, manual]",
@@ -59,7 +59,7 @@ class UvVenv(Python, ABC):
     def python_cache(self) -> dict[str, Any]:
         result = super().python_cache()
         result["seed"] = self.conf["uv_seed"]
-        result["python_fetch"] = self.conf["python_fetch"]
+        result["python_fetch"] = self.conf["uv_python_fetch"]
         result["venv"] = str(self.venv_dir.relative_to(self.env_dir))
         return result
 
@@ -165,8 +165,8 @@ class UvVenv(Python, ABC):
             cmd.append("-v")
         if self.conf["uv_seed"]:
             cmd.append("--seed")
-        if self.conf["python_fetch"] != "no":
-            cmd.extend(["--python-fetch", self.conf["python_fetch"]])
+        if self.conf["uv_python_fetch"] != "no":
+            cmd.extend(["--python-fetch", self.conf["uv_python_fetch"]])
         cmd.append(str(self.venv_dir))
         outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="venv", show=None)
         outcome.assert_success()
