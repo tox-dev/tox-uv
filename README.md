@@ -45,7 +45,7 @@ intention is to validate the lower bounds of your dependencies during test execu
 
 ### uv_python_preference
 
-This flag, set on a tox environement level, controls how uv select the Python
+This flag, set on a tox environment level, controls how uv select the Python
 interpreter.
 
 By default, uv will attempt to use Python versions found on the system and only
