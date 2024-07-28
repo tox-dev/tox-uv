@@ -34,9 +34,7 @@ if TYPE_CHECKING:
     from tox.tox_env.installer import Installer
 
 
-PythonPreference = Literal[
-    "only-managed", "installed", "managed", "system", "only-system"
-]
+PythonPreference = Literal["only-managed", "installed", "managed", "system", "only-system"]
 
 
 class UvVenv(Python, ABC):
