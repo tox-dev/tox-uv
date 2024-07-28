@@ -16,7 +16,7 @@ else:  # pragma: no cover (py38+)
 
 from pathlib import Path
 from platform import python_implementation
-from typing import TYPE_CHECKING, Any, Literal, Optional, cast
+from typing import TYPE_CHECKING, Any, Literal, Union, cast
 
 from tox.execute.local_sub_process import LocalSubProcessExecutor
 from tox.execute.request import StdinSource
@@ -54,7 +54,7 @@ class UvVenv(Python, ABC):
         )
         self.conf.add_config(
             keys=["uv_python_preference"],
-            of_type=Optional[PythonPreference],
+            of_type=Union[PythonPreference, None],
             default=None,
             desc=(
                 "Whether to prefer using Python installations that are already"
