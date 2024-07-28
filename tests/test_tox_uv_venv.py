@@ -115,7 +115,7 @@ def test_uv_venv_spec_abs_path_conflict_platform(
 
 
 def test_uv_venv_na(tox_project: ToxProjectCreator) -> None:
-    project = tox_project({"tox.ini": "[testenv]\npackage=skip\nbase_python=1.0"})
+    project = tox_project({"tox.ini": "[tox]skip_missing_interpreters=false[testenv]\npackage=skip\nbase_python=1.0"})
     result = project.run("-vv")
     result.assert_failed(code=1)
 
