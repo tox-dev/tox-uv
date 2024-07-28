@@ -154,12 +154,20 @@ def test_uv_env_python(tox_project: ToxProjectCreator) -> None:
     assert env_bin_dir in result.out
 
 
-def test_uv_env_python_preference(tox_project: ToxProjectCreator) -> None:
+@pytest.mark.parametrize(
+    "preference",
+    ["only-managed", "installed", "managed", "system", "only-system"],
+)
+def test_uv_env_python_preference(
+    tox_project: ToxProjectCreator,
+    *,
+    preference: str,
+) -> None:
     project = tox_project({
         "tox.ini": (
             "[testenv]\n"
             "package=skip\n"
-            "uv_python_preference=only-managed\n"
+            f"uv_python_preference={preference}\n"
             "commands=python -c 'print(\"{env_python}\")'"
         )
     })

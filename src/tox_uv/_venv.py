@@ -16,7 +16,7 @@ else:  # pragma: no cover (py38+)
 
 from pathlib import Path
 from platform import python_implementation
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Literal, Optional, cast
 
 from tox.execute.local_sub_process import LocalSubProcessExecutor
 from tox.execute.request import StdinSource
@@ -32,6 +32,11 @@ if TYPE_CHECKING:
     from tox.execute.api import Execute
     from tox.tox_env.api import ToxEnvCreateArgs
     from tox.tox_env.installer import Installer
+
+
+PythonPreference = Literal[
+    "only-managed", "installed", "managed", "system", "only-system"
+]
 
 
 class UvVenv(Python, ABC):
@@ -51,13 +56,13 @@ class UvVenv(Python, ABC):
         )
         self.conf.add_config(
             keys=["uv_python_preference"],
-            of_type=str,
-            default="none",
+            of_type=Optional[PythonPreference],
+            default=None,
             desc=(
                 "Whether to prefer using Python installations that are already"
                 " present on the system, or those that are downloaded and"
                 " installed by uv [possible values: only-managed, installed,"
-                " managed, system, only-system, none]. Use none to use uv's"
+                " managed, system, only-system]. Use none to use uv's"
                 " default."
             ),
         )
@@ -171,7 +176,7 @@ class UvVenv(Python, ABC):
             cmd.append("-v")
         if self.conf["uv_seed"]:
             cmd.append("--seed")
-        if self.conf["uv_python_preference"] != "none":
+        if self.conf["uv_python_preference"]:
             cmd.extend(["--python-preference", self.conf["uv_python_preference"]])
         cmd.append(str(self.venv_dir))
         outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="venv", show=None)
