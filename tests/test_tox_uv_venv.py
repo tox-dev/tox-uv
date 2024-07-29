@@ -115,19 +115,23 @@ def test_uv_venv_spec_abs_path_conflict_platform(
 
 
 def test_uv_venv_na(tox_project: ToxProjectCreator) -> None:
-    project = tox_project({"tox.ini": "[tox]skip_missing_interpreters=false[testenv]\npackage=skip\nbase_python=1.0"})
+    project = tox_project({"tox.ini": "[testenv]\npackage=skip\nbase_python=1.0"})
+    result = project.run("-vv")
+    result.assert_success()
+
+
+def test_uv_venv_skip_missing_interpreters_fail(tox_project: ToxProjectCreator) -> None:
+    project = tox_project({
+        "tox.ini": "[tox]\nskip_missing_interpreters=false\n[testenv]\npackage=skip\nbase_python=1.0"
+    })
     result = project.run("-vv")
     result.assert_failed(code=1)
 
 
-def test_uv_venv_skip_missing_interpreters_fail(tox_project: ToxProjectCreator) -> None:
-    project = tox_project({"tox.ini": "[tox]skip_missing_interpreters=false[testenv]\npackage=skip\nbase_python=1.0"})
-    result = project.run("-vv")
-    result.assert_failed(code=-1)
-
-
 def test_uv_venv_skip_missing_interpreters_pass(tox_project: ToxProjectCreator) -> None:
-    project = tox_project({"tox.ini": "[tox]skip_missing_interpreters=true[testenv]\npackage=skip\nbase_python=1.0"})
+    project = tox_project({
+        "tox.ini": "[tox]\nskip_missing_interpreters=true\n[testenv]\npackage=skip\nbase_python=1.0"
+    })
     result = project.run("-vv")
     result.assert_success()
 

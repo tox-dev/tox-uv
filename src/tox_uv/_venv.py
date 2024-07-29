@@ -20,7 +20,6 @@ from typing import TYPE_CHECKING, Any, cast
 
 from tox.execute.local_sub_process import LocalSubProcessExecutor
 from tox.execute.request import StdinSource
-from tox.tox_env.errors import Skip
 from tox.tox_env.python.api import Python, PythonInfo, VersionInfo
 from uv import find_uv_bin
 from virtualenv import app_data
@@ -69,7 +68,7 @@ class UvVenv(Python, ABC):
     def runs_on_platform(self) -> str:
         return sys.platform
 
-    def _get_python(self, base_python: list[str]) -> PythonInfo | None:  # noqa: PLR6301
+    def _get_python(self, base_python: list[str]) -> PythonInfo | None:
         for base in base_python:  # pragma: no branch
             if base == sys.executable:
                 version_info = sys.version_info
@@ -114,6 +113,7 @@ class UvVenv(Python, ABC):
                 platform=sys.platform,
                 extra={},
             )
+
         return None  # pragma: no cover
 
     @property
@@ -158,16 +158,7 @@ class UvVenv(Python, ABC):
             cmd.append("--seed")
         cmd.append(str(self.venv_dir))
         outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="venv", show=None)
-        try:
-            outcome.assert_success()
-        except SystemExit as e:
-            if self.core["skip_missing_interpreters"]:
-                msg = f"could not find python interpreter with spec(s): {version_spec}"
-                raise Skip(msg) from e
-
-            raise
-
-        self._created = True
+        outcome.assert_success()
 
     @property
     def _allow_externals(self) -> list[str]:
