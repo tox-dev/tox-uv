@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, cast
 
 from tox.execute.local_sub_process import LocalSubProcessExecutor
 from tox.execute.request import StdinSource
+from tox.tox_env.errors import Skip
 from tox.tox_env.python.api import Python, PythonInfo, VersionInfo
 from uv import find_uv_bin
 from virtualenv import app_data
@@ -90,7 +91,8 @@ class UvVenv(Python, ABC):
     def runs_on_platform(self) -> str:
         return sys.platform
 
-    def _get_python(self, base_python: list[str]) -> PythonInfo | None:  # noqa: PLR6301
+    @staticmethod
+    def _get_python(base_python: list[str]) -> PythonInfo | None:
         for base in base_python:  # pragma: no branch
             if base == sys.executable:
                 version_info = sys.version_info
@@ -135,6 +137,7 @@ class UvVenv(Python, ABC):
                 platform=sys.platform,
                 extra={},
             )
+
         return None  # pragma: no cover
 
     @property
@@ -171,6 +174,7 @@ class UvVenv(Python, ABC):
         else:
             uv_imp = "" if (imp and imp == "cpython") else imp
             version_spec = f"{uv_imp or ''}{base.major}.{base.minor}" if base.minor else f"{uv_imp or ''}{base.major}"
+
         cmd: list[str] = [self.uv, "venv", "-p", version_spec, "--allow-existing"]
         if self.options.verbosity > 2:  # noqa: PLR2004
             cmd.append("-v")
@@ -180,6 +184,11 @@ class UvVenv(Python, ABC):
             cmd.extend(["--python-preference", self.conf["uv_python_preference"]])
         cmd.append(str(self.venv_dir))
         outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="venv", show=None)
+
+        if self.core["skip_missing_interpreters"] and outcome.exit_code == 1:
+            msg = "could not find python interpreter with spec(s):" f" {version_spec}"
+            raise Skip(msg)
+
         outcome.assert_success()
         self._created = True
 
