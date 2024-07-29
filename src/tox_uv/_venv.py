@@ -22,7 +22,12 @@ from tox.execute.local_sub_process import LocalSubProcessExecutor
 from tox.execute.request import StdinSource
 from tox.tox_env.errors import Skip
 from tox.tox_env.python.api import Python, PythonInfo, VersionInfo
-from typing_extensions import TypeAlias
+
+if sys.version_info >= (3, 10):  # pragma: no cover (py310+)
+    from typing import TypeAlias
+else:  # pragma: no cover (<py310)
+    from typing_extensions import TypeAlias
+
 from uv import find_uv_bin
 from virtualenv import app_data
 from virtualenv.discovery import cached_py_info
