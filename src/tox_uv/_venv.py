@@ -16,12 +16,18 @@ else:  # pragma: no cover (py38+)
 
 from pathlib import Path
 from platform import python_implementation
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Literal, Optional, Type, cast
 
 from tox.execute.local_sub_process import LocalSubProcessExecutor
 from tox.execute.request import StdinSource
 from tox.tox_env.errors import Skip
 from tox.tox_env.python.api import Python, PythonInfo, VersionInfo
+
+if sys.version_info >= (3, 10):  # pragma: no cover (py310+)
+    from typing import TypeAlias
+else:  # pragma: no cover (<py310)
+    from typing_extensions import TypeAlias
+
 from uv import find_uv_bin
 from virtualenv import app_data
 from virtualenv.discovery import cached_py_info
@@ -35,6 +41,9 @@ if TYPE_CHECKING:
     from tox.tox_env.installer import Installer
 
 
+PythonPreference: TypeAlias = Literal["only-managed", "installed", "managed", "system", "only-system"]
+
+
 class UvVenv(Python, ABC):
     def __init__(self, create_args: ToxEnvCreateArgs) -> None:
         self._executor: Execute | None = None
@@ -44,12 +53,31 @@ class UvVenv(Python, ABC):
 
     def register_config(self) -> None:
         super().register_config()
-        desc = "add seed packages to the created venv"
-        self.conf.add_config(keys=["uv_seed"], of_type=bool, default=False, desc=desc)
+        self.conf.add_config(
+            keys=["uv_seed"],
+            of_type=bool,
+            default=False,
+            desc="add seed packages to the created venv",
+        )
+        # The cast(...) might seems superfluous but removing it
+        # makes mypy crash. The problem is probably on tox's typing side
+        self.conf.add_config(
+            keys=["uv_python_preference"],
+            of_type=cast(Type[Optional[PythonPreference]], Optional[PythonPreference]),
+            default=None,
+            desc=(
+                "Whether to prefer using Python installations that are already"
+                " present on the system, or those that are downloaded and"
+                " installed by uv [possible values: only-managed, installed,"
+                " managed, system, only-system]. Use none to use uv's"
+                " default."
+            ),
+        )
 
     def python_cache(self) -> dict[str, Any]:
         result = super().python_cache()
         result["seed"] = self.conf["uv_seed"]
+        result["python_preference"] = self.conf["uv_python_preference"]
         result["venv"] = str(self.venv_dir.relative_to(self.env_dir))
         return result
 
@@ -158,6 +186,8 @@ class UvVenv(Python, ABC):
             cmd.append("-v")
         if self.conf["uv_seed"]:
             cmd.append("--seed")
+        if self.conf["uv_python_preference"]:
+            cmd.extend(["--python-preference", self.conf["uv_python_preference"]])
         cmd.append(str(self.venv_dir))
         outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="venv", show=None)
 
