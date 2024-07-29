@@ -92,9 +92,6 @@ class UvVenv(Python, ABC):
                 info = cached_py_info.from_exe(
                     cached_py_info.PythonInfo, app_data.make_app_data(None, read_only=False, env=os.environ), base
                 )
-                if not info:
-                    return None
-
                 return PythonInfo(
                     implementation=info.implementation,
                     version_info=VersionInfo(*info.version_info),
