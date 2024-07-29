@@ -16,12 +16,13 @@ else:  # pragma: no cover (py38+)
 
 from pathlib import Path
 from platform import python_implementation
-from typing import TYPE_CHECKING, Any, Literal, Optional, cast
+from typing import TYPE_CHECKING, Any, Literal, Optional, Type, cast
 
 from tox.execute.local_sub_process import LocalSubProcessExecutor
 from tox.execute.request import StdinSource
 from tox.tox_env.errors import Skip
 from tox.tox_env.python.api import Python, PythonInfo, VersionInfo
+from typing_extensions import TypeAlias
 from uv import find_uv_bin
 from virtualenv import app_data
 from virtualenv.discovery import cached_py_info
@@ -35,7 +36,7 @@ if TYPE_CHECKING:
     from tox.tox_env.installer import Installer
 
 
-PythonPreference = Literal["only-managed", "installed", "managed", "system", "only-system"]
+PythonPreference: TypeAlias = Literal["only-managed", "installed", "managed", "system", "only-system"]
 
 
 class UvVenv(Python, ABC):
@@ -57,7 +58,7 @@ class UvVenv(Python, ABC):
         # makes mypy crash. The problem is probably on tox's typing side
         self.conf.add_config(
             keys=["uv_python_preference"],
-            of_type=cast(type, Optional[PythonPreference]),
+            of_type=cast(Type[Optional[PythonPreference]], Optional[PythonPreference]),
             default=None,
             desc=(
                 "Whether to prefer using Python installations that are already"
