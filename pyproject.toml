@@ -43,7 +43,7 @@ dependencies = [
   "importlib-resources>=6.4; python_version<'3.9'",
   "packaging>=24",
   "tox<5,>=4.15",
-  "typing-extensions>=4.12.2",
+  "typing-extensions>=4.12.2; python_version<'3.10'",
   "uv<1,>=0.2.5",
 ]
 optional-dependencies.test = [
