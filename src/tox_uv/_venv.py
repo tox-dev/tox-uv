@@ -56,7 +56,7 @@ class UvVenv(Python, ABC):
         # makes mypy crash. The problem is probably on tox's typing side
         self.conf.add_config(
             keys=["uv_python_preference"],
-            of_type=cast(type[Optional[PythonPreference]], Optional[PythonPreference]),
+            of_type=cast(type, Optional[PythonPreference]),
             default=None,
             desc=(
                 "Whether to prefer using Python installations that are already"
