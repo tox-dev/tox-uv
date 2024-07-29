@@ -16,7 +16,7 @@ else:  # pragma: no cover (py38+)
 
 from pathlib import Path
 from platform import python_implementation
-from typing import TYPE_CHECKING, Any, Literal, Optional, TypeAlias, cast
+from typing import TYPE_CHECKING, Any, Literal, Optional, cast
 
 from tox.execute.local_sub_process import LocalSubProcessExecutor
 from tox.execute.request import StdinSource
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from tox.tox_env.installer import Installer
 
 
-PythonPreference: TypeAlias = Literal["only-managed", "installed", "managed", "system", "only-system"]
+PythonPreference = Literal["only-managed", "installed", "managed", "system", "only-system"]
 
 
 class UvVenv(Python, ABC):
