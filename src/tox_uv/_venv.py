@@ -166,6 +166,7 @@ class UvVenv(Python, ABC):
             raise Skip(msg)
 
         outcome.assert_success()
+        self._created = True
 
     @property
     def _allow_externals(self) -> list[str]:
