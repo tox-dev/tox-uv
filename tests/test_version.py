@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sys
-from subprocess import check_output  # noqa: S404
+from subprocess import check_output
 
 
 def test_version() -> None:

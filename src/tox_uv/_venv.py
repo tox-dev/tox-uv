@@ -41,7 +41,12 @@ if TYPE_CHECKING:
     from tox.tox_env.installer import Installer
 
 
-PythonPreference: TypeAlias = Literal["only-managed", "installed", "managed", "system", "only-system"]
+PythonPreference: TypeAlias = Literal[
+    "only-managed",
+    "managed",
+    "system",
+    "only-system",
+]
 
 
 class UvVenv(Python, ABC):

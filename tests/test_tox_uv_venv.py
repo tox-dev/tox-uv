@@ -5,13 +5,15 @@ import os
 import os.path
 import pathlib
 import platform
-import subprocess  # noqa: S404
+import subprocess
 import sys
 from configparser import ConfigParser
 from importlib.metadata import version
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, get_args
 
 import pytest
+
+from tox_uv._venv import PythonPreference
 
 if TYPE_CHECKING:
     from tox.pytest import ToxProjectCreator
@@ -178,7 +180,7 @@ def test_uv_env_python(tox_project: ToxProjectCreator) -> None:
 
 @pytest.mark.parametrize(
     "preference",
-    ["only-managed", "installed", "managed", "system", "only-system"],
+    get_args(PythonPreference),
 )
 def test_uv_env_python_preference(
     tox_project: ToxProjectCreator,
