@@ -32,6 +32,7 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Topic :: Internet",
   "Topic :: Software Development :: Libraries",
   "Topic :: System",
@@ -114,6 +115,9 @@ lint.preview = true
 builtin = "clear,usage,en-GB_to_en-US"
 write-changes = true
 count = true
+
+[tool.pyproject-fmt]
+max_supported_python = "3.13"
 
 [tool.coverage]
 html.show_contexts = true
