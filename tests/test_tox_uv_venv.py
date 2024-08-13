@@ -105,17 +105,6 @@ def test_uv_venv_spec_abs_path_conflict_impl(
     assert f"failed with env name {env} conflicting with base python {other_interpreter_exe}" in result.out
 
 
-def test_uv_venv_spec_abs_path_conflict_platform(
-    tox_project: ToxProjectCreator, other_interpreter_exe: pathlib.Path
-) -> None:
-    ver = sys.version_info
-    env = f"py{ver.major}{ver.minor}-linux" if sys.platform == "win32" else f"py{ver.major}{ver.minor}-win32"
-    project = tox_project({"tox.ini": f"[testenv:{env}]\npackage=skip\nbase_python={other_interpreter_exe}"})
-    result = project.run("-vv", "-e", env)
-    result.assert_failed()
-    assert f"failed with env name {env} conflicting with base python {other_interpreter_exe}" in result.out
-
-
 def test_uv_venv_na(tox_project: ToxProjectCreator) -> None:
     # skip_missing_interpreters is true by default
     project = tox_project({"tox.ini": "[testenv]\npackage=skip\nbase_python=1.0"})

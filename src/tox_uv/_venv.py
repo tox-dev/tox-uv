@@ -3,17 +3,9 @@
 from __future__ import annotations
 
 import json
-import os
 import sys
 from abc import ABC
 from functools import cached_property
-
-if sys.version_info >= (3, 9):  # pragma: no cover (py39+)
-    from importlib.resources import as_file, files
-else:  # pragma: no cover (py38+)
-    from importlib_resources import as_file, files
-
-
 from pathlib import Path
 from platform import python_implementation
 from typing import TYPE_CHECKING, Any, Literal, Optional, Type, cast
@@ -22,18 +14,21 @@ from tox.execute.local_sub_process import LocalSubProcessExecutor
 from tox.execute.request import StdinSource
 from tox.tox_env.errors import Skip
 from tox.tox_env.python.api import Python, PythonInfo, VersionInfo
+from tox.tox_env.python.virtual_env.api import VirtualEnv
+from uv import find_uv_bin
+from virtualenv.discovery.py_spec import PythonSpec
+
+from ._installer import UvInstaller
 
 if sys.version_info >= (3, 10):  # pragma: no cover (py310+)
     from typing import TypeAlias
 else:  # pragma: no cover (<py310)
     from typing_extensions import TypeAlias
 
-from uv import find_uv_bin
-from virtualenv import app_data
-from virtualenv.discovery import cached_py_info
-from virtualenv.discovery.py_spec import PythonSpec
-
-from ._installer import UvInstaller
+if sys.version_info >= (3, 9):  # pragma: no cover (py39+)
+    from importlib.resources import as_file, files
+else:  # pragma: no cover (py38+)
+    from importlib_resources import as_file, files
 
 if TYPE_CHECKING:
     from tox.execute.api import Execute
@@ -64,8 +59,7 @@ class UvVenv(Python, ABC):
             default=False,
             desc="add seed packages to the created venv",
         )
-        # The cast(...) might seems superfluous but removing it
-        # makes mypy crash. The problem is probably on tox's typing side
+        # The cast(...) might seems superfluous but removing it makes mypy crash. The problem isy on tox typing side.
         self.conf.add_config(
             keys=["uv_python_preference"],
             of_type=cast(Type[Optional[PythonPreference]], Optional[PythonPreference]),
@@ -102,8 +96,7 @@ class UvVenv(Python, ABC):
     def runs_on_platform(self) -> str:
         return sys.platform
 
-    @staticmethod
-    def _get_python(base_python: list[str]) -> PythonInfo | None:
+    def _get_python(self, base_python: list[str]) -> PythonInfo | None:  # noqa: PLR6301
         for base in base_python:  # pragma: no branch
             if base == sys.executable:
                 version_info = sys.version_info
@@ -121,10 +114,9 @@ class UvVenv(Python, ABC):
                     platform=sys.platform,
                     extra={},
                 )
-            if Path(base).is_absolute():
-                info = cached_py_info.from_exe(
-                    cached_py_info.PythonInfo, app_data.make_app_data(None, read_only=False, env=os.environ), base
-                )
+            base_path = Path(base)
+            if base_path.is_absolute():
+                info = VirtualEnv.get_virtualenv_py_info(base_path)
                 return PythonInfo(
                     implementation=info.implementation,
                     version_info=VersionInfo(*info.version_info),
@@ -150,6 +142,16 @@ class UvVenv(Python, ABC):
             )
 
         return None  # pragma: no cover
+
+    @classmethod
+    def python_spec_for_path(cls, path: Path) -> PythonSpec:
+        """
+        Get the spec for an absolute path to a Python executable.
+
+        :param path: the path investigated
+        :return: the found spec
+        """
+        return VirtualEnv.python_spec_for_path(path)
 
     @property
     def uv(self) -> str:
