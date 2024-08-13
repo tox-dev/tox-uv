@@ -42,9 +42,9 @@ dynamic = [
 dependencies = [
   "importlib-resources>=6.4; python_version<'3.9'",
   "packaging>=24.1",
-  "tox<5,>=4.16",
+  "tox<5,>=4.18",
   "typing-extensions>=4.12.2; python_version<'3.10'",
-  "uv<1,>=0.2.33",
+  "uv<1,>=0.2.35",
 ]
 optional-dependencies.test = [
   "covdefaults>=2.3",
@@ -90,6 +90,7 @@ lint.ignore = [
   "D212",   # `multi-line-summary-first-line` (D212) and `multi-line-summary-second-line` (D213) are incompatible
   "D301",   #  Use `r"""` if any backslashes in a docstring
   "D401",   # First line of docstring should be in imperative mood
+  "DOC201", # no support for sphinx
   "ISC001", # Conflict with formatter
   "S104",   # Possible binding to all interface
 ]
