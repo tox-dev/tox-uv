@@ -51,5 +51,5 @@ interpreter.
 By default, uv will attempt to use Python versions found on the system and only
 download managed interpreters when necessary. However, It's possible to adjust
 uv's Python version selection preference with the
-[python-preference](https://docs.astral.sh/uv/python-versions/#adjusting-python-version-preferences)
+[python-preference](https://docs.astral.sh/uv/concepts/python-versions/#adjusting-python-version-preferences)
 option.
