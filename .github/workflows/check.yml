@@ -33,7 +33,6 @@ jobs:
         include:
           - { os: ubuntu-latest, py: "pypy3.10" }
           - { os: ubuntu-latest, py: "pypy3.8" }
-          - { os: windows-latest, py: "pypy3.10" }
     steps:
       - name: setup python for tox
         uses: actions/setup-python@v5
@@ -65,6 +64,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.py }}
+          allow-prereleases: true
       - name: Pick environment to run
         run: |
           import codecs; import os; import sys
