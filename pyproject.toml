@@ -32,6 +32,7 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Topic :: Internet",
   "Topic :: Software Development :: Libraries",
   "Topic :: System",
@@ -40,11 +41,11 @@ dynamic = [
   "version",
 ]
 dependencies = [
-  "importlib-resources>=6.4; python_version<'3.9'",
+  "importlib-resources>=6.4.4; python_version<'3.9'",
   "packaging>=24.1",
   "tox<5,>=4.18",
   "typing-extensions>=4.12.2; python_version<'3.10'",
-  "uv<1,>=0.2.35",
+  "uv<1,>=0.4.7",
 ]
 optional-dependencies.test = [
   "covdefaults>=2.3",
@@ -95,8 +96,8 @@ lint.ignore = [
   "S104",   # Possible binding to all interface
 ]
 lint.per-file-ignores."tests/**/*.py" = [
-  "D",       # don"t care about documentation in tests
-  "FBT",     # don"t care about booleans as positional arguments in tests
+  "D",       # don't care about documentation in tests
+  "FBT",     # don't care about booleans as positional arguments in tests
   "INP001",  # no implicit namespace
   "PLC2701", # private import is fine
   "PLR2004", # Magic value used in comparison, consider replacing with a constant variable
@@ -115,6 +116,9 @@ lint.preview = true
 builtin = "clear,usage,en-GB_to_en-US"
 write-changes = true
 count = true
+
+[tool.pyproject-fmt]
+max_supported_python = "3.13"
 
 [tool.coverage]
 html.show_contexts = true
@@ -141,7 +145,7 @@ run.plugins = [
 ]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 show_error_codes = true
 strict = true
 overrides = [

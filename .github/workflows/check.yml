@@ -20,6 +20,7 @@ jobs:
       fail-fast: false
       matrix:
         py:
+          - "3.13"
           - "3.12"
           - "3.11"
           - "3.10"
@@ -73,9 +74,9 @@ jobs:
                file_handler.write(env)
         shell: python
       - name: setup test suite
-        run: tox -vvvv --notest
+        run: tox run -vv --notest --skip-missing-interpreters false
       - name: run test suite
-        run: tox --skip-pkg-install
+        run: tox run  --skip-pkg-install
 
   check:
     name: tox env ${{ matrix.tox_env }}
