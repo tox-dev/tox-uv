@@ -29,8 +29,6 @@ jobs:
           - dev
           - pkg_meta
     steps:
-      - name: Install OS dependencies
-        run: sudo apt-get install graphviz -y
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
