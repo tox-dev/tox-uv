@@ -41,17 +41,17 @@ dynamic = [
   "version",
 ]
 dependencies = [
-  "importlib-resources>=6.4.4; python_version<'3.9'",
+  "importlib-resources>=6.4.5; python_version<'3.9'",
   "packaging>=24.1",
-  "tox<5,>=4.18",
+  "tox<5,>=4.20",
   "typing-extensions>=4.12.2; python_version<'3.10'",
-  "uv<1,>=0.4.7",
+  "uv<1,>=0.4.12",
 ]
 optional-dependencies.testing = [
   "covdefaults>=2.3",
-  "devpi-process>=1",
+  "devpi-process>=1.0.2",
   "diff-cover>=9.2",
-  "pytest>=8.3.2",
+  "pytest>=8.3.3",
   "pytest-cov>=5",
   "pytest-mock>=3.14",
 ]
