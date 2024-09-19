@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING, Set, cast
 
 from tox.execute.request import StdinSource
+from tox.tox_env.python.package import SdistPackage, WheelPackage
 from tox.tox_env.python.runner import add_extras_to_env, add_skip_missing_interpreters_to_core
 from tox.tox_env.runner import RunToxEnv
 
-from ._installer import ReadOnlyUvInstaller
 from ._venv import UvVenv
 
 if TYPE_CHECKING:
@@ -16,8 +17,6 @@ if TYPE_CHECKING:
 
 
 class UvVenvLockRunner(UvVenv, RunToxEnv):
-    InstallerClass = ReadOnlyUvInstaller
-
     @staticmethod
     def id() -> str:
         return "uv-venv-lock-runner"
@@ -54,8 +53,15 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
             cmd.extend(("--extra", extra))
         if not self.conf["with_dev"]:
             cmd.append("--no-dev")
+        install_pkg = getattr(self.options, "install_pkg", None)
+        if install_pkg is not None:
+            cmd.append("--no-install-project")
         outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="uv-sync", show=False)
         outcome.assert_success()
+        if install_pkg is not None:
+            path = Path(install_pkg)
+            pkg = (WheelPackage if path.suffix == ".whl" else SdistPackage)(path, deps=[])
+            self.installer.install([pkg], "install-pkg", of_type="external")
 
     @property
     def environment_variables(self) -> dict[str, str]:

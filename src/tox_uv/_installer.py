@@ -11,7 +11,7 @@ from packaging.utils import parse_sdist_filename, parse_wheel_filename
 from tox.config.types import Command
 from tox.tox_env.errors import Fail, Recreate
 from tox.tox_env.python.package import EditableLegacyPackage, EditablePackage, SdistPackage, WheelPackage
-from tox.tox_env.python.pip.pip_install import Pip, PythonInstallerListDependencies
+from tox.tox_env.python.pip.pip_install import Pip
 from tox.tox_env.python.pip.req_file import PythonDeps
 from uv import find_uv_bin
 
@@ -21,7 +21,9 @@ if TYPE_CHECKING:
     from tox.tox_env.python.api import Python
 
 
-class ReadOnlyUvInstaller(PythonInstallerListDependencies):
+class UvInstaller(Pip):
+    """Pip is a python installer that can install packages as defined by PEP-508 and PEP-517."""
+
     def __init__(self, tox_env: Python, with_list_deps: bool = True) -> None:  # noqa: FBT001, FBT002
         self._with_list_deps = with_list_deps
         super().__init__(tox_env)
@@ -32,13 +34,6 @@ class ReadOnlyUvInstaller(PythonInstallerListDependencies):
     @property
     def uv(self) -> str:
         return find_uv_bin()
-
-    def install(self, arguments: Any, section: str, of_type: str) -> None:  # noqa: ANN401
-        raise NotImplementedError  # not supported
-
-
-class UvInstaller(ReadOnlyUvInstaller, Pip):
-    """Pip is a python installer that can install packages as defined by PEP-508 and PEP-517."""
 
     def _register_config(self) -> None:
         super()._register_config()
@@ -140,6 +135,5 @@ class UvInstaller(ReadOnlyUvInstaller, Pip):
 
 
 __all__ = [
-    "ReadOnlyUvInstaller",
     "UvInstaller",
 ]
