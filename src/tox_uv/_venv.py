@@ -18,7 +18,7 @@ from tox.tox_env.python.virtual_env.api import VirtualEnv
 from uv import find_uv_bin
 from virtualenv.discovery.py_spec import PythonSpec
 
-from ._installer import ReadOnlyUvInstaller, UvInstaller
+from ._installer import UvInstaller
 
 if sys.version_info >= (3, 10):  # pragma: no cover (py310+)
     from typing import TypeAlias
@@ -45,11 +45,9 @@ PythonPreference: TypeAlias = Literal[
 
 
 class UvVenv(Python, ABC):
-    InstallerClass: type[ReadOnlyUvInstaller] = UvInstaller
-
     def __init__(self, create_args: ToxEnvCreateArgs) -> None:
         self._executor: Execute | None = None
-        self._installer: ReadOnlyUvInstaller | None = None
+        self._installer: UvInstaller | None = None
         self._created = False
         super().__init__(create_args)
 
@@ -91,7 +89,7 @@ class UvVenv(Python, ABC):
     @property
     def installer(self) -> Installer[Any]:
         if self._installer is None:
-            self._installer = self.InstallerClass(self)
+            self._installer = UvInstaller(self)
         return self._installer
 
     @property
