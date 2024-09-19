@@ -78,8 +78,8 @@ In this example:
 - `dev` will use the `uv-venv-lock-runner` and use `uv sync` to install dependencies to the environment with the `dev`,
   `test` and `type` extra groups.
 
-Note that when using `uv-venv-lock-runner` all dependencies will come from the lock file, controlled by `extras. As such,
-the `deps` option is ignored.
+Note that when using `uv-venv-lock-runner`, all dependencies will come from the lock file, controlled by `extras`.
+Therefore, the `deps` option is ignored.
 
 ### uv_seed
 
