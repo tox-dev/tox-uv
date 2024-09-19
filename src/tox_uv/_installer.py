@@ -4,25 +4,40 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Sequence, cast
+from typing import TYPE_CHECKING, Any, Sequence
 
 from packaging.requirements import Requirement
 from packaging.utils import parse_sdist_filename, parse_wheel_filename
-from tox.config.of_type import ConfigDynamicDefinition
 from tox.config.types import Command
-from tox.execute.request import StdinSource
 from tox.tox_env.errors import Fail, Recreate
 from tox.tox_env.python.package import EditableLegacyPackage, EditablePackage, SdistPackage, WheelPackage
-from tox.tox_env.python.pip.pip_install import Pip
+from tox.tox_env.python.pip.pip_install import Pip, PythonInstallerListDependencies
 from tox.tox_env.python.pip.req_file import PythonDeps
 from uv import find_uv_bin
 
 if TYPE_CHECKING:
     from tox.config.main import Config
     from tox.tox_env.package import PathPackage
+    from tox.tox_env.python.api import Python
 
 
-class UvInstaller(Pip):
+class ReadOnlyUvInstaller(PythonInstallerListDependencies):
+    def __init__(self, tox_env: Python, with_list_deps: bool = True) -> None:  # noqa: FBT001, FBT002
+        self._with_list_deps = with_list_deps
+        super().__init__(tox_env)
+
+    def freeze_cmd(self) -> list[str]:
+        return [self.uv, "--color", "never", "pip", "freeze"]
+
+    @property
+    def uv(self) -> str:
+        return find_uv_bin()
+
+    def install(self, arguments: Any, section: str, of_type: str) -> None:  # noqa: ANN401
+        raise NotImplementedError  # not supported
+
+
+class UvInstaller(ReadOnlyUvInstaller, Pip):
     """Pip is a python installer that can install packages as defined by PEP-508 and PEP-517."""
 
     def _register_config(self) -> None:
@@ -42,13 +57,6 @@ class UvInstaller(Pip):
             desc="Define the resolution strategy for uv",
             post_process=uv_resolution_post_process,
         )
-        if self._with_list_deps:  # pragma: no branch
-            conf = cast(ConfigDynamicDefinition[Command], self._env.conf._defined["list_dependencies_command"])  # noqa: SLF001
-            conf.default = Command([self.uv, "--color", "never", "pip", "freeze"])
-
-    @property
-    def uv(self) -> str:
-        return find_uv_bin()
 
     def default_install_command(self, conf: Config, env_name: str | None) -> Command:  # noqa: ARG002
         cmd = [self.uv, "pip", "install", "{opts}", "{packages}"]
@@ -77,12 +85,6 @@ class UvInstaller(Pip):
             if not (pip_pre or uv_resolution):
                 install_command.pop(opts_at)
         return cmd
-
-    def installed(self) -> list[str]:
-        cmd: Command = self._env.conf["list_dependencies_command"]
-        result = self._env.execute(cmd=cmd.args, stdin=StdinSource.OFF, run_id="freeze", show=False)
-        result.assert_success()
-        return result.out.splitlines()
 
     def install(self, arguments: Any, section: str, of_type: str) -> None:  # noqa: ANN401
         if isinstance(arguments, PythonDeps):
@@ -138,5 +140,6 @@ class UvInstaller(Pip):
 
 
 __all__ = [
+    "ReadOnlyUvInstaller",
     "UvInstaller",
 ]
