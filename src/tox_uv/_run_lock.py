@@ -39,6 +39,12 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
     def register_config(self) -> None:
         super().register_config()
         add_extras_to_env(self.conf)
+        self.conf.add_config(
+            keys=["with_dev"],
+            of_type=bool,
+            default=False,
+            desc="Install dev dependencies or not",
+        )
         add_skip_missing_interpreters_to_core(self.core, self.options)
 
     def _setup_env(self) -> None:
@@ -46,6 +52,8 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
         cmd = ["uv", "sync", "--frozen"]
         for extra in cast(Set[str], sorted(self.conf["extras"])):
             cmd.extend(("--extra", extra))
+        if not self.conf["with_dev"]:
+            cmd.append("--no-dev")
         outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="uv-sync", show=False)
         outcome.assert_success()
 
