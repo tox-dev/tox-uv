@@ -62,12 +62,12 @@ def other_interpreter_exe() -> pathlib.Path:  # pragma: no cover
 
     exe = pathlib.Path(sys.executable)
     base_python: pathlib.Path | None = None
-    if exe.name == "python":
+    if exe.name in {"python", "python3"}:
         # python -> pythonX.Y
         ver = sys.version_info
         base_python = exe.with_name(f"python{ver.major}.{ver.minor}")
     elif exe.name[-1].isdigit():
-        # python X[.Y] -> python
+        # python X.Y -> python
         base_python = exe.with_name(exe.stem[:-1])
     elif exe.suffix == ".exe":
         # python.exe <-> pythonw.exe
