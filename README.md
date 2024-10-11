@@ -98,6 +98,16 @@ A list of string that selects, which extra groups you want to install with `uv s
 
 A boolean flag to toggle installation of the `uv` development dependencies. By default, it is false.
 
+### `uv_sync_flags`
+
+A list of strings, containing additional flags to pass to uv sync (useful because some flags are not configurable via
+environment variables). For example, if you want to install the package in non editable mode and keep extra packages
+installed into the environment you can do:
+
+```ini
+uv_sync_flags = --no-editable, --inexact
+```
+
 ### External package support
 
 Should tox be invoked with the [`--installpkg`](https://tox.wiki/en/stable/cli_interface.html#tox-run---installpkg) flag

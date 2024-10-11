@@ -44,6 +44,12 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
             default=False,
             desc="Install dev dependencies or not",
         )
+        self.conf.add_config(
+            keys=["uv_sync_flags"],
+            of_type=list[str],
+            default=[],
+            desc="Additional flags to pass to uv sync (for flags not configurable via environment variables)",
+        )
         add_skip_missing_interpreters_to_core(self.core, self.options)
 
     def _setup_env(self) -> None:
@@ -58,6 +64,7 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
             cmd.append("--no-install-project")
         if self.options.verbosity > 3:  # noqa: PLR2004
             cmd.append("-v")
+        cmd.extend(self.conf["uv_sync_flags"])
         show = self.options.verbosity > 2  # noqa: PLR2004
         outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="uv-sync", show=show)
         outcome.assert_success()

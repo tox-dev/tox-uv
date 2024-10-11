@@ -134,3 +134,36 @@ def test_uv_lock_with_install_pkg(tox_project: ToxProjectCreator, name: str) -> 
         ),
     ]
     assert calls == expected
+
+
+def test_uv_sync_extra_flags(tox_project: ToxProjectCreator) -> None:
+    project = tox_project({
+        "tox.ini": """
+    [testenv]
+    runner = uv-venv-lock-runner
+    with_dev = true
+    uv_sync_flags = --no-editable, --inexact
+    commands = python hello
+    """
+    })
+    execute_calls = project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
+    result = project.run()
+    result.assert_success()
+
+    calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
+    uv = find_uv_bin()
+
+    expected = [
+        (
+            "py",
+            "venv",
+            [uv, "venv", "-p", sys.executable, "--allow-existing", str(project.path / ".tox" / "py")],
+        ),
+        (
+            "py",
+            "uv-sync",
+            ["uv", "sync", "--frozen", "--no-editable", "--inexact"],
+        ),
+        ("py", "commands[0]", ["python", "hello"]),
+    ]
+    assert calls == expected
