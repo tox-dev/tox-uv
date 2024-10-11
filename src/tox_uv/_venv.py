@@ -186,7 +186,7 @@ class UvVenv(Python, ABC):
             version_spec = f"{uv_imp or ''}{base.major}.{base.minor}" if base.minor else f"{uv_imp or ''}{base.major}"
 
         cmd: list[str] = [self.uv, "venv", "-p", version_spec, "--allow-existing"]
-        if self.options.verbosity > 2:  # noqa: PLR2004
+        if self.options.verbosity > 3:  # noqa: PLR2004
             cmd.append("-v")
         if self.conf["uv_seed"]:
             cmd.append("--seed")

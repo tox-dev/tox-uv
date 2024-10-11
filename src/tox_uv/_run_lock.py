@@ -56,7 +56,7 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
         install_pkg = getattr(self.options, "install_pkg", None)
         if install_pkg is not None:
             cmd.append("--no-install-project")
-        if self.options.verbosity > 2:  # noqa: PLR2004
+        if self.options.verbosity > 3:  # noqa: PLR2004
             cmd.append("-v")
         outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="uv-sync", show=self.options.verbosity > 1)
         outcome.assert_success()

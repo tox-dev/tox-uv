@@ -40,8 +40,8 @@ def test_uv_lock_list_dependencies_command(tox_project: ToxProjectCreator) -> No
     assert calls == expected
 
 
-@pytest.mark.parametrize("verbose", [True, False])
-def test_uv_lock_command(tox_project: ToxProjectCreator, verbose: bool) -> None:
+@pytest.mark.parametrize("verbose", ["", "-v", "-vv", "-vvv"])
+def test_uv_lock_command(tox_project: ToxProjectCreator, verbose: str) -> None:
     project = tox_project({
         "tox.ini": """
     [testenv]
@@ -53,12 +53,12 @@ def test_uv_lock_command(tox_project: ToxProjectCreator, verbose: bool) -> None:
     """
     })
     execute_calls = project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
-    result = project.run(*["-vv"] if verbose else [])
+    result = project.run(*[verbose] if verbose else [])
     result.assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
     uv = find_uv_bin()
-    v_args = ["-v"] if verbose else []
+    v_args = ["-v"] if verbose not in {"", "-v"} else []
     expected = [
         (
             "py",
