@@ -24,7 +24,6 @@ jobs:
           - "3.11"
           - "3.10"
           - "3.9"
-          - "3.8"
           - type
           - dev
           - pkg_meta
@@ -37,7 +36,6 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: "pyproject.toml"
-          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Install tox
         run: uv tool install --python-preference only-managed --python 3.13 tox --with tox-uv
       - name: Install Python

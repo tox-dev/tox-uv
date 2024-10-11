@@ -33,14 +33,15 @@ def test_uv_lock_list_dependencies_command(tox_project: ToxProjectCreator) -> No
             "venv",
             [uv, "venv", "-p", sys.executable, "--allow-existing", "-v", str(project.path / ".tox" / "py")],
         ),
-        ("py", "uv-sync", ["uv", "sync", "--frozen", "--extra", "dev", "--extra", "type", "--no-dev"]),
+        ("py", "uv-sync", ["uv", "sync", "--frozen", "--extra", "dev", "--extra", "type", "--no-dev", "-v"]),
         ("py", "freeze", [uv, "--color", "never", "pip", "freeze"]),
         ("py", "commands[0]", ["python", "hello"]),
     ]
     assert calls == expected
 
 
-def test_uv_lock_command(tox_project: ToxProjectCreator) -> None:
+@pytest.mark.parametrize("verbose", [True, False])
+def test_uv_lock_command(tox_project: ToxProjectCreator, verbose: bool) -> None:
     project = tox_project({
         "tox.ini": """
     [testenv]
@@ -52,18 +53,19 @@ def test_uv_lock_command(tox_project: ToxProjectCreator) -> None:
     """
     })
     execute_calls = project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
-    result = project.run("-vv")
+    result = project.run(*["-vv"] if verbose else [])
     result.assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
     uv = find_uv_bin()
+    v_args = ["-v"] if verbose else []
     expected = [
         (
             "py",
             "venv",
-            [uv, "venv", "-p", sys.executable, "--allow-existing", "-v", str(project.path / ".tox" / "py")],
+            [uv, "venv", "-p", sys.executable, "--allow-existing", *v_args, str(project.path / ".tox" / "py")],
         ),
-        ("py", "uv-sync", ["uv", "sync", "--frozen", "--extra", "dev", "--extra", "type", "--no-dev"]),
+        ("py", "uv-sync", ["uv", "sync", "--frozen", "--extra", "dev", "--extra", "type", "--no-dev", *v_args]),
         ("py", "commands[0]", ["python", "hello"]),
     ]
     assert calls == expected
@@ -89,7 +91,7 @@ def test_uv_lock_with_dev(tox_project: ToxProjectCreator) -> None:
             "venv",
             [uv, "venv", "-p", sys.executable, "--allow-existing", "-v", str(project.path / ".tox" / "py")],
         ),
-        ("py", "uv-sync", ["uv", "sync", "--frozen"]),
+        ("py", "uv-sync", ["uv", "sync", "--frozen", "-v"]),
     ]
     assert calls == expected
 
@@ -122,7 +124,7 @@ def test_uv_lock_with_install_pkg(tox_project: ToxProjectCreator, name: str) -> 
             "venv",
             [uv, "venv", "-p", sys.executable, "--allow-existing", "-v", str(project.path / ".tox" / "py")],
         ),
-        ("py", "uv-sync", ["uv", "sync", "--frozen", "--no-dev", "--no-install-project"]),
+        ("py", "uv-sync", ["uv", "sync", "--frozen", "--no-dev", "--no-install-project", "-v"]),
         (
             "py",
             "install_external",

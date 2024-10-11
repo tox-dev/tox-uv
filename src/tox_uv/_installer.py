@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any
 
 from packaging.requirements import Requirement
 from packaging.utils import parse_sdist_filename, parse_wheel_filename
