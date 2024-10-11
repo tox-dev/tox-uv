@@ -69,6 +69,8 @@ def test_uv_lock_command(tox_project: ToxProjectCreator, verbose: str) -> None:
         ("py", "commands[0]", ["python", "hello"]),
     ]
     assert calls == expected
+    show_uv_output = execute_calls.call_args_list[1].args[4]
+    assert show_uv_output is (bool(verbose))
 
 
 def test_uv_lock_with_dev(tox_project: ToxProjectCreator) -> None:
