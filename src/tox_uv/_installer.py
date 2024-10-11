@@ -56,7 +56,7 @@ class UvInstaller(Pip):
 
     def default_install_command(self, conf: Config, env_name: str | None) -> Command:  # noqa: ARG002
         cmd = [self.uv, "pip", "install", "{opts}", "{packages}"]
-        if self._env.options.verbosity > 2:  # noqa: PLR2004
+        if self._env.options.verbosity > 3:  # noqa: PLR2004
             cmd.append("-v")
         return Command(cmd)
 
