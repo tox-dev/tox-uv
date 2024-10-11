@@ -8,7 +8,7 @@ from abc import ABC
 from functools import cached_property
 from pathlib import Path
 from platform import python_implementation
-from typing import TYPE_CHECKING, Any, Literal, Optional, Type, cast
+from typing import TYPE_CHECKING, Any, Literal, Optional, Type, cast  # noqa: UP035
 
 from tox.execute.local_sub_process import LocalSubProcessExecutor
 from tox.execute.request import StdinSource
@@ -25,10 +25,7 @@ if sys.version_info >= (3, 10):  # pragma: no cover (py310+)
 else:  # pragma: no cover (<py310)
     from typing_extensions import TypeAlias
 
-if sys.version_info >= (3, 9):  # pragma: no cover (py39+)
-    from importlib.resources import as_file, files
-else:  # pragma: no cover (py38+)
-    from importlib_resources import as_file, files
+from importlib.resources import as_file, files
 
 if TYPE_CHECKING:
     from tox.execute.api import Execute
@@ -62,7 +59,7 @@ class UvVenv(Python, ABC):
         # The cast(...) might seems superfluous but removing it makes mypy crash. The problem isy on tox typing side.
         self.conf.add_config(
             keys=["uv_python_preference"],
-            of_type=cast(Type[Optional[PythonPreference]], Optional[PythonPreference]),
+            of_type=cast(Type[Optional[PythonPreference]], Optional[PythonPreference]),  # noqa: UP006
             default=None,
             desc=(
                 "Whether to prefer using Python installations that are already"

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Set, cast
+from typing import TYPE_CHECKING, cast
 
 from tox.execute.request import StdinSource
 from tox.tox_env.python.package import SdistPackage, WheelPackage
@@ -49,14 +49,16 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
     def _setup_env(self) -> None:
         super()._setup_env()
         cmd = ["uv", "sync", "--frozen"]
-        for extra in cast(Set[str], sorted(self.conf["extras"])):
+        for extra in cast(set[str], sorted(self.conf["extras"])):
             cmd.extend(("--extra", extra))
         if not self.conf["with_dev"]:
             cmd.append("--no-dev")
         install_pkg = getattr(self.options, "install_pkg", None)
         if install_pkg is not None:
             cmd.append("--no-install-project")
-        outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="uv-sync", show=False)
+        if self.options.verbosity > 2:  # noqa: PLR2004
+            cmd.append("-v")
+        outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="uv-sync", show=self.options.verbosity > 1)
         outcome.assert_success()
         if install_pkg is not None:
             path = Path(install_pkg)
