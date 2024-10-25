@@ -31,6 +31,7 @@ Install `tox-uv` into the environment of your tox, and it will replace `virtuale
 uv tool install tox --with tox-uv # use uv to install
 tox --version # validate you are using the installed tox
 tox r -e py312 # will use uv
+tox --runner virtualenv r -e py312 # will use virtualenv+pip
 ```
 
 ## tox environment types provided
