@@ -25,7 +25,7 @@ def tox_register_tox_env(register: ToxEnvRegister) -> None:
 
 
 def tox_append_version_info() -> str:
-    return f'with uv=={version("uv")}'
+    return f"with uv=={version('uv')}"
 
 
 __all__ = [
