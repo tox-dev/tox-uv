@@ -99,6 +99,10 @@ A list of string that selects, which extra groups you want to install with `uv s
 
 A boolean flag to toggle installation of the `uv` development dependencies. By default, it is false.
 
+### `dependency_groups`
+
+Specify [PEP 735 – Dependency Groups](https://peps.python.org/pep-0735/) to install.
+
 ### `uv_sync_flags`
 
 A list of strings, containing additional flags to pass to uv sync (useful because some flags are not configurable via

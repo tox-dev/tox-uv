@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, List, Set, cast  # noqa: UP035
 
 from tox.execute.request import StdinSource
 from tox.tox_env.python.package import SdistPackage, WheelPackage
@@ -45,8 +45,14 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
             desc="Install dev dependencies or not",
         )
         self.conf.add_config(
+            keys=["dependency_groups"],
+            of_type=Set[str],  # noqa: UP006
+            default=set(),
+            desc="dependency groups to install of the target package",
+        )
+        self.conf.add_config(
             keys=["uv_sync_flags"],
-            of_type=list[str],
+            of_type=List[str],  # noqa: UP006
             default=[],
             desc="Additional flags to pass to uv sync (for flags not configurable via environment variables)",
         )
@@ -64,6 +70,8 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
             cmd.append("--no-install-project")
         if self.options.verbosity > 3:  # noqa: PLR2004
             cmd.append("-v")
+        for group in sorted(self.conf["dependency_groups"]):
+            cmd.extend(("--group", group))
         cmd.extend(self.conf["uv_sync_flags"])
         show = self.options.verbosity > 2  # noqa: PLR2004
         outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="uv-sync", show=show)
