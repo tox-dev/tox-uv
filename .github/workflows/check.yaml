@@ -5,6 +5,7 @@ on:
     branches: ["main"]
     tags-ignore: ["**"]
   pull_request:
+  pull_request_target:
   schedule:
     - cron: "0 8 * * *"
 
@@ -14,7 +15,8 @@ concurrency:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runs-on || 'ubuntu-latest' }}
+    name: ${{ matrix.name || matrix.env }}
     strategy:
       fail-fast: false
       matrix:
@@ -27,6 +29,10 @@ jobs:
           - type
           - dev
           - pkg_meta
+        include:
+          - env: "3.13"
+            runs-on: macos-latest
+            name: 3.13-macos
     steps:
       - uses: actions/checkout@v4
         with:
