@@ -12,6 +12,7 @@ from importlib.metadata import version
 from typing import TYPE_CHECKING, get_args
 
 import pytest
+import tox.tox_env.errors
 
 from tox_uv._venv import PythonPreference
 
@@ -52,6 +53,48 @@ def test_uv_venv_spec_major_only(tox_project: ToxProjectCreator) -> None:
     project = tox_project({"tox.ini": f"[testenv]\npackage=skip\nbase_python={ver.major}"})
     result = project.run("-vv")
     result.assert_success()
+
+
+@pytest.mark.parametrize(
+    ("pypy", "expected_uv_pypy"),
+    [
+        ("pypy", "pypy"),
+        ("pypy9", "pypy9"),
+        ("pypy999", "pypy9.99"),
+        ("pypy9.99", "pypy9.99"),
+    ],
+)
+def test_uv_venv_spec_pypy(
+    capfd: pytest.CaptureFixture[str],
+    tox_project: ToxProjectCreator,
+    pypy: str,
+    expected_uv_pypy: str,
+) -> None:
+    """Validate that major and minor versions are correctly applied to implementations.
+
+    This test prevents a regression that occurred when the testenv name was "pypy":
+    the uv runner was asked to use "pypyNone" as the Python version.
+
+    The test is dependent on what PyPy interpreters are installed on the system;
+    if any PyPy is available then the "pypy" value will not raise a Skip exception,
+    and STDOUT will be captured in `result.out`.
+
+    However, it is expected that no system will have PyPy v9.x installed,
+    so STDOUT must be read from `capfd` after the Skip exception is caught.
+
+    Since it is unknown whether any PyPy interpreter will be installed,
+    the `else` block's branch coverage is disabled.
+    """
+
+    project = tox_project({"tox.ini": f"[tox]\nenv_list = {pypy}"})
+    try:
+        result = project.run("config", "-vv")
+    except tox.tox_env.errors.Skip:
+        stdout, _ = capfd.readouterr()
+    else:  # pragma: no cover (PyPy might not be available on the system)
+        stdout = result.out
+    assert "pypyNone" not in stdout
+    assert f"-p {expected_uv_pypy} " in stdout
 
 
 @pytest.fixture
