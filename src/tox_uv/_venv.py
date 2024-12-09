@@ -59,7 +59,7 @@ class UvVenv(Python, ABC):
         # The cast(...) might seems superfluous but removing it makes mypy crash. The problem isy on tox typing side.
         self.conf.add_config(
             keys=["uv_python_preference"],
-            of_type=cast(Type[Optional[PythonPreference]], Optional[PythonPreference]),  # noqa: UP006
+            of_type=cast("Type[Optional[PythonPreference]]", Optional[PythonPreference]),  # noqa: UP006
             default=None,
             desc=(
                 "Whether to prefer using Python installations that are already"
@@ -156,7 +156,7 @@ class UvVenv(Python, ABC):
 
     @property
     def venv_dir(self) -> Path:
-        return cast(Path, self.conf["env_dir"])
+        return cast("Path", self.conf["env_dir"])
 
     @property
     def environment_variables(self) -> dict[str, str]:
