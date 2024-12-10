@@ -61,7 +61,7 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
     def _setup_env(self) -> None:
         super()._setup_env()
         cmd = ["uv", "sync", "--frozen"]
-        for extra in cast(set[str], sorted(self.conf["extras"])):
+        for extra in cast("set[str]", sorted(self.conf["extras"])):
             cmd.extend(("--extra", extra))
         if not self.conf["with_dev"]:
             cmd.append("--no-dev")
