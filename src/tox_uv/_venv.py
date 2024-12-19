@@ -182,13 +182,13 @@ class UvVenv(Python, ABC):
         elif (base.major, base.minor) == sys.version_info[:2] and (sys.implementation.name.lower() == imp):
             version_spec = sys.executable
         else:
-            uv_imp = "" if (imp and imp == "cpython") else imp
+            uv_imp = imp or ""
             if not base.major:
-                version_spec = f"{uv_imp or ''}"
+                version_spec = uv_imp
             elif not base.minor:
-                version_spec = f"{uv_imp or ''}{base.major}"
+                version_spec = f"{uv_imp}{base.major}"
             else:
-                version_spec = f"{uv_imp or ''}{base.major}.{base.minor}"
+                version_spec = f"{uv_imp}{base.major}.{base.minor}"
 
         cmd: list[str] = [self.uv, "venv", "-p", version_spec, "--allow-existing"]
         if self.options.verbosity > 3:  # noqa: PLR2004
