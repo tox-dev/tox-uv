@@ -97,6 +97,42 @@ def test_uv_venv_spec_pypy(
     assert f"-p {expected_uv_pypy} " in stdout
 
 
+@pytest.mark.parametrize(
+    ("implementation", "expected_implementation", "expected_name"),
+    [
+        ("", "cpython", "cpython"),
+        ("py", "cpython", "cpython"),
+        ("pypy", "pypy", "pypy"),
+    ],
+)
+def test_uv_venv_spec_full_implementation(
+    tox_project: ToxProjectCreator,
+    implementation: str,
+    expected_implementation: str,
+    expected_name: str,
+) -> None:
+    """Validate that Python implementations are explicitly passed to uv's `-p` argument.
+
+    This test ensures that uv searches for the target Python implementation and version,
+    even if another implementation -- with the same language version --
+    is found on the path first.
+
+    This prevents a regression to a bug that occurred when PyPy 3.10 was on the PATH
+    and tox was invoked with `tox -e py3.10`:
+    uv was invoked with `-p 3.10` and found PyPy 3.10, not CPython 3.10.
+    """
+
+    project = tox_project({})
+    result = project.run("run", "-vve", f"{implementation}9.99")
+
+    # Verify that uv was invoked with the full Python implementation and version.
+    assert f" -p {expected_implementation}9.99 " in result.out
+
+    # Verify that uv interpreted the `-p` argument as a Python spec, not an executable.
+    # This confirms that tox-uv is passing recognizable, usable `-p` arguments to uv.
+    assert f"no interpreter found for {expected_name} 9.99" in result.err.lower()
+
+
 @pytest.fixture
 def other_interpreter_exe() -> pathlib.Path:  # pragma: no cover
     """Returns an interpreter executable path that is not the exact same as `sys.executable`.
