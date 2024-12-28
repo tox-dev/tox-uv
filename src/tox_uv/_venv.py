@@ -60,13 +60,16 @@ class UvVenv(Python, ABC):
         self.conf.add_config(
             keys=["uv_python_preference"],
             of_type=cast("Type[Optional[PythonPreference]]", Optional[PythonPreference]),  # noqa: UP006
-            default=None,
+            default="system",
             desc=(
                 "Whether to prefer using Python installations that are already"
                 " present on the system, or those that are downloaded and"
                 " installed by uv [possible values: only-managed, installed,"
                 " managed, system, only-system]. Use none to use uv's"
-                " default."
+                " default. Our default value is 'system', while uv's default"
+                " value is 'managed' because we prefer using same python"
+                " interpreters with all tox environments and avoid accidental"
+                " downloading of other interpreters."
             ),
         )
 
