@@ -10,6 +10,7 @@ from pathlib import Path
 from platform import python_implementation
 from typing import TYPE_CHECKING, Any, Literal, Optional, Type, cast  # noqa: UP035
 
+from tox.config.loader.str_convert import StrConvert
 from tox.execute.local_sub_process import LocalSubProcessExecutor
 from tox.execute.request import StdinSource
 from tox.tox_env.errors import Skip
@@ -56,6 +57,15 @@ class UvVenv(Python, ABC):
             default=False,
             desc="add seed packages to the created venv",
         )
+        self.conf.add_config(
+            keys=["system_site_packages", "sitepackages"],
+            of_type=bool,
+            default=lambda conf, name: StrConvert().to_bool(  # noqa: ARG005
+                self.environment_variables.get("VIRTUALENV_SYSTEM_SITE_PACKAGES", "False"),
+            ),
+            desc="create virtual environments that also have access to globally installed packages.",
+        )
+
         # The cast(...) might seems superfluous but removing it makes mypy crash. The problem isy on tox typing side.
         self.conf.add_config(
             keys=["uv_python_preference"],
@@ -195,6 +205,8 @@ class UvVenv(Python, ABC):
             cmd.append("-v")
         if self.conf["uv_seed"]:
             cmd.append("--seed")
+        if self.conf["system_site_packages"]:
+            cmd.append("--system-site-packages")
         if self.conf["uv_python_preference"]:
             cmd.extend(["--python-preference", self.conf["uv_python_preference"]])
         cmd.append(str(self.venv_dir))

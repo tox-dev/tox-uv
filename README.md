@@ -138,6 +138,12 @@ By default, `uv` will attempt to use Python versions found on the system and onl
 necessary. However, It is possible to adjust `uv`'s Python version selection preference with the
 [python-preference](https://docs.astral.sh/uv/concepts/python-versions/#adjusting-python-version-preferences) option.
 
+### `system_site_packages` (`sitepackages`)
+
+Create virtual environments that also have access to globally installed packages. Note the default value may be
+overwritten by the VIRTUALENV_SYSTEM_SITE_PACKAGES environment variable. This flag works the same way as the one from
+[tox native virtualenv implementation](https://tox.wiki/en/latest/config.html#system_site_packages).
+
 ## Package installation
 
 We use `uv pip` to install packages into the virtual environment. The behavior of this can be configured via the

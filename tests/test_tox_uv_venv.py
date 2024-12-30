@@ -133,6 +133,12 @@ def test_uv_venv_spec_full_implementation(
     assert f"no interpreter found for {expected_name} 9.99" in result.err.lower()
 
 
+def test_uv_venv_system_site_packages(tox_project: ToxProjectCreator) -> None:
+    project = tox_project({"tox.ini": "[testenv]\npackage=skip\nsystem_site_packages=true"})
+    result = project.run("-vv")
+    result.assert_success()
+
+
 @pytest.fixture
 def other_interpreter_exe() -> pathlib.Path:  # pragma: no cover
     """Returns an interpreter executable path that is not the exact same as `sys.executable`.
