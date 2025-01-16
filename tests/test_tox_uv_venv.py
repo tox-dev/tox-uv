@@ -339,3 +339,20 @@ def test_uv_python_set(tox_project: ToxProjectCreator, monkeypatch: pytest.Monke
     })
     result = project.run("-vv")
     result.assert_success()
+
+
+def test_uv_pip_constraints(tox_project: ToxProjectCreator) -> None:
+    project = tox_project({
+        "tox.ini": f"""
+            [testenv]
+            package=skip
+            setenv=
+                PIP_CONSTRAINTS={os.devnull}
+            commands=python --version
+            """
+    })
+    result = project.run()
+    result.assert_success()
+    assert (
+        "Found PIP_CONSTRAINTS defined, you may want to also define UV_CONSTRAINT to match pip behavior." in result.out
+    )
