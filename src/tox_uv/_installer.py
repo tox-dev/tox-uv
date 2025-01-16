@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from packaging.requirements import Requirement
 from packaging.utils import parse_sdist_filename, parse_wheel_filename
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from tox.tox_env.python.api import Python
 
 
-logger = logging.getLogger(__name__)
+_LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
 
 
 class UvInstaller(Pip):
@@ -91,7 +91,7 @@ class UvInstaller(Pip):
         elif isinstance(arguments, Sequence):  # pragma: no branch
             self._install_list_of_deps(arguments, section, of_type)
         else:  # pragma: no cover
-            logger.warning("uv cannot install %r", arguments)  # pragma: no cover
+            _LOGGER.warning("uv cannot install %r", arguments)  # pragma: no cover
             raise SystemExit(1)  # pragma: no cover
 
     def _install_list_of_deps(  # noqa: C901
@@ -115,7 +115,7 @@ class UvInstaller(Pip):
                 groups["req"].extend(str(i) for i in arg.deps)
                 groups["dev_pkg"].append(str(arg.path))
             else:  # pragma: no branch
-                logger.warning("uv install %r", arg)  # pragma: no cover
+                _LOGGER.warning("uv install %r", arg)  # pragma: no cover
                 raise SystemExit(1)  # pragma: no cover
         req_of_type = f"{of_type}_deps" if groups["pkg"] or groups["dev_pkg"] else of_type
         for value in groups.values():
