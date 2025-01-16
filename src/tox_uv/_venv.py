@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import json
+import logging
 import sys
 from abc import ABC
 from functools import cached_property
 from pathlib import Path
 from platform import python_implementation
-from typing import TYPE_CHECKING, Any, Literal, Optional, Type, cast  # noqa: UP035
+from typing import TYPE_CHECKING, Any, Final, Literal, Optional, Type, cast  # noqa: UP035
 
 from tox.config.loader.str_convert import StrConvert
 from tox.execute.local_sub_process import LocalSubProcessExecutor
@@ -41,6 +42,7 @@ PythonPreference: TypeAlias = Literal[
     "system",
     "only-system",
 ]
+_LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
 
 
 class UvVenv(Python, ABC):
@@ -178,6 +180,12 @@ class UvVenv(Python, ABC):
         env = super().environment_variables
         env.pop("UV_PYTHON", None)  # UV_PYTHON takes precedence over VIRTUAL_ENV
         env["VIRTUAL_ENV"] = str(self.venv_dir)
+        for pip_var in ("PIP_CONSTRAINT", "PIP_CONSTRAINTS"):
+            if pip_var in env:
+                _LOGGER.warning(
+                    "Found %s defined, you may want to also define UV_CONSTRAINT to match pip behavior.", pip_var
+                )
+                break
         return env
 
     def _default_pass_env(self) -> list[str]:
