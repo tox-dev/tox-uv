@@ -31,13 +31,41 @@ def test_uv_lock_list_dependencies_command(tox_project: ToxProjectCreator) -> No
         (
             "py",
             "venv",
-            [uv, "venv", "-p", sys.executable, "--allow-existing", "-v", str(project.path / ".tox" / "py")],
+            [
+                uv,
+                "venv",
+                "-p",
+                sys.executable,
+                "--allow-existing",
+                "-v",
+                "--python-preference",
+                "system",
+                str(project.path / ".tox" / "py"),
+            ],
         ),
-        ("py", "uv-sync", ["uv", "sync", "--frozen", "--extra", "dev", "--extra", "type", "--no-dev", "-v"]),
+        (
+            "py",
+            "uv-sync",
+            [
+                "uv",
+                "sync",
+                "--frozen",
+                "--python-preference",
+                "system",
+                "--extra",
+                "dev",
+                "--extra",
+                "type",
+                "--no-dev",
+                "-v",
+            ],
+        ),
         ("py", "freeze", [uv, "--color", "never", "pip", "freeze"]),
         ("py", "commands[0]", ["python", "hello"]),
     ]
-    assert calls == expected
+    assert len(calls) == len(expected)
+    for i in range(len(calls)):
+        assert calls[i] == expected[i]
 
 
 @pytest.mark.parametrize("verbose", ["", "-v", "-vv", "-vvv"])
@@ -63,9 +91,35 @@ def test_uv_lock_command(tox_project: ToxProjectCreator, verbose: str) -> None:
         (
             "py",
             "venv",
-            [uv, "venv", "-p", sys.executable, "--allow-existing", *v_args, str(project.path / ".tox" / "py")],
+            [
+                uv,
+                "venv",
+                "-p",
+                sys.executable,
+                "--allow-existing",
+                *v_args,
+                "--python-preference",
+                "system",
+                str(project.path / ".tox" / "py"),
+            ],
         ),
-        ("py", "uv-sync", ["uv", "sync", "--frozen", "--extra", "dev", "--extra", "type", "--no-dev", *v_args]),
+        (
+            "py",
+            "uv-sync",
+            [
+                "uv",
+                "sync",
+                "--frozen",
+                "--python-preference",
+                "system",
+                "--extra",
+                "dev",
+                "--extra",
+                "type",
+                "--no-dev",
+                *v_args,
+            ],
+        ),
         ("py", "commands[0]", ["python", "hello"]),
     ]
     assert calls == expected
@@ -91,9 +145,19 @@ def test_uv_lock_with_dev(tox_project: ToxProjectCreator) -> None:
         (
             "py",
             "venv",
-            [uv, "venv", "-p", sys.executable, "--allow-existing", "-v", str(project.path / ".tox" / "py")],
+            [
+                uv,
+                "venv",
+                "-p",
+                sys.executable,
+                "--allow-existing",
+                "-v",
+                "--python-preference",
+                "system",
+                str(project.path / ".tox" / "py"),
+            ],
         ),
-        ("py", "uv-sync", ["uv", "sync", "--frozen", "-v"]),
+        ("py", "uv-sync", ["uv", "sync", "--frozen", "--python-preference", "system", "-v"]),
     ]
     assert calls == expected
 
@@ -124,9 +188,23 @@ def test_uv_lock_with_install_pkg(tox_project: ToxProjectCreator, name: str) -> 
         (
             "py",
             "venv",
-            [uv, "venv", "-p", sys.executable, "--allow-existing", "-v", str(project.path / ".tox" / "py")],
+            [
+                uv,
+                "venv",
+                "-p",
+                sys.executable,
+                "--allow-existing",
+                "-v",
+                "--python-preference",
+                "system",
+                str(project.path / ".tox" / "py"),
+            ],
         ),
-        ("py", "uv-sync", ["uv", "sync", "--frozen", "--no-dev", "--no-install-project", "-v"]),
+        (
+            "py",
+            "uv-sync",
+            ["uv", "sync", "--frozen", "--python-preference", "system", "--no-dev", "--no-install-project", "-v"],
+        ),
         (
             "py",
             "install_external",
@@ -157,12 +235,21 @@ def test_uv_sync_extra_flags(tox_project: ToxProjectCreator) -> None:
         (
             "py",
             "venv",
-            [uv, "venv", "-p", sys.executable, "--allow-existing", str(project.path / ".tox" / "py")],
+            [
+                uv,
+                "venv",
+                "-p",
+                sys.executable,
+                "--allow-existing",
+                "--python-preference",
+                "system",
+                str(project.path / ".tox" / "py"),
+            ],
         ),
         (
             "py",
             "uv-sync",
-            ["uv", "sync", "--frozen", "--no-editable", "--inexact"],
+            ["uv", "sync", "--frozen", "--python-preference", "system", "--no-editable", "--inexact"],
         ),
         ("py", "commands[0]", ["python", "hello"]),
     ]
@@ -190,12 +277,21 @@ def test_uv_sync_extra_flags_toml(tox_project: ToxProjectCreator) -> None:
         (
             "py",
             "venv",
-            [uv, "venv", "-p", sys.executable, "--allow-existing", str(project.path / ".tox" / "py")],
+            [
+                uv,
+                "venv",
+                "-p",
+                sys.executable,
+                "--allow-existing",
+                "--python-preference",
+                "system",
+                str(project.path / ".tox" / "py"),
+            ],
         ),
         (
             "py",
             "uv-sync",
-            ["uv", "sync", "--frozen", "--no-editable", "--inexact"],
+            ["uv", "sync", "--frozen", "--python-preference", "system", "--no-editable", "--inexact"],
         ),
         ("py", "commands[0]", ["python", "hello"]),
     ]
@@ -223,12 +319,72 @@ def test_uv_sync_dependency_groups(tox_project: ToxProjectCreator) -> None:
         (
             "py",
             "venv",
-            [uv, "venv", "-p", sys.executable, "--allow-existing", str(project.path / ".tox" / "py")],
+            [
+                uv,
+                "venv",
+                "-p",
+                sys.executable,
+                "--allow-existing",
+                "--python-preference",
+                "system",
+                str(project.path / ".tox" / "py"),
+            ],
         ),
         (
             "py",
             "uv-sync",
-            ["uv", "sync", "--frozen", "--group", "test", "--group", "type"],
+            ["uv", "sync", "--frozen", "--python-preference", "system", "--group", "test", "--group", "type"],
+        ),
+        ("py", "commands[0]", ["python", "hello"]),
+    ]
+    assert calls == expected
+
+
+@pytest.mark.parametrize(
+    ("uv_python_preference", "injected"),
+    [
+        pytest.param("none", [], id="on"),
+        pytest.param("system", ["--python-preference", "system"], id="off"),
+    ],
+)
+def test_uv_sync_uv_python_preference(
+    tox_project: ToxProjectCreator, uv_python_preference: str, injected: list[str]
+) -> None:
+    project = tox_project({
+        "tox.toml": f"""
+    [env_run_base]
+    runner = "uv-venv-lock-runner"
+    with_dev = true
+    dependency_groups = ["test", "type"]
+    commands = [["python", "hello"]]
+    uv_python_preference = "{uv_python_preference}"
+    """
+    })
+    execute_calls = project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
+    result = project.run()
+    result.assert_success()
+
+    calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
+    uv = find_uv_bin()
+
+    expected = [
+        (
+            "py",
+            "venv",
+            [
+                uv,
+                "venv",
+                "-p",
+                sys.executable,
+                "--allow-existing",
+                *injected,
+                str(project.path / ".tox" / "py"),
+            ],
+        ),
+        (
+            "py",
+            "uv-sync",
+            ["uv", "sync", "--frozen", *injected, "--group", "test", "--group", "type"],
         ),
         ("py", "commands[0]", ["python", "hello"]),
     ]
