@@ -79,6 +79,8 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
         for group in sorted(self.conf["dependency_groups"]):
             cmd.extend(("--group", group))
         cmd.extend(self.conf["uv_sync_flags"])
+        cmd.extend(("-p", self.env_version_spec()))
+
         show = self.options.verbosity > 2  # noqa: PLR2004
         outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="uv-sync", show=show)
         outcome.assert_success()

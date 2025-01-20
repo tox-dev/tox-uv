@@ -197,21 +197,7 @@ class UvVenv(Python, ABC):
         return env
 
     def create_python_env(self) -> None:
-        base = self.base_python.version_info
-        imp = self.base_python.impl_lower
-        executable = self.base_python.extra.get("executable")
-        if executable:
-            version_spec = executable
-        elif (base.major, base.minor) == sys.version_info[:2] and (sys.implementation.name.lower() == imp):
-            version_spec = sys.executable
-        else:
-            uv_imp = imp or ""
-            if not base.major:
-                version_spec = uv_imp
-            elif not base.minor:
-                version_spec = f"{uv_imp}{base.major}"
-            else:
-                version_spec = f"{uv_imp}{base.major}.{base.minor}"
+        version_spec = self.env_version_spec()
 
         cmd: list[str] = [self.uv, "venv", "-p", version_spec, "--allow-existing"]
         if self.options.verbosity > 3:  # noqa: PLR2004
@@ -258,6 +244,24 @@ class UvVenv(Python, ABC):
             py = self._py_info
             impl = "pypy" if py.implementation == "pypy" else "python"
             return self.venv_dir / "lib" / f"{impl}{py.version_dot}" / "site-packages"
+
+    def env_version_spec(self) -> str:
+        base = self.base_python.version_info
+        imp = self.base_python.impl_lower
+        executable = self.base_python.extra.get("executable")
+        if executable:
+            version_spec = executable
+        elif (base.major, base.minor) == sys.version_info[:2] and (sys.implementation.name.lower() == imp):
+            version_spec = sys.executable
+        else:
+            uv_imp = imp or ""
+            if not base.major:
+                version_spec = uv_imp
+            elif not base.minor:
+                version_spec = f"{uv_imp}{base.major}"
+            else:
+                version_spec = f"{uv_imp}{base.major}.{base.minor}"
+        return version_spec
 
     @cached_property
     def _py_info(self) -> PythonInfo:  # pragma: win32 no cover
