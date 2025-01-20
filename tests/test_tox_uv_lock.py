@@ -58,6 +58,8 @@ def test_uv_lock_list_dependencies_command(tox_project: ToxProjectCreator) -> No
                 "type",
                 "--no-dev",
                 "-v",
+                "-p",
+                sys.executable,
             ],
         ),
         ("py", "freeze", [uv, "--color", "never", "pip", "freeze"]),
@@ -118,6 +120,8 @@ def test_uv_lock_command(tox_project: ToxProjectCreator, verbose: str) -> None:
                 "type",
                 "--no-dev",
                 *v_args,
+                "-p",
+                sys.executable,
             ],
         ),
         ("py", "commands[0]", ["python", "hello"]),
@@ -157,7 +161,7 @@ def test_uv_lock_with_dev(tox_project: ToxProjectCreator) -> None:
                 str(project.path / ".tox" / "py"),
             ],
         ),
-        ("py", "uv-sync", ["uv", "sync", "--frozen", "--python-preference", "system", "-v"]),
+        ("py", "uv-sync", ["uv", "sync", "--frozen", "--python-preference", "system", "-v", "-p", sys.executable]),
     ]
     assert calls == expected
 
@@ -203,7 +207,18 @@ def test_uv_lock_with_install_pkg(tox_project: ToxProjectCreator, name: str) -> 
         (
             "py",
             "uv-sync",
-            ["uv", "sync", "--frozen", "--python-preference", "system", "--no-dev", "--no-install-project", "-v"],
+            [
+                "uv",
+                "sync",
+                "--frozen",
+                "--python-preference",
+                "system",
+                "--no-dev",
+                "--no-install-project",
+                "-v",
+                "-p",
+                sys.executable,
+            ],
         ),
         (
             "py",
@@ -249,7 +264,17 @@ def test_uv_sync_extra_flags(tox_project: ToxProjectCreator) -> None:
         (
             "py",
             "uv-sync",
-            ["uv", "sync", "--frozen", "--python-preference", "system", "--no-editable", "--inexact"],
+            [
+                "uv",
+                "sync",
+                "--frozen",
+                "--python-preference",
+                "system",
+                "--no-editable",
+                "--inexact",
+                "-p",
+                sys.executable,
+            ],
         ),
         ("py", "commands[0]", ["python", "hello"]),
     ]
@@ -291,7 +316,17 @@ def test_uv_sync_extra_flags_toml(tox_project: ToxProjectCreator) -> None:
         (
             "py",
             "uv-sync",
-            ["uv", "sync", "--frozen", "--python-preference", "system", "--no-editable", "--inexact"],
+            [
+                "uv",
+                "sync",
+                "--frozen",
+                "--python-preference",
+                "system",
+                "--no-editable",
+                "--inexact",
+                "-p",
+                sys.executable,
+            ],
         ),
         ("py", "commands[0]", ["python", "hello"]),
     ]
@@ -333,7 +368,19 @@ def test_uv_sync_dependency_groups(tox_project: ToxProjectCreator) -> None:
         (
             "py",
             "uv-sync",
-            ["uv", "sync", "--frozen", "--python-preference", "system", "--group", "test", "--group", "type"],
+            [
+                "uv",
+                "sync",
+                "--frozen",
+                "--python-preference",
+                "system",
+                "--group",
+                "test",
+                "--group",
+                "type",
+                "-p",
+                sys.executable,
+            ],
         ),
         ("py", "commands[0]", ["python", "hello"]),
     ]
@@ -384,7 +431,18 @@ def test_uv_sync_uv_python_preference(
         (
             "py",
             "uv-sync",
-            ["uv", "sync", "--frozen", *injected, "--group", "test", "--group", "type"],
+            [
+                "uv",
+                "sync",
+                "--frozen",
+                *injected,
+                "--group",
+                "test",
+                "--group",
+                "type",
+                "-p",
+                sys.executable,
+            ],
         ),
         ("py", "commands[0]", ["python", "hello"]),
     ]
