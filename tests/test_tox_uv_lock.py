@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from tox.pytest import ToxProjectCreator
 
 
+@pytest.mark.usefixtures("clear_python_preference_env_var")
 def test_uv_lock_list_dependencies_command(tox_project: ToxProjectCreator) -> None:
     project = tox_project({
         "tox.ini": """
@@ -70,6 +71,7 @@ def test_uv_lock_list_dependencies_command(tox_project: ToxProjectCreator) -> No
         assert calls[i] == expected[i]
 
 
+@pytest.mark.usefixtures("clear_python_preference_env_var")
 @pytest.mark.parametrize("verbose", ["", "-v", "-vv", "-vvv"])
 def test_uv_lock_command(tox_project: ToxProjectCreator, verbose: str) -> None:
     project = tox_project({
@@ -131,6 +133,7 @@ def test_uv_lock_command(tox_project: ToxProjectCreator, verbose: str) -> None:
     assert show_uv_output is (bool(verbose))
 
 
+@pytest.mark.usefixtures("clear_python_preference_env_var")
 def test_uv_lock_with_dev(tox_project: ToxProjectCreator) -> None:
     project = tox_project({
         "tox.ini": """
@@ -166,6 +169,7 @@ def test_uv_lock_with_dev(tox_project: ToxProjectCreator) -> None:
     assert calls == expected
 
 
+@pytest.mark.usefixtures("clear_python_preference_env_var")
 @pytest.mark.parametrize(
     "name",
     [
@@ -229,6 +233,7 @@ def test_uv_lock_with_install_pkg(tox_project: ToxProjectCreator, name: str) -> 
     assert calls == expected
 
 
+@pytest.mark.usefixtures("clear_python_preference_env_var")
 def test_uv_sync_extra_flags(tox_project: ToxProjectCreator) -> None:
     project = tox_project({
         "tox.ini": """
@@ -281,6 +286,7 @@ def test_uv_sync_extra_flags(tox_project: ToxProjectCreator) -> None:
     assert calls == expected
 
 
+@pytest.mark.usefixtures("clear_python_preference_env_var")
 def test_uv_sync_extra_flags_toml(tox_project: ToxProjectCreator) -> None:
     project = tox_project({
         "tox.toml": """
@@ -333,6 +339,7 @@ def test_uv_sync_extra_flags_toml(tox_project: ToxProjectCreator) -> None:
     assert calls == expected
 
 
+@pytest.mark.usefixtures("clear_python_preference_env_var")
 def test_uv_sync_dependency_groups(tox_project: ToxProjectCreator) -> None:
     project = tox_project({
         "tox.toml": """

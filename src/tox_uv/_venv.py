@@ -73,7 +73,7 @@ class UvVenv(Python, ABC):
         self.conf.add_config(
             keys=["uv_python_preference"],
             of_type=cast("Type[Optional[PythonPreference]]", Optional[PythonPreference]),  # noqa: UP006
-            default="system",
+            default=lambda conf, name: self.environment_variables.get("UV_PYTHON_PREFERENCE", "system"),  # noqa: ARG005
             desc=(
                 "Whether to prefer using Python installations that are already"
                 " present on the system, or those that are downloaded and"

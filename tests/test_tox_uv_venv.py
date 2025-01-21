@@ -41,6 +41,36 @@ def test_uv_venv_pass_env(tox_project: ToxProjectCreator) -> None:
     assert "PKG_CONFIG_PATH" in pass_through
 
 
+@pytest.mark.usefixtures("clear_python_preference_env_var")
+def test_uv_venv_preference_system_by_default(tox_project: ToxProjectCreator) -> None:
+    project = tox_project({"tox.ini": "[testenv]"})
+
+    result = project.run("c", "-k", "uv_python_preference")
+    result.assert_success()
+
+    parser = ConfigParser()
+    parser.read_string(result.out)
+    got = parser["testenv:py"]["uv_python_preference"]
+
+    assert got == "system"
+
+
+def test_uv_venv_preference_override_via_env_var(
+    tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    project = tox_project({"tox.ini": "[testenv]"})
+    monkeypatch.setenv("UV_PYTHON_PREFERENCE", "only-managed")
+
+    result = project.run("c", "-k", "uv_python_preference")
+    result.assert_success()
+
+    parser = ConfigParser()
+    parser.read_string(result.out)
+    got = parser["testenv:py"]["uv_python_preference"]
+
+    assert got == "only-managed"
+
+
 def test_uv_venv_spec(tox_project: ToxProjectCreator) -> None:
     ver = sys.version_info
     project = tox_project({"tox.ini": f"[testenv]\npackage=skip\nbase_python={ver.major}.{ver.minor}"})
