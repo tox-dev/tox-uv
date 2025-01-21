@@ -37,14 +37,17 @@ jobs:
           enable-cache: true
           cache-dependency-glob: "pyproject.toml"
       - name: Install tox
-        run: uv tool install --python-preference only-managed --python 3.13 tox --with tox-uv
+        run: uv tool install --python-preference only-managed --python 3.13 tox --with .
       - name: Install Python
         if: startsWith(matrix.env, '3.') && matrix.env != '3.13'
         run: uv python install --python-preference only-managed ${{ matrix.env }}
       - name: Setup test suite
         run: tox run -vv --notest --skip-missing-interpreters false -e ${{ matrix.env }}
+        env:
+          UV_PYTHON_PREFERENCE: "only-managed"
       - name: Run test suite
         run: tox run --skip-pkg-install -e ${{ matrix.env }}
         env:
           PYTEST_ADDOPTS: "-vv --durations=20"
           DIFF_AGAINST: HEAD
+          UV_PYTHON_PREFERENCE: "only-managed"

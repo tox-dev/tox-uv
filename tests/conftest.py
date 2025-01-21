@@ -33,6 +33,11 @@ def demo_pkg_inline(root: Path) -> Path:
     return root / "demo_pkg_inline"
 
 
+@pytest.fixture
+def clear_python_preference_env_var(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("UV_PYTHON_PREFERENCE", raising=False)
+
+
 pytest_plugins = [
     "tox.pytest",
 ]
