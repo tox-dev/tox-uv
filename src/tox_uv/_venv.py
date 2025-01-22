@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import sys
 from abc import ABC
 from functools import cached_property
@@ -73,7 +74,9 @@ class UvVenv(Python, ABC):
         self.conf.add_config(
             keys=["uv_python_preference"],
             of_type=cast("Type[Optional[PythonPreference]]", Optional[PythonPreference]),  # noqa: UP006
-            default=lambda conf, name: self.environment_variables.get("UV_PYTHON_PREFERENCE", "system"),  # noqa: ARG005
+            # use os.environ here instead of self.environment_variables as this value is needed to create the virtual
+            # environment, if environment variables use env_site_packages_dir we would run into a chicken-egg problem.
+            default=lambda conf, name: os.environ.get("UV_PYTHON_PREFERENCE", "system"),  # noqa: ARG005
             desc=(
                 "Whether to prefer using Python installations that are already"
                 " present on the system, or those that are downloaded and"
@@ -240,10 +243,10 @@ class UvVenv(Python, ABC):
     def env_site_package_dir(self) -> Path:
         if sys.platform == "win32":  # pragma: win32 cover
             return self.venv_dir / "Lib" / "site-packages"
-        else:  # pragma: win32 no cover # noqa: RET505
-            py = self._py_info
-            impl = "pypy" if py.implementation == "pypy" else "python"
-            return self.venv_dir / "lib" / f"{impl}{py.version_dot}" / "site-packages"
+        # pragma: win32 no cover
+        py = self._py_info
+        impl = "pypy" if py.implementation == "pypy" else "python"
+        return self.venv_dir / "lib" / f"{impl}{py.version_dot}" / "site-packages"
 
     def env_version_spec(self) -> str:
         base = self.base_python.version_info
