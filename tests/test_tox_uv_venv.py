@@ -71,6 +71,18 @@ def test_uv_venv_preference_override_via_env_var(
     assert got == "only-managed"
 
 
+def test_uv_venv_preference_override_via_env_var_and_set_env_depends_on_py(
+    tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    project = tox_project({"tox.ini": "[testenv]\nset_env=A={env_site_packages_dir}"})
+    monkeypatch.setenv("UV_PYTHON_PREFERENCE", "only-managed")
+
+    result = project.run("c", "-k", "set_env")
+    result.assert_success()
+
+    assert str(project.path) in result.out
+
+
 def test_uv_venv_spec(tox_project: ToxProjectCreator) -> None:
     ver = sys.version_info
     project = tox_project({"tox.ini": f"[testenv]\npackage=skip\nbase_python={ver.major}.{ver.minor}"})
