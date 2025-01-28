@@ -396,5 +396,27 @@ def test_uv_pip_constraints(tox_project: ToxProjectCreator) -> None:
     result = project.run()
     result.assert_success()
     assert (
-        "Found PIP_CONSTRAINTS defined, you may want to also define UV_CONSTRAINT to match pip behavior." in result.out
+        result.out.count(
+            "Found PIP_CONSTRAINTS defined, you may want to also define UV_CONSTRAINT to match pip behavior."
+        )
+        == 1
+    ), "Warning should be found once and only once in output."
+
+
+def test_uv_pip_constraints_no(tox_project: ToxProjectCreator) -> None:
+    project = tox_project({
+        "tox.ini": f"""
+            [testenv]
+            package=skip
+            setenv=
+                PIP_CONSTRAINTS={os.devnull}
+                UV_CONSTRAINT={os.devnull}
+            commands=python --version
+            """
+    })
+    result = project.run()
+    result.assert_success()
+    assert (
+        "Found PIP_CONSTRAINTS defined, you may want to also define UV_CONSTRAINT to match pip behavior."
+        not in result.out
     )

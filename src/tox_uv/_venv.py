@@ -51,6 +51,7 @@ class UvVenv(Python, ABC):
         self._executor: Execute | None = None
         self._installer: UvInstaller | None = None
         self._created = False
+        self._displayed_uv_constraint_warning = False
         super().__init__(create_args)
 
     def register_config(self) -> None:
@@ -183,12 +184,14 @@ class UvVenv(Python, ABC):
         env = super().environment_variables
         env.pop("UV_PYTHON", None)  # UV_PYTHON takes precedence over VIRTUAL_ENV
         env["VIRTUAL_ENV"] = str(self.venv_dir)
-        for pip_var in ("PIP_CONSTRAINT", "PIP_CONSTRAINTS"):
-            if pip_var in env:
-                _LOGGER.warning(
-                    "Found %s defined, you may want to also define UV_CONSTRAINT to match pip behavior.", pip_var
-                )
-                break
+        if "UV_CONSTRAINT" not in env and not self._displayed_uv_constraint_warning:
+            for pip_var in ("PIP_CONSTRAINT", "PIP_CONSTRAINTS"):
+                if pip_var in env:
+                    _LOGGER.warning(
+                        "Found %s defined, you may want to also define UV_CONSTRAINT to match pip behavior.", pip_var
+                    )
+                    self._displayed_uv_constraint_warning = True
+                    break
         return env
 
     def _default_pass_env(self) -> list[str]:
