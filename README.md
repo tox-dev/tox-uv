@@ -95,9 +95,11 @@ Therefore, options like `deps` are ignored (and all others
 
 A list of string that selects, which extra groups you want to install with `uv sync`. By default, it is empty.
 
-### `with_dev`
+### `no_default_groups`
 
-A boolean flag to toggle installation of the `uv` development dependencies. By default, it is false.
+A boolean flag to toggle installation of the `uv`
+[default development groups](https://docs.astral.sh/uv/concepts/projects/dependencies/#default-groups). By default, it
+is `true`.
 
 ### `dependency_groups`
 
