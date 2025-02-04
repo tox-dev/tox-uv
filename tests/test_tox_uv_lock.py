@@ -57,7 +57,7 @@ def test_uv_lock_list_dependencies_command(tox_project: ToxProjectCreator) -> No
                 "dev",
                 "--extra",
                 "type",
-                "--no-dev",
+                "--no-default-groups",
                 "-v",
                 "-p",
                 sys.executable,
@@ -120,7 +120,7 @@ def test_uv_lock_command(tox_project: ToxProjectCreator, verbose: str) -> None:
                 "dev",
                 "--extra",
                 "type",
-                "--no-dev",
+                "--no-default-groups",
                 *v_args,
                 "-p",
                 sys.executable,
@@ -134,12 +134,12 @@ def test_uv_lock_command(tox_project: ToxProjectCreator, verbose: str) -> None:
 
 
 @pytest.mark.usefixtures("clear_python_preference_env_var")
-def test_uv_lock_with_dev(tox_project: ToxProjectCreator) -> None:
+def test_uv_lock_with_default_groups(tox_project: ToxProjectCreator) -> None:
     project = tox_project({
         "tox.ini": """
     [testenv]
     runner = uv-venv-lock-runner
-    with_dev = True
+    no_default_groups = False
     """
     })
     execute_calls = project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
@@ -217,7 +217,7 @@ def test_uv_lock_with_install_pkg(tox_project: ToxProjectCreator, name: str) -> 
                 "--frozen",
                 "--python-preference",
                 "system",
-                "--no-dev",
+                "--no-default-groups",
                 "--no-install-project",
                 "-v",
                 "-p",
@@ -239,7 +239,7 @@ def test_uv_sync_extra_flags(tox_project: ToxProjectCreator) -> None:
         "tox.ini": """
     [testenv]
     runner = uv-venv-lock-runner
-    with_dev = true
+    no_default_groups = false
     uv_sync_flags = --no-editable, --inexact
     commands = python hello
     """
@@ -292,7 +292,7 @@ def test_uv_sync_extra_flags_toml(tox_project: ToxProjectCreator) -> None:
         "tox.toml": """
     [env_run_base]
     runner = "uv-venv-lock-runner"
-    with_dev = true
+    no_default_groups = false
     uv_sync_flags = ["--no-editable", "--inexact"]
     commands = [["python", "hello"]]
     """

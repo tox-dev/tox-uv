@@ -39,10 +39,10 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
         super().register_config()
         add_extras_to_env(self.conf)
         self.conf.add_config(
-            keys=["with_dev"],
+            keys=["no_default_groups"],
             of_type=bool,
-            default=False,
-            desc="Install dev dependencies or not",
+            default=True,
+            desc="Install default groups or not",
         )
         self.conf.add_config(
             keys=["dependency_groups"],
@@ -70,14 +70,14 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
         for extra in cast("set[str]", sorted(self.conf["extras"])):
             cmd.extend(("--extra", extra))
         groups = sorted(self.conf["dependency_groups"])
-        if not (self.conf["with_dev"] or "dev" in groups):
-            cmd.append("--no-dev")
+        if self.conf["no_default_groups"] and not groups:
+            cmd.append("--no-default-groups")
         install_pkg = getattr(self.options, "install_pkg", None)
         if install_pkg is not None:
             cmd.append("--no-install-project")
         if self.options.verbosity > 3:  # noqa: PLR2004
             cmd.append("-v")
-        for group in sorted(groups):
+        for group in groups:
             cmd.extend(("--group", group))
         cmd.extend(self.conf["uv_sync_flags"])
         cmd.extend(("-p", self.env_version_spec()))
