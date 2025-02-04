@@ -454,3 +454,39 @@ def test_uv_sync_uv_python_preference(
         ("py", "commands[0]", ["python", "hello"]),
     ]
     assert calls == expected
+
+
+def test_skip_uv_sync(tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("UV_PYTHON_PREFERENCE", raising=False)
+    project = tox_project({
+        "tox.toml": """
+    [env_run_base]
+    runner = "uv-venv-lock-runner"
+    commands = [["python", "hello"]]
+    """
+    })
+    execute_calls = project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
+    result = project.run("run", "--skip-uv-sync")
+    result.assert_success()
+
+    calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
+    uv = find_uv_bin()
+
+    expected = [
+        (
+            "py",
+            "venv",
+            [
+                uv,
+                "venv",
+                "-p",
+                sys.executable,
+                "--allow-existing",
+                "--python-preference",
+                "system",
+                str(project.path / ".tox" / "py"),
+            ],
+        ),
+        ("py", "commands[0]", ["python", "hello"]),
+    ]
+    assert calls == expected

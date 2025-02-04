@@ -60,31 +60,32 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
 
     def _setup_env(self) -> None:
         super()._setup_env()
-        cmd = [
-            "uv",
-            "sync",
-            "--frozen",
-        ]
-        if self.conf["uv_python_preference"] != "none":
-            cmd.extend(("--python-preference", self.conf["uv_python_preference"]))
-        for extra in cast("set[str]", sorted(self.conf["extras"])):
-            cmd.extend(("--extra", extra))
-        groups = sorted(self.conf["dependency_groups"])
-        if self.conf["no_default_groups"] and not groups:
-            cmd.append("--no-default-groups")
         install_pkg = getattr(self.options, "install_pkg", None)
-        if install_pkg is not None:
-            cmd.append("--no-install-project")
-        if self.options.verbosity > 3:  # noqa: PLR2004
-            cmd.append("-v")
-        for group in groups:
-            cmd.extend(("--group", group))
-        cmd.extend(self.conf["uv_sync_flags"])
-        cmd.extend(("-p", self.env_version_spec()))
+        if not getattr(self.options, "skip_uv_sync", False):
+            cmd = [
+                "uv",
+                "sync",
+                "--frozen",
+            ]
+            if self.conf["uv_python_preference"] != "none":
+                cmd.extend(("--python-preference", self.conf["uv_python_preference"]))
+            for extra in cast("set[str]", sorted(self.conf["extras"])):
+                cmd.extend(("--extra", extra))
+            groups = sorted(self.conf["dependency_groups"])
+            if self.conf["no_default_groups"] and not groups:
+                cmd.append("--no-default-groups")
+            if install_pkg is not None:
+                cmd.append("--no-install-project")
+            if self.options.verbosity > 3:  # noqa: PLR2004
+                cmd.append("-v")
+            for group in groups:
+                cmd.extend(("--group", group))
+            cmd.extend(self.conf["uv_sync_flags"])
+            cmd.extend(("-p", self.env_version_spec()))
 
-        show = self.options.verbosity > 2  # noqa: PLR2004
-        outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="uv-sync", show=show)
-        outcome.assert_success()
+            show = self.options.verbosity > 2  # noqa: PLR2004
+            outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="uv-sync", show=show)
+            outcome.assert_success()
         if install_pkg is not None:
             path = Path(install_pkg)
             pkg = (WheelPackage if path.suffix == ".whl" else SdistPackage)(path, deps=[])

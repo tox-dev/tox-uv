@@ -43,7 +43,7 @@ dependencies = [
   "packaging>=24.2",
   "tox>=4.24.1,<5",
   "typing-extensions>=4.12.2; python_version<'3.10'",
-  "uv>=0.5.22,<1",
+  "uv>=0.5.27,<1",
 ]
 urls.Changelog = "https://github.com/tox-dev/tox-uv/releases"
 urls.Documentation = "https://github.com/tox-dev/tox-uv#tox-uv"
@@ -62,14 +62,14 @@ dev = [
 test = [
   "covdefaults>=2.3",
   "devpi-process>=1.0.2",
-  "diff-cover>=9.2.1",
+  "diff-cover>=9.2.2",
   "pytest>=8.3.4",
   "pytest-cov>=6",
   "pytest-mock>=3.14",
 ]
 type = [ "mypy==1.14.1", { include-group = "test" } ]
 lint = [ "pre-commit-uv>=4.1.4" ]
-pkg-meta = [ "check-wheel-contents>=0.6.1", "twine>=6.1", "uv>=0.5.22" ]
+pkg-meta = [ "check-wheel-contents>=0.6.1", "twine>=6.1", "uv>=0.5.27" ]
 
 [tool.hatch]
 build.hooks.vcs.version-file = "src/tox_uv/version.py"
