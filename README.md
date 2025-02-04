@@ -14,14 +14,16 @@ will get both the benefits (performance) or downsides (bugs) of `uv`.
 - [tox environment types provided](#tox-environment-types-provided)
 - [uv.lock support](#uvlock-support)
   - [extras](#extras)
-  - [with_dev](#with_dev)
+  - [no_default_groups](#no_default_groups)
+  - [dependency_groups](#dependency_groups)
+  - [uv_sync_flags](#uv_sync_flags)
   - [External package support](#external-package-support)
 - [Environment creation](#environment-creation)
   - [uv_seed](#uv_seed)
   - [uv_python_preference](#uv_python_preference)
 - [Package installation](#package-installation)
-  - [uv_resolution](#uv_resolution)
-  <!--te-->
+- [uv_resolution](#uv_resolution)
+<!--te-->
 
 ## How to use
 
