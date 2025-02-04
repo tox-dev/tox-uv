@@ -69,14 +69,15 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
             cmd.extend(("--python-preference", self.conf["uv_python_preference"]))
         for extra in cast("set[str]", sorted(self.conf["extras"])):
             cmd.extend(("--extra", extra))
-        if not self.conf["with_dev"]:
+        groups = sorted(self.conf["dependency_groups"])
+        if not (self.conf["with_dev"] or "dev" in groups):
             cmd.append("--no-dev")
         install_pkg = getattr(self.options, "install_pkg", None)
         if install_pkg is not None:
             cmd.append("--no-install-project")
         if self.options.verbosity > 3:  # noqa: PLR2004
             cmd.append("-v")
-        for group in sorted(self.conf["dependency_groups"]):
+        for group in sorted(groups):
             cmd.extend(("--group", group))
         cmd.extend(self.conf["uv_sync_flags"])
         cmd.extend(("-p", self.env_version_spec()))
