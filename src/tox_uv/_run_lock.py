@@ -39,16 +39,16 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
         super().register_config()
         add_extras_to_env(self.conf)
         self.conf.add_config(
-            keys=["no_default_groups"],
-            of_type=bool,
-            default=True,
-            desc="Install default groups or not",
-        )
-        self.conf.add_config(
             keys=["dependency_groups"],
             of_type=Set[str],  # noqa: UP006
             default=set(),
             desc="dependency groups to install of the target package",
+        )
+        self.conf.add_config(
+            keys=["no_default_groups"],
+            of_type=bool,
+            default=lambda _, __: bool(self.conf["dependency_groups"]),
+            desc="Install default groups or not",
         )
         self.conf.add_config(
             keys=["uv_sync_flags"],
@@ -72,7 +72,7 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
             for extra in cast("set[str]", sorted(self.conf["extras"])):
                 cmd.extend(("--extra", extra))
             groups = sorted(self.conf["dependency_groups"])
-            if self.conf["no_default_groups"] and not groups:
+            if self.conf["no_default_groups"]:
                 cmd.append("--no-default-groups")
             if install_pkg is not None:
                 cmd.append("--no-install-project")

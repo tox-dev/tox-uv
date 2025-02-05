@@ -101,7 +101,7 @@ A list of string that selects, which extra groups you want to install with `uv s
 
 A boolean flag to toggle installation of the `uv`
 [default development groups](https://docs.astral.sh/uv/concepts/projects/dependencies/#default-groups). By default, it
-is `true`.
+will be `true` if the `dependency_groups` is not empty and `false` otherwise.
 
 ### `dependency_groups`
 
