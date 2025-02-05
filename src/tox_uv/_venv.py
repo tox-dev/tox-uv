@@ -156,7 +156,7 @@ class UvVenv(Python, ABC):
                 version=str(spec),
                 is_64=spec.architecture == 64,  # noqa: PLR2004
                 platform=sys.platform,
-                extra={},
+                extra={"architecture": spec.architecture},
             )
 
         return None  # pragma: no cover
@@ -255,9 +255,14 @@ class UvVenv(Python, ABC):
         base = self.base_python.version_info
         imp = self.base_python.impl_lower
         executable = self.base_python.extra.get("executable")
+        architecture = self.base_python.extra.get("architecture")
         if executable:
             version_spec = str(executable)
-        elif (base.major, base.minor) == sys.version_info[:2] and (sys.implementation.name.lower() == imp):
+        elif (
+            architecture is None
+            and (base.major, base.minor) == sys.version_info[:2]
+            and (sys.implementation.name.lower() == imp)
+        ):
             version_spec = sys.executable
         else:
             uv_imp = imp or ""
@@ -265,6 +270,9 @@ class UvVenv(Python, ABC):
                 version_spec = f"{uv_imp}"
             elif not base.minor:
                 version_spec = f"{uv_imp}{base.major}"
+            elif architecture is not None and self.base_python.platform == "win32":
+                uv_arch = {32: "x86", 64: "x86_64"}[architecture]
+                version_spec = f"{uv_imp}-{base.major}.{base.minor}-windows-{uv_arch}-none"
             else:
                 version_spec = f"{uv_imp}{base.major}.{base.minor}"
         return version_spec
