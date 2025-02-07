@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Set, cast  # noqa: UP035
+from typing import TYPE_CHECKING, List, Literal, Set, cast  # noqa: UP035
 
 from tox.execute.request import StdinSource
 from tox.tox_env.python.package import SdistPackage, WheelPackage
@@ -56,6 +56,12 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
             default=[],
             desc="Additional flags to pass to uv sync (for flags not configurable via environment variables)",
         )
+        self.conf.add_config(
+            keys=["package"],
+            of_type=Literal["editable", "wheel", "skip"],  # type: ignore[arg-type]
+            default="editable",
+            desc="How should the package be installed",
+        )
         add_skip_missing_interpreters_to_core(self.core, self.options)
 
     def _setup_env(self) -> None:
@@ -74,10 +80,13 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
             groups = sorted(self.conf["dependency_groups"])
             if self.conf["no_default_groups"]:
                 cmd.append("--no-default-groups")
-            if install_pkg is not None:
+            package = self.conf["package"]
+            if install_pkg is not None or package == "skip":
                 cmd.append("--no-install-project")
             if self.options.verbosity > 3:  # noqa: PLR2004
                 cmd.append("-v")
+            if package == "wheel":
+                cmd.append("--no-editable")
             for group in groups:
                 cmd.extend(("--group", group))
             cmd.extend(self.conf["uv_sync_flags"])

@@ -13,6 +13,7 @@ will get both the benefits (performance) or downsides (bugs) of `uv`.
 - [How to use](#how-to-use)
 - [tox environment types provided](#tox-environment-types-provided)
 - [uv.lock support](#uvlock-support)
+  - [package](#package)
   - [extras](#extras)
   - [no_default_groups](#no_default_groups)
   - [dependency_groups](#dependency_groups)
@@ -23,6 +24,7 @@ will get both the benefits (performance) or downsides (bugs) of `uv`.
   - [uv_python_preference](#uv_python_preference)
 - [Package installation](#package-installation)
 - [uv_resolution](#uv_resolution)
+
 <!--te-->
 
 ## How to use
@@ -92,6 +94,10 @@ In this example:
 Note that when using `uv-venv-lock-runner`, _all_ dependencies will come from the lock file, controlled by `extras`.
 Therefore, options like `deps` are ignored (and all others
 [enumerated here](https://tox.wiki/en/stable/config.html#python-run) as Python run flags).
+
+### `package`
+
+How to install the source tree package, one of `wheel`, `editable` or `skip`. By default will do `editable`.
 
 ### `extras`
 
