@@ -8,6 +8,7 @@ import os
 import sys
 from abc import ABC
 from functools import cached_property
+from importlib.resources import as_file, files
 from pathlib import Path
 from platform import python_implementation
 from typing import TYPE_CHECKING, Any, Final, Literal, Optional, Type, cast  # noqa: UP035
@@ -28,7 +29,6 @@ if sys.version_info >= (3, 10):  # pragma: no cover (py310+)
 else:  # pragma: no cover (<py310)
     from typing_extensions import TypeAlias
 
-from importlib.resources import as_file, files
 
 if TYPE_CHECKING:
     from tox.execute.api import Execute
@@ -74,7 +74,7 @@ class UvVenv(Python, ABC):
         # The cast(...) might seems superfluous but removing it makes mypy crash. The problem isy on tox typing side.
         self.conf.add_config(
             keys=["uv_python_preference"],
-            of_type=cast("Type[Optional[PythonPreference]]", Optional[PythonPreference]),  # noqa: UP006
+            of_type=cast("Type[Optional[PythonPreference]]", Optional[PythonPreference]),  # type: ignore[valid-type] # noqa: UP006
             # use os.environ here instead of self.environment_variables as this value is needed to create the virtual
             # environment, if environment variables use env_site_packages_dir we would run into a chicken-egg problem.
             default=lambda conf, name: os.environ.get("UV_PYTHON_PREFERENCE", "system"),  # noqa: ARG005
@@ -273,6 +273,7 @@ class UvVenv(Python, ABC):
     def _py_info(self) -> PythonInfo:  # pragma: win32 no cover
         if not self._created and not self.env_python().exists():  # called during config, no environment setup
             self.create_python_env()
+        if not self._paths:
             self._paths = self.prepend_env_var_path()
         with as_file(files("tox_uv") / "_venv_query.py") as filename:
             cmd = [str(self.env_python()), str(filename)]
