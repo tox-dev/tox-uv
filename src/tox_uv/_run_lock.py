@@ -2,15 +2,22 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Literal, Set, cast  # noqa: UP035
 
 from tox.execute.request import StdinSource
+from tox.report import HandledError
 from tox.tox_env.python.package import SdistPackage, WheelPackage
 from tox.tox_env.python.runner import add_extras_to_env, add_skip_missing_interpreters_to_core
 from tox.tox_env.runner import RunToxEnv
 
 from ._venv import UvVenv
+
+if sys.version_info >= (3, 11):  # pragma: no cover (py311+)
+    import tomllib
+else:  # pragma: no cover (py311+)
+    import tomli as tomllib
 
 if TYPE_CHECKING:
     from tox.tox_env.package import Package
@@ -64,7 +71,7 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
         )
         add_skip_missing_interpreters_to_core(self.core, self.options)
 
-    def _setup_env(self) -> None:
+    def _setup_env(self) -> None:  # noqa: C901
         super()._setup_env()
         install_pkg = getattr(self.options, "install_pkg", None)
         if not getattr(self.options, "skip_uv_sync", False):
@@ -86,7 +93,17 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
             if self.options.verbosity > 3:  # noqa: PLR2004
                 cmd.append("-v")
             if package == "wheel":
-                cmd.append("--no-editable")
+                # need the package name here but we don't have the packaging infrastructure -> read from pyproject.toml
+                project_file = self.core["tox_root"] / "pyproject.toml"
+                name = None
+                if project_file.exists():
+                    with project_file.open("rb") as file_handler:
+                        raw = tomllib.load(file_handler)
+                    name = raw.get("project", {}).get("name")
+                if name is None:
+                    msg = "Could not detect project name"
+                    raise HandledError(msg)
+                cmd.extend(("--no-editable", "--reinstall-package", name))
             for group in groups:
                 cmd.extend(("--group", group))
             cmd.extend(self.conf["uv_sync_flags"])

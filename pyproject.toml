@@ -79,9 +79,6 @@ build.targets.sdist.include = [
 ]
 version.source = "vcs"
 
-[tool.black]
-line-length = 120
-
 [tool.ruff]
 line-length = 120
 format.preview = true
@@ -128,6 +125,10 @@ count = true
 [tool.pyproject-fmt]
 max_supported_python = "3.13"
 
+[tool.pytest.ini_options]
+norecursedirs = "tests/data/*"
+verbosity_assertions = 2
+
 [tool.coverage]
 html.show_contexts = true
 html.skip_covered = false
@@ -162,6 +163,3 @@ overrides = [
     "uv.*",
   ], ignore_missing_imports = true },
 ]
-
-[tool.uv]
-cache-keys = [ { file = "pyproject.toml" }, { git = true } ]
