@@ -491,14 +491,18 @@ def test_skip_uv_sync(tox_project: ToxProjectCreator, monkeypatch: pytest.Monkey
     assert calls == expected
 
 
-def test_skip_uv_package_wheel(tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_uv_package_wheel(tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("UV_PYTHON_PREFERENCE", raising=False)
     project = tox_project({
         "tox.toml": """
-    [env_run_base]
-    runner = "uv-venv-lock-runner"
-    package = "wheel"
-    """
+            [env_run_base]
+            runner = "uv-venv-lock-runner"
+            package = "wheel"
+            """,
+        "pyproject.toml": """
+            [project]
+            name = "demo"
+            """,
     })
     execute_calls = project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
     result = project.run("run", "--notest")
@@ -532,12 +536,30 @@ def test_skip_uv_package_wheel(tox_project: ToxProjectCreator, monkeypatch: pyte
                 "--python-preference",
                 "system",
                 "--no-editable",
+                "--reinstall-package",
+                "demo",
                 "-p",
                 sys.executable,
             ],
         ),
     ]
     assert calls == expected
+
+
+def test_uv_package_wheel_no_pyproject(tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("UV_PYTHON_PREFERENCE", raising=False)
+    project = tox_project({
+        "tox.toml": """
+            [env_run_base]
+            runner = "uv-venv-lock-runner"
+            package = "wheel"
+            """,
+    })
+    project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
+
+    result = project.run("run", "--notest")
+
+    result.assert_failed()
 
 
 def test_skip_uv_package_skip(tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch) -> None:
