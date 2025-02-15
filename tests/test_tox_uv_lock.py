@@ -50,7 +50,7 @@ def test_uv_lock_list_dependencies_command(tox_project: ToxProjectCreator) -> No
             [
                 "uv",
                 "sync",
-                "--frozen",
+                "--locked",
                 "--python-preference",
                 "system",
                 "--extra",
@@ -112,7 +112,7 @@ def test_uv_lock_command(tox_project: ToxProjectCreator, verbose: str) -> None:
             [
                 "uv",
                 "sync",
-                "--frozen",
+                "--locked",
                 "--python-preference",
                 "system",
                 "--extra",
@@ -162,7 +162,7 @@ def test_uv_lock_with_default_groups(tox_project: ToxProjectCreator) -> None:
                 str(project.path / ".tox" / "py"),
             ],
         ),
-        ("py", "uv-sync", ["uv", "sync", "--frozen", "--python-preference", "system", "-v", "-p", sys.executable]),
+        ("py", "uv-sync", ["uv", "sync", "--locked", "--python-preference", "system", "-v", "-p", sys.executable]),
     ]
     assert calls == expected
 
@@ -212,7 +212,7 @@ def test_uv_lock_with_install_pkg(tox_project: ToxProjectCreator, name: str) -> 
             [
                 "uv",
                 "sync",
-                "--frozen",
+                "--locked",
                 "--python-preference",
                 "system",
                 "--no-install-project",
@@ -269,7 +269,7 @@ def test_uv_sync_extra_flags(tox_project: ToxProjectCreator) -> None:
             [
                 "uv",
                 "sync",
-                "--frozen",
+                "--locked",
                 "--python-preference",
                 "system",
                 "--no-editable",
@@ -322,7 +322,7 @@ def test_uv_sync_extra_flags_toml(tox_project: ToxProjectCreator) -> None:
             [
                 "uv",
                 "sync",
-                "--frozen",
+                "--locked",
                 "--python-preference",
                 "system",
                 "--no-editable",
@@ -375,7 +375,7 @@ def test_uv_sync_dependency_groups(tox_project: ToxProjectCreator) -> None:
             [
                 "uv",
                 "sync",
-                "--frozen",
+                "--locked",
                 "--python-preference",
                 "system",
                 "--no-default-groups",
@@ -439,7 +439,7 @@ def test_uv_sync_uv_python_preference(
             [
                 "uv",
                 "sync",
-                "--frozen",
+                "--locked",
                 *injected,
                 "--no-default-groups",
                 "--group",
@@ -532,7 +532,7 @@ def test_uv_package_wheel(tox_project: ToxProjectCreator, monkeypatch: pytest.Mo
             [
                 "uv",
                 "sync",
-                "--frozen",
+                "--locked",
                 "--python-preference",
                 "system",
                 "--no-editable",
@@ -599,7 +599,7 @@ def test_skip_uv_package_skip(tox_project: ToxProjectCreator, monkeypatch: pytes
             [
                 "uv",
                 "sync",
-                "--frozen",
+                "--locked",
                 "--python-preference",
                 "system",
                 "--no-install-project",

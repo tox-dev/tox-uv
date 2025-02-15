@@ -78,7 +78,7 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
             cmd = [
                 "uv",
                 "sync",
-                "--frozen",
+                "--locked",
             ]
             if self.conf["uv_python_preference"] != "none":
                 cmd.extend(("--python-preference", self.conf["uv_python_preference"]))
