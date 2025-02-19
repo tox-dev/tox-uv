@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import itertools
 import logging
 from collections import defaultdict
 from collections.abc import Sequence
@@ -15,6 +16,8 @@ from tox.tox_env.python.package import EditableLegacyPackage, EditablePackage, S
 from tox.tox_env.python.pip.pip_install import Pip
 from tox.tox_env.python.pip.req_file import PythonDeps
 from uv import find_uv_bin
+
+from ._package_types import UvFromDirEditablePackage, UvFromDirPackage
 
 if TYPE_CHECKING:
     from tox.config.main import Config
@@ -94,7 +97,7 @@ class UvInstaller(Pip):
             _LOGGER.warning("uv cannot install %r", arguments)  # pragma: no cover
             raise SystemExit(1)  # pragma: no cover
 
-    def _install_list_of_deps(  # noqa: C901
+    def _install_list_of_deps(  # noqa: C901, PLR0912
         self,
         arguments: Sequence[
             Requirement | WheelPackage | SdistPackage | EditableLegacyPackage | EditablePackage | PathPackage
@@ -114,6 +117,12 @@ class UvInstaller(Pip):
             elif isinstance(arg, EditableLegacyPackage):
                 groups["req"].extend(str(i) for i in arg.deps)
                 groups["dev_pkg"].append(str(arg.path))
+            elif isinstance(arg, UvFromDirPackage):
+                extras_suffix = f"[{','.join(arg.extras)}]" if arg.extras else ""
+                groups["pkg_from_dir"].append(f"{arg.path}{extras_suffix}")
+            elif isinstance(arg, UvFromDirEditablePackage):
+                extras_suffix = f"[{','.join(arg.extras)}]" if arg.extras else ""
+                groups["dev_pkg_from_dir"].append(f"{arg.path}{extras_suffix}")
             else:  # pragma: no branch
                 _LOGGER.warning("uv install %r", arg)  # pragma: no cover
                 raise SystemExit(1)  # pragma: no cover
@@ -129,7 +138,13 @@ class UvInstaller(Pip):
                 new_deps = sorted(set(groups["req"]) - set(old or []))
                 if new_deps:  # pragma: no branch
                     self._execute_installer(new_deps, req_of_type)
-        install_args = ["--reinstall", "--no-deps"]
+        install_args = ["--reinstall"]
+        if groups["pkg_from_dir"]:
+            self._execute_installer(install_args + groups["pkg_from_dir"], of_type)
+        if groups["dev_pkg_from_dir"]:
+            requirements = list(itertools.chain.from_iterable(("-e", entry) for entry in groups["dev_pkg_from_dir"]))
+            self._execute_installer(install_args + requirements, of_type)
+        install_args.append("--no-deps")
         if groups["pkg"]:
             self._execute_installer(install_args + groups["pkg"], of_type)
         if groups["dev_pkg"]:

@@ -32,6 +32,10 @@ class UvVenvRunner(UvVenv, PythonRun):
             return "skip"
         return super().default_pkg_type
 
+    @property
+    def _package_types(self) -> tuple[str, ...]:
+        return (*super()._package_types, "from-dir", "from-dir-editable")
+
 
 __all__ = [
     "UvVenvRunner",

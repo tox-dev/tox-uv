@@ -98,7 +98,17 @@ Therefore, options like `deps` are ignored (and all others
 
 ### `package`
 
-How to install the source tree package, one of `wheel`, `editable` or `skip`. By default will do `editable`.
+How to install the source tree package, one of:
+- `wheel`
+- `editable`
+- `skip`
+- `from-dir`
+- `from-dir-editable`
+
+By default will do `editable`.
+
+The latter two options delegate to `uv`'s built-in packager and dependency resolver,
+and will respect `[tool.uv.sources]` in `pyproject.toml`
 
 ### `extras`
 
