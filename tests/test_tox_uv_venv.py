@@ -10,11 +10,13 @@ import sys
 from configparser import ConfigParser
 from importlib.metadata import version
 from typing import TYPE_CHECKING, get_args
+from unittest import mock
 
 import pytest
 import tox.tox_env.errors
+from tox.tox_env.python.api import PythonInfo, VersionInfo
 
-from tox_uv._venv import PythonPreference
+from tox_uv._venv import PythonPreference, UvVenv
 
 if TYPE_CHECKING:
     from tox.pytest import ToxProjectCreator
@@ -420,3 +422,91 @@ def test_uv_pip_constraints_no(tox_project: ToxProjectCreator) -> None:
         "Found PIP_CONSTRAINTS defined, you may want to also define UV_CONSTRAINT to match pip behavior."
         not in result.out
     )
+
+
+class _TestUvVenv(UvVenv):
+    @staticmethod
+    def id() -> str:
+        return "uv-venv-test"  # pragma: no cover
+
+    def set_base_python(self, python_info: PythonInfo) -> None:
+        self._base_python_searched = True
+        self._base_python = python_info
+
+    def get_python_info(self, base_python: str) -> PythonInfo | None:
+        return self._get_python([base_python])
+
+
+@pytest.mark.parametrize(
+    ("base_python", "architecture"), [("python3.11", None), ("python3.11-32", 32), ("python3.11-64", 64)]
+)
+def test_get_python_architecture(base_python: str, architecture: int | None) -> None:
+    uv_venv = _TestUvVenv(create_args=mock.Mock())
+    python_info = uv_venv.get_python_info(base_python)
+    assert python_info is not None
+    assert python_info.extra["architecture"] == architecture
+
+
+def test_env_version_spec_no_architecture() -> None:
+    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+    python_info = PythonInfo(
+        implementation="cpython",
+        version_info=VersionInfo(
+            major=3,
+            minor=11,
+            micro=9,
+            releaselevel="",
+            serial=0,
+        ),
+        version="",
+        is_64=True,
+        platform="win32",
+        extra={"architecture": None},
+    )
+    uv_venv.set_base_python(python_info)
+    with mock.patch("sys.version_info", (0, 0, 0)):  # prevent picking sys.executable
+        assert uv_venv.env_version_spec() == "cpython3.11"
+
+
+@pytest.mark.parametrize("architecture", [32, 64])
+def test_env_version_spec_architecture_configured(architecture: int) -> None:
+    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+    python_info = PythonInfo(
+        implementation="cpython",
+        version_info=VersionInfo(
+            major=3,
+            minor=11,
+            micro=9,
+            releaselevel="",
+            serial=0,
+        ),
+        version="",
+        is_64=architecture == 64,
+        platform="win32",
+        extra={"architecture": architecture},
+    )
+    uv_venv.set_base_python(python_info)
+    uv_arch = {32: "x86", 64: "x86_64"}[architecture]
+    assert uv_venv.env_version_spec() == f"cpython-3.11-windows-{uv_arch}-none"
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="architecture configuration only on Windows")
+def test_env_version_spec_architecture_configured_overwrite_sys_exe() -> None:  # pragma: win32 cover
+    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+    (major, minor) = sys.version_info[:2]
+    python_info = PythonInfo(
+        implementation="cpython",
+        version_info=VersionInfo(
+            major=major,
+            minor=minor,
+            micro=0,
+            releaselevel="",
+            serial=0,
+        ),
+        version="",
+        is_64=False,
+        platform="win32",
+        extra={"architecture": 32},
+    )
+    uv_venv.set_base_python(python_info)
+    assert uv_venv.env_version_spec() == f"cpython-{major}.{minor}-windows-x86-none"
