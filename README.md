@@ -54,7 +54,8 @@ This package will provide the following new tox environments:
 
 If you want for a tox environment to use `uv sync` with a `uv.lock` file you need to change for that tox environment the
 `runner` to `uv-venv-lock-runner`. Furthermore, should in such environments you use the `extras` config to instruct `uv`
-to install the specified extras, for example:
+to install the specified extras, for example (this example is for the `tox.ini`, for other formats see the documentation
+[here](https://tox.wiki/en/latest/config.html#discovery-and-file-types)):
 
 ```ini
 
