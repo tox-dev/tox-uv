@@ -464,7 +464,8 @@ def test_env_version_spec_no_architecture() -> None:
         extra={"architecture": None},
     )
     uv_venv.set_base_python(python_info)
-    assert uv_venv.env_version_spec() == "cpython3.11"
+    with mock.patch("sys.version_info", (0, 0, 0)):  # prevent picking sys.executable
+        assert uv_venv.env_version_spec() == "cpython3.11"
 
 
 @pytest.mark.parametrize("architecture", [32, 64])
