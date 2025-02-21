@@ -21,9 +21,9 @@ class UvVenvPep517Packager(Pep517VenvPackager, UvVenv):
     def perform_packaging(self, for_env: EnvConfigSet) -> list[Package]:
         of_type: str = for_env["package"]
         if of_type == UvPackage.KEY:
-            return [UvPackage(self.core["tox_root"], self.conf["extras"])]
+            return [UvPackage(self.core["tox_root"], for_env["extras"])]
         if of_type == UvEditablePackage.KEY:
-            return [UvEditablePackage(self.core["tox_root"], self.conf["extras"])]
+            return [UvEditablePackage(self.core["tox_root"], for_env["extras"])]
         return super().perform_packaging(for_env)
 
 

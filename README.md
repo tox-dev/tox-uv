@@ -100,11 +100,13 @@ Therefore, options like `deps` are ignored (and all others
 
 How to install the source tree package, must be one of:
 
+- `skip`,
 - `wheel`,
 - `editable` (default),
-- `skip`,
 - `uv` (use uv to install the project, rather than build wheel via `tox`),
 - `uv-editable` (use uv to install the project in editable mode, rather than build wheel via `tox`).
+
+You should use the latter two in case you need to use any non-standard features of `uv`, such as `tool.uv.sources`.
 
 ### `extras`
 
