@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from tox.tox_env.python.runner import PythonRun
 
+from ._package_types import UvEditablePackage, UvPackage
 from ._venv import UvVenv
 
 if TYPE_CHECKING:
@@ -31,6 +32,10 @@ class UvVenvRunner(UvVenv, PythonRun):
         if not (any((tox_root / i).exists() for i in ("pyproject.toml", "setup.py", "setup.cfg"))):
             return "skip"
         return super().default_pkg_type
+
+    @property
+    def _package_types(self) -> tuple[str, ...]:
+        return *super()._package_types, UvPackage.KEY, UvEditablePackage.KEY
 
 
 __all__ = [

@@ -24,7 +24,7 @@ def test_uv_package_use_default_from_file(tox_project: ToxProjectCreator) -> Non
 
 
 @pytest.mark.parametrize("with_dash", [True, False], ids=["name_dash", "name_underscore"])
-@pytest.mark.parametrize("package", ["sdist", "wheel", "editable"])
+@pytest.mark.parametrize("package", ["sdist", "wheel", "editable", "uv", "uv-editable"])
 def test_uv_package_artifact(
     tox_project: ToxProjectCreator, package: str, demo_pkg_inline: Path, with_dash: bool
 ) -> None:
