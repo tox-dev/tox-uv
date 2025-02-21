@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from tox.tox_env.python.runner import PythonRun
 
+from ._package_types import UvEditablePackage, UvPackage
 from ._venv import UvVenv
 
 if TYPE_CHECKING:
@@ -34,7 +35,7 @@ class UvVenvRunner(UvVenv, PythonRun):
 
     @property
     def _package_types(self) -> tuple[str, ...]:
-        return (*super()._package_types, "from-dir", "from-dir-editable")
+        return *super()._package_types, UvPackage.KEY, UvEditablePackage.KEY
 
 
 __all__ = [
