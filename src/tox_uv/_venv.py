@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import sys
+import sysconfig
 from abc import ABC
 from functools import cached_property
 from importlib.resources import as_file, files
@@ -131,6 +132,7 @@ class UvVenv(Python, ABC):
                     is_64=sys.maxsize > 2**32,
                     platform=sys.platform,
                     extra={},
+                    free_threaded=sysconfig.get_config_var("Py_GIL_DISABLED") == 1,
                 )
             base_path = Path(base)
             if base_path.is_absolute():
@@ -142,6 +144,7 @@ class UvVenv(Python, ABC):
                     is_64=info.architecture == 64,  # noqa: PLR2004
                     platform=info.platform,
                     extra={"executable": base},
+                    free_threaded=info.free_threaded,
                 )
             spec = PythonSpec.from_string_spec(base)
             return PythonInfo(
@@ -157,6 +160,7 @@ class UvVenv(Python, ABC):
                 is_64=spec.architecture == 64,  # noqa: PLR2004
                 platform=sys.platform,
                 extra={"architecture": spec.architecture},
+                free_threaded=spec.free_threaded,
             )
 
         return None  # pragma: no cover
@@ -256,25 +260,28 @@ class UvVenv(Python, ABC):
         imp = self.base_python.impl_lower
         executable = self.base_python.extra.get("executable")
         architecture = self.base_python.extra.get("architecture")
+        free_threaded = self.base_python.free_threaded
         if executable:
             version_spec = str(executable)
         elif (
             architecture is None
             and (base.major, base.minor) == sys.version_info[:2]
             and (sys.implementation.name.lower() == imp)
+            and ((sysconfig.get_config_var("Py_GIL_DISABLED") == 1) == free_threaded)
         ):
             version_spec = sys.executable
         else:
             uv_imp = imp or ""
+            free_threaded_tag = "+freethreaded" if free_threaded else ""
             if not base.major:
                 version_spec = f"{uv_imp}"
             elif not base.minor:
-                version_spec = f"{uv_imp}{base.major}"
+                version_spec = f"{uv_imp}{base.major}{free_threaded_tag}"
             elif architecture is not None and self.base_python.platform == "win32":
                 uv_arch = {32: "x86", 64: "x86_64"}[architecture]
-                version_spec = f"{uv_imp}-{base.major}.{base.minor}-windows-{uv_arch}-none"
+                version_spec = f"{uv_imp}-{base.major}.{base.minor}{free_threaded_tag}-windows-{uv_arch}-none"
             else:
-                version_spec = f"{uv_imp}{base.major}.{base.minor}"
+                version_spec = f"{uv_imp}{base.major}.{base.minor}{free_threaded_tag}"
         return version_spec
 
     @cached_property
