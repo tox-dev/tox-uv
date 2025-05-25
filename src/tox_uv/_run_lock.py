@@ -82,6 +82,8 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
             ]
             if self.conf["uv_python_preference"] != "none":
                 cmd.extend(("--python-preference", self.conf["uv_python_preference"]))
+            if self.conf["uv_resolution"]:
+                cmd.extend(("--resolution", self.conf["uv_resolution"]))
             for extra in cast("set[str]", sorted(self.conf["extras"])):
                 cmd.extend(("--extra", extra))
             groups = sorted(self.conf["dependency_groups"])
