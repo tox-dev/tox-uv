@@ -447,6 +447,14 @@ def test_get_python_architecture(base_python: str, architecture: int | None) -> 
     assert python_info.extra["architecture"] == architecture
 
 
+@pytest.mark.parametrize(("base_python", "is_free_threaded"), [("py313", False), ("py313t", True)])
+def test_get_python_free_threaded(base_python: str, is_free_threaded: int | None) -> None:
+    uv_venv = _TestUvVenv(create_args=mock.Mock())
+    python_info = uv_venv.get_python_info(base_python)
+    assert python_info is not None
+    assert python_info.free_threaded == is_free_threaded
+
+
 def test_env_version_spec_no_architecture() -> None:
     uv_venv = _TestUvVenv(create_args=mock.MagicMock())
     python_info = PythonInfo(
@@ -510,3 +518,25 @@ def test_env_version_spec_architecture_configured_overwrite_sys_exe() -> None:  
     )
     uv_venv.set_base_python(python_info)
     assert uv_venv.env_version_spec() == f"cpython-{major}.{minor}-windows-x86-none"
+
+
+def test_env_version_spec_free_threaded() -> None:
+    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+    python_info = PythonInfo(
+        implementation="cpython",
+        version_info=VersionInfo(
+            major=3,
+            minor=13,
+            micro=3,
+            releaselevel="",
+            serial=0,
+        ),
+        version="",
+        is_64=True,
+        platform="win32",
+        extra={"architecture": None},
+        free_threaded=True,
+    )
+    uv_venv.set_base_python(python_info)
+    with mock.patch("sys.version_info", (0, 0, 0)):  # prevent picking sys.executable
+        assert uv_venv.env_version_spec() == "cpython3.13+freethreaded"
