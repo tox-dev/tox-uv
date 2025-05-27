@@ -99,3 +99,27 @@ def test_uv_install_with_resolution_strategy_custom_install_cmd(tox_project: Tox
     result.assert_success()
 
     assert execute_calls.call_args[0][3].cmd[2:] == ["install", "tomli>=2.0.1", "--resolution", "lowest-direct"]
+
+
+def test_uv_install_with_resolution_strategy_and_pip_pre(tox_project: ToxProjectCreator) -> None:
+    project = tox_project({
+        "tox.ini": """
+    [testenv]
+    deps = tomli>=2.0.1
+    package = skip
+    uv_resolution = lowest-direct
+    pip_pre = true
+    """
+    })
+    execute_calls = project.patch_execute(lambda r: 0 if "install" in r.run_id else None)
+    result = project.run("-vv")
+    result.assert_success()
+    assert execute_calls.call_args[0][3].cmd[2:] == [
+        "install",
+        "--prerelease",
+        "allow",
+        "--resolution",
+        "lowest-direct",
+        "tomli>=2.0.1",
+        "-v",
+    ]

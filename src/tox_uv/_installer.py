@@ -78,14 +78,12 @@ class UvInstaller(Pip):
             if uv_resolution:
                 install_command.extend(("--resolution", uv_resolution))
         else:
+            opts: list[str] = []
             if pip_pre:
-                install_command[opts_at] = "--prerelease"
-                install_command.insert(opts_at + 1, "allow")
+                opts.extend(("--prerelease", "allow"))
             if uv_resolution:
-                install_command[opts_at] = "--resolution"
-                install_command.insert(opts_at + 1, uv_resolution)
-            if not (pip_pre or uv_resolution):
-                install_command.pop(opts_at)
+                opts.extend(("--resolution", uv_resolution))
+            install_command[opts_at : opts_at + 1] = opts
         return cmd
 
     def install(self, arguments: Any, section: str, of_type: str) -> None:  # noqa: ANN401
