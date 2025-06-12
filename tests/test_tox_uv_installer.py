@@ -36,6 +36,21 @@ def test_uv_install_with_pre(tox_project: ToxProjectCreator) -> None:
     result.assert_success()
 
 
+def test_uv_install_with_pre_custom_install_cmd_using_original_pip(tox_project: ToxProjectCreator) -> None:
+    project = tox_project({
+        "tox.ini": """
+    [testenv]
+    deps = tomli
+    pip_pre = true
+    package = skip
+    install_command = python3 -m pip install {packages}
+    uv_seed = true
+    """
+    })
+    result = project.run("-vv")
+    result.assert_success()
+
+
 def test_uv_install_with_pre_custom_install_cmd(tox_project: ToxProjectCreator) -> None:
     project = tox_project({
         "tox.ini": """

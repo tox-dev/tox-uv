@@ -27,8 +27,9 @@ repos:
     rev: "v0.11.13"
     hooks:
       - id: ruff-format
-      - id: ruff
-        args: ["--fix", "--unsafe-fixes", "--exit-non-zero-on-fix"]
+        alias: ruff
+      - id: ruff-check
+        alias: ruff
   - repo: https://github.com/rbubley/mirrors-prettier
     rev: "v3.5.3"
     hooks:
