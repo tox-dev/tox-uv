@@ -115,6 +115,7 @@ lint.isort = { known-first-party = [
 ], required-imports = [
   "from __future__ import annotations",
 ] }
+lint.pydocstyle.convention = "google"
 lint.preview = true
 
 [tool.codespell]
