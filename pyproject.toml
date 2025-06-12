@@ -96,6 +96,7 @@ lint.ignore = [
   "D301",   #  Use `r"""` if any backslashes in a docstring
   "D401",   # First line of docstring should be in imperative mood
   "DOC201", # no support for sphinx
+  "DOC501", # no support for sphinx https://github.com/astral-sh/ruff/issues/12520
   "ISC001", # Conflict with formatter
   "S104",   # Possible binding to all interface
 ]
