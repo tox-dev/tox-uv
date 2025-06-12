@@ -33,6 +33,7 @@ class UvInstaller(Pip):
 
     def __init__(self, tox_env: Python, with_list_deps: bool = True) -> None:  # noqa: FBT001, FBT002
         self._with_list_deps = with_list_deps
+        self._pkg_manager = "uv"
         super().__init__(tox_env)
 
     def freeze_cmd(self) -> list[str]:
@@ -67,6 +68,21 @@ class UvInstaller(Pip):
         return Command(cmd)
 
     def post_process_install_command(self, cmd: Command) -> Command:
+        """Returns uv or pip based on current config.
+
+        Returns:
+            A string, uv or pip currently.
+        Raises:
+            RuntimeError: if unexpected a data is found in config.
+        """
+        install_cmd = cmd.args
+        # uv pip command does not have same option named for reinstall and we want to allow users that use original
+        # 'pip' in their install_command to still be able to make use of it.
+        if len(install_cmd) < 1 or not isinstance(install_cmd[0], str):  # pragma: no cover
+            msg = f"Unable to determine install command. {install_cmd}"
+            raise RuntimeError(msg)
+        self._pkg_manager = "uv" if install_cmd[0].endswith("uv") else "pip"
+
         install_command = cmd.args
         pip_pre: bool = self._env.conf["pip_pre"]
         uv_resolution: str = self._env.conf["uv_resolution"]
@@ -74,7 +90,7 @@ class UvInstaller(Pip):
             opts_at = install_command.index("{opts}")
         except ValueError:
             if pip_pre:
-                install_command.extend(("--prerelease", "allow"))
+                install_command.extend(("--prerelease", "allow") if self._pkg_manager == "uv" else ("--pre",))
             if uv_resolution:
                 install_command.extend(("--resolution", uv_resolution))
         else:
@@ -136,7 +152,7 @@ class UvInstaller(Pip):
                 new_deps = sorted(set(groups["req"]) - set(old or []))
                 if new_deps:  # pragma: no branch
                     self._execute_installer(new_deps, req_of_type)
-        install_args = ["--reinstall"]
+        install_args = ["--reinstall"] if self._pkg_manager == "uv" else ["--force-reinstall"]
         if groups["uv"]:
             self._execute_installer(install_args + groups["uv"], of_type)
         if groups["uv_editable"]:
