@@ -15,7 +15,8 @@ from tox.tox_env.errors import Fail, Recreate
 from tox.tox_env.python.package import EditableLegacyPackage, EditablePackage, SdistPackage, WheelPackage
 from tox.tox_env.python.pip.pip_install import Pip
 from tox.tox_env.python.pip.req_file import PythonDeps
-from uv import find_uv_bin
+
+from tox_uv._util import find_uv_bin
 
 from ._package_types import UvEditablePackage, UvPackage
 
