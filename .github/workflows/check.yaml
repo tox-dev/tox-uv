@@ -5,6 +5,7 @@ on:
     branches: ["main"]
     tags-ignore: ["**"]
   pull_request:
+  pull_request_target:
   schedule:
     - cron: "0 8 * * *"
 
@@ -14,7 +15,8 @@ concurrency:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os || 'ubuntu-latest' }}
+    name: ${{ matrix.env }}${{ matrix.suffix || ''}}
     strategy:
       fail-fast: false
       matrix:
@@ -28,6 +30,17 @@ jobs:
           - type
           - dev
           - pkg_meta
+        os:
+          - ubuntu-latest
+        suffix:
+          - ""
+        include:
+          - env: "3.13"
+            os: windows-latest
+            suffix: -windows
+          - env: "3.13"
+            os: macos-latest
+            suffix: -macos
     steps:
       - uses: actions/checkout@v4
         with:
@@ -45,10 +58,12 @@ jobs:
       - name: Setup test suite
         run: tox run -vv --notest --skip-missing-interpreters false -e ${{ matrix.env }}
         env:
+          FORCE_COLOR: "1"
           UV_PYTHON_PREFERENCE: "only-managed"
       - name: Run test suite
         run: tox run --skip-pkg-install -e ${{ matrix.env }}
         env:
+          FORCE_COLOR: "1"
           PYTEST_ADDOPTS: "-vv --durations=20"
           DIFF_AGAINST: HEAD
           UV_PYTHON_PREFERENCE: "only-managed"
