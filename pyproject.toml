@@ -80,6 +80,8 @@ version.source = "vcs"
 
 [tool.ruff]
 line-length = 120
+fix = true
+unsafe-fixes = true
 format.preview = true
 format.docstring-code-line-length = 100
 format.docstring-code-format = true
