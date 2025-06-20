@@ -4,7 +4,8 @@ import sys
 from typing import TYPE_CHECKING
 
 import pytest
-from uv import find_uv_bin
+
+from tox_uv._util import find_uv_bin
 
 if TYPE_CHECKING:
     from tox.pytest import ToxProjectCreator

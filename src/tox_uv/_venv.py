@@ -20,8 +20,9 @@ from tox.execute.request import StdinSource
 from tox.tox_env.errors import Skip
 from tox.tox_env.python.api import Python, PythonInfo, VersionInfo
 from tox.tox_env.python.virtual_env.api import VirtualEnv
-from uv import find_uv_bin
 from virtualenv.discovery.py_spec import PythonSpec
+
+from tox_uv._util import find_uv_bin
 
 from ._installer import UvInstaller
 
