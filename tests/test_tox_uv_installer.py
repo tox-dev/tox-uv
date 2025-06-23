@@ -123,3 +123,29 @@ def test_uv_install_with_resolution_strategy_and_pip_pre(tox_project: ToxProject
         "tomli>=2.0.1",
         "-v",
     ]
+
+
+def test_uv_install_broken_venv(tox_project: ToxProjectCreator) -> None:
+    """Tests ability to detect that a venv a with broken symlink to python interpreter is recreated."""
+    project = tox_project({
+        "tox.ini": """
+    [testenv]
+    skip_install = true
+    install = false
+    commands = python3 --version
+    """
+    })
+    result = project.run("run", "-v")
+    result.assert_success()
+    assert "recreate env because existing venv is broken" not in result.out
+    # break the environment
+    bin_dir = project.path / ".tox" / "py" / "bin"
+    bin_dir.mkdir(parents=True, exist_ok=True)
+    for filename in ("python", "python3"):
+        path = bin_dir / filename
+        path.unlink()
+        path.symlink_to("/broken-location")
+    # run again and ensure we did run the repair bits
+    result = project.run("run", "-v")
+    result.assert_success()
+    assert "recreate env because existing venv is broken" in result.out
