@@ -87,6 +87,12 @@ class UvInstaller(Pip):
         return cmd
 
     def install(self, arguments: Any, section: str, of_type: str) -> None:  # noqa: ANN401
+        # can happen if the original python was upgraded to a newer version and
+        # the symlinks become orphan.
+        if not self._env.env_python().resolve().is_file():
+            msg = "existing venv is broken"
+            raise Recreate(msg)
+
         if isinstance(arguments, PythonDeps):
             self._install_requirement_file(arguments, section, of_type)
         elif isinstance(arguments, Sequence):  # pragma: no branch
