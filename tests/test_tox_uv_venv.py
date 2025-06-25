@@ -99,6 +99,10 @@ def test_uv_venv_spec_major_only(tox_project: ToxProjectCreator) -> None:
     result.assert_success()
 
 
+@pytest.mark.xfail(
+    sys.platform == "win32",
+    reason="Bug https://github.com/tox-dev/tox-uv/issues/193 https://github.com/astral-sh/uv/issues/14239",
+)
 @pytest.mark.parametrize(
     ("pypy", "expected_uv_pypy"),
     [
@@ -133,7 +137,7 @@ def test_uv_venv_spec_pypy(
     project = tox_project({"tox.ini": f"[tox]\nenv_list = {pypy}"})
     try:
         result = project.run("config", "-vv")
-    except tox.tox_env.errors.Skip:
+    except tox.tox_env.errors.Skip:  # pragma: win32 no cover
         stdout, _ = capfd.readouterr()
     else:  # pragma: no cover (PyPy might not be available on the system)
         stdout = result.out
@@ -208,15 +212,25 @@ def other_interpreter_exe() -> pathlib.Path:  # pragma: no cover
     return base_python
 
 
-def test_uv_venv_spec_abs_path(tox_project: ToxProjectCreator, other_interpreter_exe: pathlib.Path) -> None:
+@pytest.mark.xfail(
+    sys.platform == "win32",
+    reason="Bug https://github.com/tox-dev/tox-uv/issues/193 https://github.com/astral-sh/uv/issues/14239",
+)
+def test_uv_venv_spec_abs_path(
+    tox_project: ToxProjectCreator, other_interpreter_exe: pathlib.Path
+) -> None:  # pragma: win32 no cover
     project = tox_project({"tox.ini": f"[testenv]\npackage=skip\nbase_python={other_interpreter_exe}"})
     result = project.run("-vv")
     result.assert_success()
 
 
+@pytest.mark.xfail(
+    sys.platform == "win32",
+    reason="Bug https://github.com/tox-dev/tox-uv/issues/193 https://github.com/astral-sh/uv/issues/14239",
+)
 def test_uv_venv_spec_abs_path_conflict_ver(
     tox_project: ToxProjectCreator, other_interpreter_exe: pathlib.Path
-) -> None:
+) -> None:  # pragma: win32 no cover
     # py27 is long gone, but still matches the testenv capture regex, so we know it will fail
     project = tox_project({"tox.ini": f"[testenv:py27]\npackage=skip\nbase_python={other_interpreter_exe}"})
     result = project.run("-vv", "-e", "py27")
@@ -224,9 +238,13 @@ def test_uv_venv_spec_abs_path_conflict_ver(
     assert f"failed with env name py27 conflicting with base python {other_interpreter_exe}" in result.out
 
 
+@pytest.mark.xfail(
+    sys.platform == "win32",
+    reason="Bug https://github.com/tox-dev/tox-uv/issues/193 https://github.com/astral-sh/uv/issues/14239",
+)
 def test_uv_venv_spec_abs_path_conflict_impl(
     tox_project: ToxProjectCreator, other_interpreter_exe: pathlib.Path
-) -> None:
+) -> None:  # pragma: win32 no cover
     env = "pypy" if platform.python_implementation() == "CPython" else "cpython"
     project = tox_project({"tox.ini": f"[testenv:{env}]\npackage=skip\nbase_python={other_interpreter_exe}"})
     result = project.run("-vv", "-e", env)

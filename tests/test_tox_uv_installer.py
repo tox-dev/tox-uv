@@ -132,18 +132,23 @@ def test_uv_install_broken_venv(tox_project: ToxProjectCreator) -> None:
     [testenv]
     skip_install = true
     install = false
-    commands = python3 --version
+    commands = {env_python} --version
     """
     })
     result = project.run("run", "-v")
     result.assert_success()
     assert "recreate env because existing venv is broken" not in result.out
     # break the environment
-    bin_dir = project.path / ".tox" / "py" / "bin"
+    if sys.platform != "win32":  # pragma: win32 no cover
+        bin_dir = project.path / ".tox" / "py" / "bin"
+        executables = ("python", "python3")
+    else:  # pragma: win32 cover
+        bin_dir = project.path / ".tox" / "py" / "Scripts"
+        executables = ("python.exe", "pythonw.exe")
     bin_dir.mkdir(parents=True, exist_ok=True)
-    for filename in ("python", "python3"):
+    for filename in executables:
         path = bin_dir / filename
-        path.unlink()
+        path.unlink(missing_ok=True)
         path.symlink_to("/broken-location")
     # run again and ensure we did run the repair bits
     result = project.run("run", "-v")
