@@ -222,7 +222,7 @@ class UvVenv(Python, ABC):
         cmd.append(str(self.venv_dir))
         outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="venv", show=None)
 
-        if self.core["skip_missing_interpreters"] and outcome.exit_code == 1:
+        if self.core["skip_missing_interpreters"] and outcome.exit_code in {1, 2}:
             msg = f"could not find python interpreter with spec(s): {version_spec}"
             raise Skip(msg)
 
