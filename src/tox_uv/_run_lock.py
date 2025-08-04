@@ -96,7 +96,8 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
                 cmd.append("-v")
             if package == "wheel":
                 # need the package name here but we don't have the packaging infrastructure -> read from pyproject.toml
-                project_file = self.core["tox_root"] / "pyproject.toml"
+                root = self.package_root()
+                project_file = root / "pyproject.toml"
                 name = None
                 if project_file.exists():
                     with project_file.open("rb") as file_handler:
@@ -112,7 +113,14 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
             cmd.extend(("-p", self.env_version_spec()))
 
             show = self.options.verbosity > 2  # noqa: PLR2004
-            outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="uv-sync", show=show)
+            cwd = self.package_root()
+            outcome = self.execute(
+                cmd,
+                stdin=StdinSource.OFF,
+                run_id="uv-sync",
+                show=show,
+                cwd=cwd,
+            )
             outcome.assert_success()
         if install_pkg is not None:
             path = Path(install_pkg)

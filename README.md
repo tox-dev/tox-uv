@@ -168,6 +168,9 @@ overwritten by the VIRTUALENV_SYSTEM_SITE_PACKAGES environment variable. This fl
 We use `uv pip` to install packages into the virtual environment. The behavior of this can be configured via the
 following options:
 
+tox-uv resolves your project location based on the `package_root` setting. If that option is not defined, it will
+fall back to the `setupdir` value from `tox.ini`, matching how tox itself locates project files.
+
 ### `uv_resolution`
 
 This flag, set on a tox environment level, informs `uv` of the desired [resolution strategy]:

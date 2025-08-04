@@ -8,6 +8,7 @@ import os
 import sys
 import sysconfig
 from abc import ABC
+from configparser import ConfigParser
 from functools import cached_property
 from importlib.resources import as_file, files
 from pathlib import Path
@@ -309,6 +310,18 @@ class UvVenv(Python, ABC):
             platform=sys.platform,
             extra={},
         )
+
+    def package_root(self) -> Path:
+        try:
+            return self.core["package_root"]
+        except KeyError:
+            config = self.core["tox_root"] / "tox.ini"
+            if config.is_file():
+                parser = ConfigParser()
+                parser.read(config)
+                if parser.has_section("tox") and parser.has_option("tox", "setupdir"):
+                    return self.core["tox_root"] / parser.get("tox", "setupdir")
+            return self.core["tox_root"]
 
 
 __all__ = [
