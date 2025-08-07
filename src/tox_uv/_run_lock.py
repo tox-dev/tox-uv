@@ -64,6 +64,12 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
             desc="Additional flags to pass to uv sync (for flags not configurable via environment variables)",
         )
         self.conf.add_config(
+            keys=["uv_sync_locked"],
+            of_type=bool,
+            default=True,
+            desc="When set to 'false', it will remove `--locked` argument from 'uv sync' implicit arguments.",
+        )
+        self.conf.add_config(
             keys=["package"],
             of_type=Literal["editable", "wheel", "skip"],  # type: ignore[arg-type]
             default="editable",
@@ -71,15 +77,16 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
         )
         add_skip_missing_interpreters_to_core(self.core, self.options)
 
-    def _setup_env(self) -> None:  # noqa: C901
+    def _setup_env(self) -> None:  # noqa: C901,PLR0912
         super()._setup_env()
         install_pkg = getattr(self.options, "install_pkg", None)
         if not getattr(self.options, "skip_uv_sync", False):
             cmd = [
                 "uv",
                 "sync",
-                "--locked",
             ]
+            if self.conf["uv_sync_locked"]:
+                cmd.append("--locked")
             if self.conf["uv_python_preference"] != "none":
                 cmd.extend(("--python-preference", self.conf["uv_python_preference"]))
             if self.conf["uv_resolution"]:
