@@ -18,6 +18,7 @@ will get both the benefits (performance) or downsides (bugs) of `uv`.
   - [no_default_groups](#no_default_groups)
   - [dependency_groups](#dependency_groups)
   - [uv_sync_flags](#uv_sync_flags)
+  - [uv_sync_locked](#uv_sync_locked)
   - [External package support](#external-package-support)
 - [Environment creation](#environment-creation)
   - [uv_seed](#uv_seed)
@@ -131,6 +132,12 @@ installed into the environment you can do:
 ```ini
 uv_sync_flags = --no-editable, --inexact
 ```
+
+### `uv_sync_locked`
+
+By default tox-uv will call `uv sync` with `--locked` argument, which is incompatible with other arguments like
+`--prerelease` or `--upgrade ` that you might want to add to `uv_sync_flags` for some test scenarios. You can set this
+to `false` to avoid such conflicts.
 
 ### External package support
 
