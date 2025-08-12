@@ -42,7 +42,7 @@ jobs:
             os: macos-latest
             suffix: -macos
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Install the latest version of uv
