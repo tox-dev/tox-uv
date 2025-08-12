@@ -3,11 +3,17 @@
 from __future__ import annotations
 
 import logging
+import sys
 from collections import defaultdict
 from collections.abc import Sequence
+from functools import cached_property
 from itertools import chain
 from typing import TYPE_CHECKING, Any, Final
 
+if sys.version_info >= (3, 11):  # pragma: no cover (py311+)
+    import tomllib
+else:  # pragma: no cover (py311+)
+    import tomli as tomllib
 from packaging.requirements import Requirement
 from packaging.utils import parse_sdist_filename, parse_wheel_filename
 from tox.config.types import Command
@@ -101,6 +107,17 @@ class UvInstaller(Pip):
             _LOGGER.warning("uv cannot install %r", arguments)  # pragma: no cover
             raise SystemExit(1)  # pragma: no cover
 
+    @cached_property
+    def _sourced_pkg_names(self) -> set[str]:
+        pyproject_file = self._env.conf._conf.src_path.parent / "pyproject.toml"  # noqa: SLF001
+        if not pyproject_file.exists():  # pragma: no cover
+            return set()
+        with pyproject_file.open("rb") as file_handler:
+            pyproject = tomllib.load(file_handler)
+
+        sources = pyproject.get("tool", {}).get("uv", {}).get("sources", {})
+        return {key for key, val in sources.items() if val.get("workspace", False)}
+
     def _install_list_of_deps(  # noqa: C901, PLR0912
         self,
         arguments: Sequence[
@@ -114,12 +131,20 @@ class UvInstaller(Pip):
             if isinstance(arg, Requirement):  # pragma: no branch
                 groups["req"].append(str(arg))  # pragma: no cover
             elif isinstance(arg, (WheelPackage, SdistPackage, EditablePackage)):
-                groups["req"].extend(str(i) for i in arg.deps)
+                for pkg in arg.deps:
+                    if (
+                        isinstance(pkg, Requirement)
+                        and pkg.name in self._sourced_pkg_names
+                        and "." not in groups["uv_editable"]
+                    ):
+                        groups["uv_editable"].append(".")
+                        continue
+                    groups["req"].append(str(pkg))
                 parser = parse_sdist_filename if isinstance(arg, SdistPackage) else parse_wheel_filename
                 name, *_ = parser(arg.path.name)
                 groups["pkg"].append(f"{name}@{arg.path}")
             elif isinstance(arg, EditableLegacyPackage):
-                groups["req"].extend(str(i) for i in arg.deps)
+                groups["req"].extend(str(pkg) for pkg in arg.deps)
                 groups["dev_pkg"].append(str(arg.path))
             elif isinstance(arg, UvPackage):
                 extras_suffix = f"[{','.join(arg.extras)}]" if arg.extras else ""

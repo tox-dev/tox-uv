@@ -29,6 +29,16 @@ def demo_pkg_setuptools(root: Path) -> Path:
 
 
 @pytest.fixture(scope="session")
+def demo_pkg_workspace(root: Path) -> Path:
+    return root / "demo_pkg_workspace"
+
+
+@pytest.fixture(scope="session")
+def demo_pkg_no_pyproject(root: Path) -> Path:
+    return root / "demo_pkg_no_pyproject"
+
+
+@pytest.fixture(scope="session")
 def demo_pkg_inline(root: Path) -> Path:
     return root / "demo_pkg_inline"
 
