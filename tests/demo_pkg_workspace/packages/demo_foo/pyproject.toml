@@ -1,0 +1,20 @@
+[build-system]
+build-backend = "uv_build"
+requires = [ "uv-build>=0.8.9,<0.9" ]
+
+[project]
+name = "demo-foo"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [ { name = "Sorin Sbarnea", email = "sorin.sbarnea@gmail.com" } ]
+requires-python = ">=3.9"
+classifiers = [
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+dependencies = [ "demo-root" ]
