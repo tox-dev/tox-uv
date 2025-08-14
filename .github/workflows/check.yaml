@@ -31,15 +31,15 @@ jobs:
           - dev
           - pkg_meta
         os:
-          - ubuntu-latest
+          - ubuntu-24.04
         suffix:
           - ""
         include:
           - env: "3.13"
-            os: windows-latest
+            os: windows-2025
             suffix: -windows
           - env: "3.13"
-            os: macos-latest
+            os: macos-15
             suffix: -macos
     steps:
       - uses: actions/checkout@v5
