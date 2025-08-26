@@ -136,7 +136,7 @@ class UvVenv(Python, ABC):
                     free_threaded=sysconfig.get_config_var("Py_GIL_DISABLED") == 1,
                 )
             base_path = Path(base)
-            if base_path.is_absolute():
+            if base_path.is_absolute():  # pragma: win32 no cover
                 info = VirtualEnv.get_virtualenv_py_info(base_path)
                 return PythonInfo(
                     implementation=info.implementation,
@@ -174,7 +174,7 @@ class UvVenv(Python, ABC):
         :param path: the path investigated
         :return: the found spec
         """
-        return VirtualEnv.python_spec_for_path(path)
+        return VirtualEnv.python_spec_for_path(path)  # pragma: win32 no cover
 
     @property
     def uv(self) -> str:
@@ -248,10 +248,9 @@ class UvVenv(Python, ABC):
         suffix = ".exe" if sys.platform == "win32" else ""
         return self.env_bin_dir() / f"python{suffix}"
 
-    def env_site_package_dir(self) -> Path:
+    def env_site_package_dir(self) -> Path:  # pragma: win32 no cover
         if sys.platform == "win32":  # pragma: win32 cover
             return self.venv_dir / "Lib" / "site-packages"
-        # pragma: win32 no cover
         py = self._py_info
         impl = "pypy" if py.implementation == "pypy" else "python"
         return self.venv_dir / "lib" / f"{impl}{py.version_dot}" / "site-packages"
@@ -262,7 +261,7 @@ class UvVenv(Python, ABC):
         executable = self.base_python.extra.get("executable")
         architecture = self.base_python.extra.get("architecture")
         free_threaded = self.base_python.free_threaded
-        if executable:
+        if executable:  # pragma: win32 no cover
             version_spec = str(executable)
         elif (
             architecture is None
@@ -274,7 +273,7 @@ class UvVenv(Python, ABC):
         else:
             uv_imp = imp or ""
             free_threaded_tag = "+freethreaded" if free_threaded else ""
-            if not base.major:
+            if not base.major:  # pragma: win32 no cover
                 version_spec = f"{uv_imp}"
             elif not base.minor:
                 version_spec = f"{uv_imp}{base.major}{free_threaded_tag}"

@@ -231,13 +231,16 @@ def test_uv_lock_with_install_pkg(tox_project: ToxProjectCreator, name: str) -> 
 
 
 @pytest.mark.usefixtures("clear_python_preference_env_var")
-def test_uv_sync_extra_flags(tox_project: ToxProjectCreator) -> None:
+@pytest.mark.parametrize("uv_sync_locked", [True, False])
+def test_uv_sync_extra_flags(tox_project: ToxProjectCreator, uv_sync_locked: bool) -> None:
+    uv_sync_locked_str = str(uv_sync_locked).lower()
     project = tox_project({
-        "tox.ini": """
+        "tox.ini": f"""
     [testenv]
     runner = uv-venv-lock-runner
     no_default_groups = false
     uv_sync_flags = --no-editable, --inexact
+    uv_sync_locked = {uv_sync_locked_str}
     commands = python hello
     """
     })
@@ -269,7 +272,7 @@ def test_uv_sync_extra_flags(tox_project: ToxProjectCreator) -> None:
             [
                 "uv",
                 "sync",
-                "--locked",
+                *(["--locked"] if uv_sync_locked else []),
                 "--python-preference",
                 "system",
                 "--no-editable",

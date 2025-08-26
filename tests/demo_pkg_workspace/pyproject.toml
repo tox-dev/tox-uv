@@ -1,0 +1,28 @@
+[build-system]
+build-backend = "uv_build"
+requires = [ "uv-build>=0.8.9,<0.9" ]
+
+[project]
+name = "demo-root"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+# typing-extensions is not really used but we include it for testing the
+# branch coverage for deps that are not sourced.
+dependencies = [ "demo-foo", "typing-extensions" ]
+
+[tool.uv.sources]
+demo-foo = { workspace = true }
+demo-root = { workspace = true }
+
+[tool.uv.workspace]
+members = [ "packages/*" ]
