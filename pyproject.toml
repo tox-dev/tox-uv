@@ -40,10 +40,10 @@ dynamic = [
 ]
 dependencies = [
   "packaging>=25",
-  "tomli>=2.2.1; python_version < '3.11'",
-  "tox<5,>=4.30.2",
-  "typing-extensions>=4.15; python_version < '3.10'",
-  "uv<1,>=0.8.16",
+  "tomli>=2.2.1; python_version<'3.11'",
+  "tox>=4.30.2,<5",
+  "typing-extensions>=4.15; python_version<'3.10'",
+  "uv>=0.8.16,<1",
 ]
 urls.Changelog = "https://github.com/tox-dev/tox-uv/releases"
 urls.Documentation = "https://github.com/tox-dev/tox-uv#tox-uv"
