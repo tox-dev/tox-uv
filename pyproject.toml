@@ -1,7 +1,7 @@
 [build-system]
 build-backend = "hatchling.build"
 requires = [
-  "hatch-vcs>=0.4",
+  "hatch-vcs>=0.5",
   "hatchling>=1.27",
 ]
 
@@ -39,11 +39,11 @@ dynamic = [
   "version",
 ]
 dependencies = [
-  "packaging>=24.2",
-  "tomli>=2.2.1; python_version<'3.11'",
-  "tox>=4.26,<5",
-  "typing-extensions>=4.12.2; python_version<'3.10'",
-  "uv>=0.5.31,<1",
+  "packaging>=25",
+  "tomli>=2.2.1; python_version < '3.11'",
+  "tox<5,>=4.30.2",
+  "typing-extensions>=4.15; python_version < '3.10'",
+  "uv<1,>=0.8.16",
 ]
 urls.Changelog = "https://github.com/tox-dev/tox-uv/releases"
 urls.Documentation = "https://github.com/tox-dev/tox-uv#tox-uv"
@@ -62,14 +62,14 @@ dev = [
 test = [
   "covdefaults>=2.3",
   "devpi-process>=1.0.2",
-  "diff-cover>=9.2.2",
-  "pytest>=8.3.4",
-  "pytest-cov>=6",
-  "pytest-mock>=3.14",
+  "diff-cover>=9.6",
+  "pytest>=8.4.2",
+  "pytest-cov>=7",
+  "pytest-mock>=3.15",
 ]
-type = [ "mypy==1.15", "types-setuptools>=80.9.0.20250801", { include-group = "test" } ]
-lint = [ "pre-commit-uv>=4.1.4" ]
-pkg-meta = [ "check-wheel-contents>=0.6.1", "twine>=6.1", "uv>=0.5.31" ]
+type = [ "mypy==1.17.1", "types-setuptools>=80.9.0.20250822", { include-group = "test" } ]
+lint = [ "pre-commit-uv>=4.1.5" ]
+pkg-meta = [ "check-wheel-contents>=0.6.3", "twine>=6.2", "uv>=0.8.16" ]
 
 [tool.hatch]
 build.hooks.vcs.version-file = "src/tox_uv/version.py"
@@ -151,6 +151,7 @@ report.omit = [
 ]
 report.fail_under = 100
 run.parallel = true
+run.patch = [ "subprocess" ]
 run.plugins = [
   "covdefaults",
 ]
