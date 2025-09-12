@@ -28,7 +28,7 @@ class UvVenvRunner(UvVenv, PythonRun):
 
     @property
     def default_pkg_type(self) -> str:
-        package_root: Path = self.package_root()
+        package_root: Path = self.package_root
         if not (any((package_root / i).exists() for i in ("pyproject.toml", "setup.py", "setup.cfg"))):
             return "skip"
         return super().default_pkg_type
