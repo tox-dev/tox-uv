@@ -310,6 +310,7 @@ class UvVenv(Python, ABC):
             extra={},
         )
 
+    @cached_property
     def package_root(self) -> Path:
         try:
             return self.core["package_root"]
