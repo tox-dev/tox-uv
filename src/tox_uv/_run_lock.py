@@ -124,7 +124,7 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
         if install_pkg is not None:
             path = Path(install_pkg)
             pkg = (WheelPackage if path.suffix == ".whl" else SdistPackage)(path, deps=[])
-            self.installer.install([pkg], "install-pkg", of_type="external")
+            self._install([pkg], "install-pkg", of_type="external")
 
     @property
     def environment_variables(self) -> dict[str, str]:
