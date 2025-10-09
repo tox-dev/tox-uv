@@ -57,6 +57,25 @@ def test_uv_venv_preference_system_by_default(tox_project: ToxProjectCreator) ->
     assert got == "system"
 
 
+@pytest.mark.usefixtures("clear_python_preference_env_var")
+@pytest.mark.parametrize("env_var", ["UV_NO_MANAGED_PYTHON", "UV_MANAGED_PYTHON"])
+def test_uv_venv_preference_not_set_if_uv_no_managed_python(
+    tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch, env_var: str
+) -> None:
+    # --(no-)managed-python cannot be used together with --python-preference
+    project = tox_project({"tox.ini": "[testenv]"})
+    monkeypatch.setenv(env_var, "True")
+
+    result = project.run("c", "-k", "uv_python_preference")
+    result.assert_success()
+
+    parser = ConfigParser()
+    parser.read_string(result.out)
+    got = parser["testenv:py"]
+
+    assert got.get("uv_python_preference") == "none"
+
+
 def test_uv_venv_preference_override_via_env_var(
     tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch
 ) -> None:

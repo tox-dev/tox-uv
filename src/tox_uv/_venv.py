@@ -72,13 +72,20 @@ class UvVenv(Python, ABC):
             desc="create virtual environments that also have access to globally installed packages.",
         )
 
+        def uv_python_preference_default(conf: object, name: object) -> str:  # noqa: ARG001
+            return (
+                "none"
+                if {"UV_NO_MANAGED_PYTHON", "UV_MANAGED_PYTHON"} & set(os.environ)
+                else os.environ.get("UV_PYTHON_PREFERENCE", "system")
+            )
+
         # The cast(...) might seems superfluous but removing it makes mypy crash. The problem isy on tox typing side.
         self.conf.add_config(
             keys=["uv_python_preference"],
             of_type=cast("Type[Optional[PythonPreference]]", Optional[PythonPreference]),  # type: ignore[valid-type] # noqa: UP006
             # use os.environ here instead of self.environment_variables as this value is needed to create the virtual
             # environment, if environment variables use env_site_packages_dir we would run into a chicken-egg problem.
-            default=lambda conf, name: os.environ.get("UV_PYTHON_PREFERENCE", "system"),  # noqa: ARG005
+            default=uv_python_preference_default,
             desc=(
                 "Whether to prefer using Python installations that are already"
                 " present on the system, or those that are downloaded and"
