@@ -40,10 +40,10 @@ dynamic = [
 ]
 dependencies = [
   "packaging>=25",
-  "tomli>=2.2.1; python_version<'3.11'",
-  "tox<5,>=4.30.3",
+  "tomli>=2.3; python_version<'3.11'",
+  "tox<5,>=4.31",
   "typing-extensions>=4.15; python_version<'3.10'",
-  "uv<1,>=0.8.22",
+  "uv<1,>=0.9.1",
 ]
 urls.Changelog = "https://github.com/tox-dev/tox-uv/releases"
 urls.Documentation = "https://github.com/tox-dev/tox-uv#tox-uv"
@@ -68,8 +68,8 @@ test = [
   "pytest-mock>=3.15.1",
 ]
 type = [ "mypy==1.18.2", "types-setuptools>=80.9.0.20250822", { include-group = "test" } ]
-lint = [ "pre-commit-uv>=4.1.5" ]
-pkg-meta = [ "check-wheel-contents>=0.6.3", "twine>=6.2", "uv>=0.8.22" ]
+lint = [ "pre-commit-uv>=4.2" ]
+pkg-meta = [ "check-wheel-contents>=0.6.3", "twine>=6.2", "uv>=0.9.1" ]
 
 [tool.hatch]
 build.hooks.vcs.version-file = "src/tox_uv/version.py"
