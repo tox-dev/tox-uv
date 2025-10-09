@@ -19,18 +19,18 @@ license = "MIT"
 maintainers = [
   { name = "Bernát Gábor", email = "gaborjbernat@gmail.com" },
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Intended Audience :: Developers",
   "Operating System :: OS Independent",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Topic :: Internet",
   "Topic :: Software Development :: Libraries",
   "Topic :: System",
@@ -40,10 +40,10 @@ dynamic = [
 ]
 dependencies = [
   "packaging>=25",
-  "tomli>=2.2.1; python_version<'3.11'",
-  "tox>=4.30.2,<5",
+  "tomli>=2.3; python_version<'3.11'",
+  "tox<5,>=4.31",
   "typing-extensions>=4.15; python_version<'3.10'",
-  "uv>=0.8.16,<1",
+  "uv<1,>=0.9.1",
 ]
 urls.Changelog = "https://github.com/tox-dev/tox-uv/releases"
 urls.Documentation = "https://github.com/tox-dev/tox-uv#tox-uv"
@@ -62,14 +62,14 @@ dev = [
 test = [
   "covdefaults>=2.3",
   "devpi-process>=1.0.2",
-  "diff-cover>=9.6",
+  "diff-cover>=9.7.1",
   "pytest>=8.4.2",
   "pytest-cov>=7",
-  "pytest-mock>=3.15",
+  "pytest-mock>=3.15.1",
 ]
-type = [ "mypy==1.17.1", "types-setuptools>=80.9.0.20250822", { include-group = "test" } ]
-lint = [ "pre-commit-uv>=4.1.5" ]
-pkg-meta = [ "check-wheel-contents>=0.6.3", "twine>=6.2", "uv>=0.8.16" ]
+type = [ "mypy==1.18.2", "types-setuptools>=80.9.0.20250822", { include-group = "test" } ]
+lint = [ "pre-commit-uv>=4.2" ]
+pkg-meta = [ "check-wheel-contents>=0.6.3", "twine>=6.2", "uv>=0.9.1" ]
 
 [tool.hatch]
 build.hooks.vcs.version-file = "src/tox_uv/version.py"
@@ -123,9 +123,6 @@ lint.preview = true
 builtin = "clear,usage,en-GB_to_en-US"
 write-changes = true
 count = true
-
-[tool.pyproject-fmt]
-max_supported_python = "3.13"
 
 [tool.pytest.ini_options]
 norecursedirs = "tests/data/*"
