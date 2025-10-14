@@ -10,3 +10,5 @@ __pycache__
 /build
 dist
 src/tox_uv/version.py
+
+uv.lock
