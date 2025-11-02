@@ -73,6 +73,11 @@ class UvVenv(Python, ABC):
                 else os.environ.get("UV_PYTHON_PREFERENCE", "system")
             )
 
+        def uv_python_preference_post_process(value: str | None) -> str:
+            if value is not None:
+                return value.lower()
+            return "system"
+
         # The cast(...) might seems superfluous but removing it makes mypy crash. The problem isy on tox typing side.
         self.conf.add_config(
             keys=["uv_python_preference"],
@@ -90,6 +95,7 @@ class UvVenv(Python, ABC):
                 " interpreters with all tox environments and avoid accidental"
                 " downloading of other interpreters."
             ),
+            post_process=uv_python_preference_post_process,
         )
 
     def python_cache(self) -> dict[str, Any]:
