@@ -369,6 +369,35 @@ def test_uv_env_python_preference(
     assert env_bin_dir in result.out
 
 
+@pytest.mark.parametrize(
+    "env",
+    ["3.10", "3.10-onlymanaged"],
+)
+def test_uv_env_python_preference_complex(
+    tox_project: ToxProjectCreator,
+    *,
+    env: str,
+) -> None:
+    project = tox_project({
+        "tox.ini": (
+            "[tox]\n"
+            "env_list =\n"
+            "    3.10\n"
+            "[testenv]\n"
+            "package=skip\n"
+            "uv_python_preference=\n"
+            "    onlymanaged: only-managed\n"
+            "commands=python -c 'print(\"{env_python}\")'"
+        )
+    })
+    result = project.run("-vv", "-e", env)
+    result.assert_success()
+
+    exe = "python.exe" if sys.platform == "win32" else "python"
+    env_bin_dir = str(project.path / ".tox" / env / ("Scripts" if sys.platform == "win32" else "bin") / exe)
+    assert env_bin_dir in result.out
+
+
 def test_uv_env_site_package_dir_run(tox_project: ToxProjectCreator) -> None:
     project = tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python -c 'print(\"{envsitepackagesdir}\")'"})
     result = project.run("-vv")
