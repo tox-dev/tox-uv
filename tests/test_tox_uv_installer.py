@@ -27,7 +27,7 @@ def test_uv_install_in_ci_seed(tox_project: ToxProjectCreator, monkeypatch: pyte
     if sys.version_info >= (3, 12):  # pragma: >=3.12 cover
         assert report == {"pip"}
     else:  # pragma: <3.12 cover
-        assert report == {"pip", "setuptools", "wheel"}
+        assert report == {"pip", "setuptools", "wheel", "packaging"}
 
 
 def test_uv_install_with_pre(tox_project: ToxProjectCreator) -> None:
