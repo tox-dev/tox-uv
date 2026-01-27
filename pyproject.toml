@@ -2,7 +2,7 @@
 build-backend = "hatchling.build"
 requires = [
   "hatch-vcs>=0.5",
-  "hatchling>=1.27",
+  "hatchling>=1.28",
 ]
 
 [project]
@@ -39,11 +39,11 @@ dynamic = [
   "version",
 ]
 dependencies = [
-  "packaging>=25",
-  "tomli>=2.3; python_version<'3.11'",
-  "tox<5,>=4.31",
+  "packaging>=26",
+  "tomli>=2.4; python_version<'3.11'",
+  "tox<5,>=4.34.1",
   "typing-extensions>=4.15; python_version<'3.10'",
-  "uv<1,>=0.9.1",
+  "uv<1,>=0.9.27",
 ]
 urls.Changelog = "https://github.com/tox-dev/tox-uv/releases"
 urls.Documentation = "https://github.com/tox-dev/tox-uv#tox-uv"
@@ -61,15 +61,15 @@ dev = [
 ]
 test = [
   "covdefaults>=2.3",
-  "devpi-process>=1.0.2",
-  "diff-cover>=9.7.1",
-  "pytest>=8.4.2",
+  "devpi-process>=1.1",
+  "diff-cover>=10.2",
+  "pytest>=9.0.2",
   "pytest-cov>=7",
   "pytest-mock>=3.15.1",
 ]
-type = [ "mypy==1.18.2", "types-setuptools>=80.9.0.20250822", { include-group = "test" } ]
+type = [ "mypy==1.19.1", "types-setuptools>=80.10.0.20260124", { include-group = "test" } ]
 lint = [ "pre-commit-uv>=4.2" ]
-pkg-meta = [ "check-wheel-contents>=0.6.3", "twine>=6.2", "uv>=0.9.1" ]
+pkg-meta = [ "check-wheel-contents>=0.6.3", "twine>=6.2", "uv>=0.9.27" ]
 
 [tool.hatch]
 build.hooks.vcs.version-file = "src/tox_uv/version.py"
