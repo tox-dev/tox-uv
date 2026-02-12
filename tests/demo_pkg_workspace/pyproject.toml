@@ -21,9 +21,7 @@ classifiers = [
 # branch coverage for deps that are not sourced.
 dependencies = [ "demo-foo", "typing-extensions" ]
 
-[tool.uv.sources]
-demo-foo = { workspace = true }
-demo-root = { workspace = true }
-
-[tool.uv.workspace]
-members = [ "packages/*" ]
+[tool.uv]
+sources.demo-foo = { workspace = true }
+sources.demo-root = { workspace = true }
+workspace.members = [ "packages/*" ]
