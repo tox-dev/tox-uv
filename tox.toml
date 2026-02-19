@@ -1,0 +1,74 @@
+requires = [ "tox>=4.34.1", "tox-uv>=1.23" ]
+env_list = [ "3.14", "3.13", "3.12", "3.11", "3.10", "fix", "pkg_meta", "type" ]
+skip_missing_interpreters = true
+
+[env_run_base]
+description = "run the unit tests with pytest under {env_name}"
+package = "wheel"
+wheel_build_env = ".pkg"
+dependency_groups = [ "test" ]
+pass_env = [ "DIFF_AGAINST", "PYTEST_*" ]
+set_env.COVERAGE_FILE = { replace = "env", name = "COVERAGE_FILE", default = "{work_dir}{/}.coverage.{env_name}" }
+commands = [
+  [
+    "python",
+    "-m",
+    "pytest",
+    { replace = "posargs", extend = true, default = [
+      "--cov",
+      "{env_site_packages_dir}{/}tox_uv",
+      "--cov",
+      "{tox_root}{/}tests",
+      "--cov-config=pyproject.toml",
+      "--no-cov-on-fail",
+      "--cov-report",
+      "term-missing:skip-covered",
+      "--cov-context=test",
+      "--cov-report",
+      "html:{env_tmp_dir}{/}htmlcov",
+      "--cov-report",
+      "xml:{work_dir}{/}coverage.{env_name}.xml",
+      "--junitxml",
+      "{work_dir}{/}junit.{env_name}.xml",
+      "tests",
+    ] },
+  ],
+  [
+    "diff-cover",
+    "--compare-branch",
+    { replace = "env", name = "DIFF_AGAINST", default = "origin/main" },
+    "{work_dir}{/}coverage.{env_name}.xml",
+    "--fail-under",
+    "100",
+  ],
+]
+
+[env.fix]
+description = "format the code base to adhere to our styles, and complain about what we cannot do automatically"
+skip_install = true
+deps = [ "pre-commit-uv>=4.2" ]
+commands = [ [ "pre-commit", "run", "--all-files", "--show-diff-on-failure" ] ]
+
+[env.pkg_meta]
+description = "check that the long description is valid"
+skip_install = true
+dependency_groups = [ "pkg-meta" ]
+commands = [
+  [ "uv", "build", "--sdist", "--wheel", "--out-dir", "{env_tmp_dir}", "." ],
+  [ "twine", "check", "{env_tmp_dir}{/}*" ],
+  [ "check-wheel-contents", "--no-config", "{env_tmp_dir}" ],
+]
+
+[env.type]
+description = "run type check on code base"
+dependency_groups = [ "type" ]
+commands = [ [ "mypy", "src", "tests" ] ]
+
+[env.dev]
+description = "generate a DEV environment"
+package = "editable"
+dependency_groups = [ "dev" ]
+commands = [
+  [ "uv", "pip", "tree" ],
+  [ "python", "-c", "import sys; print(sys.executable)" ],
+]

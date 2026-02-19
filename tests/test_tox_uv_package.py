@@ -58,12 +58,11 @@ def test_uv_package_requirements(tox_project: ToxProjectCreator) -> None:
 
 def test_uv_package_workspace(tox_project: ToxProjectCreator, demo_pkg_workspace: Path) -> None:
     """Tests ability to install uv workspace projects."""
-    ini = f"""
+    ini = """
     [testenv]
 
     [testenv:.pkg]
     uv_seed = true
-    {"deps = wheel" if sys.version_info >= (3, 12) else ""}
     """
     project = tox_project({"tox.ini": ini}, base=demo_pkg_workspace)
     result = project.run()
@@ -72,12 +71,11 @@ def test_uv_package_workspace(tox_project: ToxProjectCreator, demo_pkg_workspace
 
 def test_uv_package_no_pyproject(tox_project: ToxProjectCreator, demo_pkg_no_pyproject: Path) -> None:
     """Tests ability to install uv workspace projects."""
-    ini = f"""
+    ini = """
     [testenv]
 
     [testenv:.pkg]
     uv_seed = true
-    {"deps = wheel" if sys.version_info >= (3, 12) else ""}
     """
     project = tox_project({"tox.ini": ini}, base=demo_pkg_no_pyproject)
     result = project.run()
