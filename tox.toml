@@ -62,7 +62,7 @@ commands = [
 [env.type]
 description = "run type check on code base"
 dependency_groups = [ "type" ]
-commands = [ [ "mypy", "src", "tests" ] ]
+commands = [ [ "ty", "check", "--output-format", "concise", "--error-on-warning", "." ] ]
 
 [env.dev]
 description = "generate a DEV environment"

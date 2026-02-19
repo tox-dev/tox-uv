@@ -67,7 +67,7 @@ test = [
   "pytest-cov>=7",
   "pytest-mock>=3.15.1",
 ]
-type = [ "mypy==1.19.1", "types-setuptools>=80.10.0.20260124", { include-group = "test" } ]
+type = [ "ty>=0.0.17", { include-group = "test" } ]
 lint = [ "pre-commit-uv>=4.2" ]
 pkg-meta = [ "check-wheel-contents>=0.6.3", "twine>=6.2", "uv>=0.9.27" ]
 
@@ -154,13 +154,5 @@ run.plugins = [
   "covdefaults",
 ]
 
-[tool.mypy]
-python_version = "3.12"
-show_error_codes = true
-strict = true
-overrides = [
-  { module = [
-    "virtualenv.*",
-    "uv.*",
-  ], ignore_missing_imports = true },
-]
+[tool.ty]
+environment.python-version = "3.14"
