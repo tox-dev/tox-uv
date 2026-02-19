@@ -58,6 +58,20 @@ def test_uv_venv_preference_system_by_default(tox_project: ToxProjectCreator) ->
 
 
 @pytest.mark.usefixtures("clear_python_preference_env_var")
+def test_uv_venv_preference_empty_falls_back_to_system(tox_project: ToxProjectCreator) -> None:
+    project = tox_project({"tox.ini": "[testenv]\nuv_python_preference ="})
+
+    result = project.run("c", "-k", "uv_python_preference")
+    result.assert_success()
+
+    parser = ConfigParser()
+    parser.read_string(result.out)
+    got = parser["testenv:py"]["uv_python_preference"]
+
+    assert got == "system"
+
+
+@pytest.mark.usefixtures("clear_python_preference_env_var")
 @pytest.mark.parametrize("env_var", ["UV_NO_MANAGED_PYTHON", "UV_MANAGED_PYTHON"])
 def test_uv_venv_preference_not_set_if_uv_no_managed_python(
     tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch, env_var: str
