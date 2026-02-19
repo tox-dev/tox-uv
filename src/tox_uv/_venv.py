@@ -78,10 +78,9 @@ class UvVenv(Python, ABC):
                 return value.lower()
             return "system"
 
-        # The cast(...) might seems superfluous but removing it makes mypy crash. The problem isy on tox typing side.
-        self.conf.add_config(
+        self.conf.add_config(  # ty: ignore[no-matching-overload]
             keys=["uv_python_preference"],
-            of_type=cast("type[PythonPreference | None]", PythonPreference | None),  # type: ignore[valid-type]
+            of_type=cast("type[PythonPreference | None]", PythonPreference | None),
             # use os.environ here instead of self.environment_variables as this value is needed to create the virtual
             # environment, if environment variables use env_site_packages_dir we would run into a chicken-egg problem.
             default=uv_python_preference_default,
