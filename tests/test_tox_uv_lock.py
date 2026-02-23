@@ -11,6 +11,58 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.usefixtures("clear_python_preference_env_var")
+def test_uv_lock_with_setupdir(tox_project: ToxProjectCreator) -> None:
+    project = tox_project({
+        "tox.ini": """\
+[testenv]
+runner = uv-venv-lock-runner
+package_root = src
+""",
+    })
+    (project.path / "src").mkdir()
+    execute_calls = project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
+    result = project.run("run", "--notest", "-vv")
+    result.assert_success()
+
+    calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
+    uv = find_uv_bin()
+    expected = [
+        (
+            "py",
+            "venv",
+            [
+                uv,
+                "venv",
+                "-p",
+                sys.executable,
+                "--allow-existing",
+                "-v",
+                "--python-preference",
+                "system",
+                str(project.path / ".tox" / "py"),
+            ],
+        ),
+        (
+            "py",
+            "uv-sync",
+            [
+                "uv",
+                "sync",
+                "--directory",
+                str(project.path / "src"),
+                "--locked",
+                "--python-preference",
+                "system",
+                "-v",
+                "-p",
+                sys.executable,
+            ],
+        ),
+    ]
+    assert calls == expected
+
+
+@pytest.mark.usefixtures("clear_python_preference_env_var")
 def test_uv_lock_list_dependencies_command(tox_project: ToxProjectCreator) -> None:
     project = tox_project({
         "tox.ini": """

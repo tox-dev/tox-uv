@@ -75,16 +75,27 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
             default="editable",
             desc="How should the package be installed",
         )
+        self.conf.add_config(
+            keys=["package_root", "setupdir"],
+            of_type=Path,
+            default=cast("Path", self.core["tox_root"]),
+            desc="indicates where the pyproject.toml and uv.lock files exist",
+        )
         add_skip_missing_interpreters_to_core(self.core, self.options)
 
     def _setup_env(self) -> None:  # noqa: C901,PLR0912
         super()._setup_env()
         install_pkg = getattr(self.options, "install_pkg", None)
         if not getattr(self.options, "skip_uv_sync", False):
+            package_root: Path = self.conf["package_root"]
+            if not package_root.is_absolute():
+                package_root = self.core["tox_root"] / package_root
             cmd = [
                 "uv",
                 "sync",
             ]
+            if package_root != self.core["tox_root"]:
+                cmd.extend(("--directory", str(package_root)))
             if self.conf["uv_sync_locked"]:
                 cmd.append("--locked")
             if self.conf["uv_python_preference"] != "none":
@@ -102,8 +113,7 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
             if self.options.verbosity > 3:  # noqa: PLR2004
                 cmd.append("-v")
             if package in {"wheel", "uv"}:
-                # need the package name here but we don't have the packaging infrastructure -> read from pyproject.toml
-                project_file = self.core["tox_root"] / "pyproject.toml"
+                project_file = package_root / "pyproject.toml"
                 name = None
                 if project_file.exists():
                     with project_file.open("rb") as file_handler:
