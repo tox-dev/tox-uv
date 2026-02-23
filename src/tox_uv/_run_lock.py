@@ -71,7 +71,7 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
         )
         self.conf.add_config(  # type: ignore[call-overload]
             keys=["package"],
-            of_type=Literal["editable", "wheel", "skip"],
+            of_type=Literal["editable", "wheel", "skip", "uv", "uv-editable"],
             default="editable",
             desc="How should the package be installed",
         )
@@ -101,7 +101,7 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
                 cmd.append("--no-install-project")
             if self.options.verbosity > 3:  # noqa: PLR2004
                 cmd.append("-v")
-            if package == "wheel":
+            if package in {"wheel", "uv"}:
                 # need the package name here but we don't have the packaging infrastructure -> read from pyproject.toml
                 project_file = self.core["tox_root"] / "pyproject.toml"
                 name = None
