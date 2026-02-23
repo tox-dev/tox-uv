@@ -52,6 +52,12 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
             desc="dependency groups to install of the target package",
         )
         self.conf.add_config(
+            keys=["only_groups"],
+            of_type=set[str],
+            default=set(),
+            desc="install only these dependency groups (maps to uv sync --only-group)",
+        )
+        self.conf.add_config(
             keys=["no_default_groups"],
             of_type=bool,
             default=lambda _, __: bool(self.conf["dependency_groups"]),
@@ -125,6 +131,8 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
                 cmd.extend(("--no-editable", "--reinstall-package", name))
             for group in groups:
                 cmd.extend(("--group", group))
+            for group in sorted(self.conf["only_groups"]):
+                cmd.extend(("--only-group", group))
             cmd.extend(self.conf["uv_sync_flags"])
             cmd.extend(("-p", self.env_version_spec()))
 
