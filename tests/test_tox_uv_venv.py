@@ -289,10 +289,7 @@ def test_uv_venv_na(tox_project: ToxProjectCreator) -> None:
     # skip_missing_interpreters is true by default
     project = tox_project({"tox.ini": "[testenv]\npackage=skip\nbase_python=1.0"})
     result = project.run("-vv")
-
-    # When a Python interpreter is missing in a pytest environment, project.run
-    # return code is equal to -1
-    result.assert_failed(code=-1)
+    result.assert_failed(code=1)
 
 
 def test_uv_venv_na_uv_072(tox_project: ToxProjectCreator) -> None:
@@ -300,10 +297,7 @@ def test_uv_venv_na_uv_072(tox_project: ToxProjectCreator) -> None:
     # skip_missing_interpreters is true by default
     project = tox_project({"tox.ini": "[testenv]\npackage=skip\nbase_python=1.0\nrequires=uv==0.7.2"})
     result = project.run("-vv")
-
-    # When a Python interpreter is missing in a pytest environment, project.run
-    # return code is equal to -1
-    result.assert_failed(code=-1)
+    result.assert_failed(code=1)
 
 
 def test_uv_venv_skip_missing_interpreters_fail(tox_project: ToxProjectCreator) -> None:
@@ -319,9 +313,7 @@ def test_uv_venv_skip_missing_interpreters_pass(tox_project: ToxProjectCreator) 
         "tox.ini": "[tox]\nskip_missing_interpreters=true\n[testenv]\npackage=skip\nbase_python=1.0"
     })
     result = project.run("-vv")
-    # When a Python interpreter is missing in a pytest environment, project.run
-    # return code is equal to -1
-    result.assert_failed(code=-1)
+    result.assert_failed(code=1)
 
 
 def test_uv_venv_platform_check(tox_project: ToxProjectCreator) -> None:

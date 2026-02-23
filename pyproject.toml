@@ -41,7 +41,7 @@ dynamic = [
 dependencies = [
   "packaging>=26",
   "tomli>=2.4; python_version<'3.11'",
-  "tox<5,>=4.34.1",
+  "tox<5,>=4.40",
   "typing-extensions>=4.15; python_version<'3.10'",
   "uv<1,>=0.9.27",
 ]
@@ -130,8 +130,16 @@ ini_options.norecursedirs = "tests/data/*"
 ini_options.verbosity_assertions = 2
 
 [tool.coverage]
-html.show_contexts = true
-html.skip_covered = false
+run.parallel = true
+run.patch = [ "subprocess" ]
+run.plugins = [
+  "covdefaults",
+]
+paths.other = [
+  ".",
+  "*/tox_uv",
+  "*\\tox_uv",
+]
 paths.source = [
   "src",
   ".tox/*/lib/*/site-packages",
@@ -139,20 +147,12 @@ paths.source = [
   "**/src",
   "**\\src",
 ]
-paths.other = [
-  ".",
-  "*/tox_uv",
-  "*\\tox_uv",
-]
+report.fail_under = 100
 report.omit = [
   "src/tox_uv/_venv_query.py",
 ]
-report.fail_under = 100
-run.parallel = true
-run.patch = [ "subprocess" ]
-run.plugins = [
-  "covdefaults",
-]
+html.show_contexts = true
+html.skip_covered = false
 
 [tool.ty]
 environment.python-version = "3.14"
