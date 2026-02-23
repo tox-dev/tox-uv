@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
+from packaging.requirements import Requirement
+from tox.tox_env.python.dependency_groups import resolve as resolve_dependency_groups
 from tox.tox_env.python.runner import PythonRun
 
 from ._package_types import UvEditablePackage, UvPackage
@@ -11,6 +14,8 @@ from ._venv import UvVenv
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class UvVenvRunner(UvVenv, PythonRun):
@@ -36,6 +41,36 @@ class UvVenvRunner(UvVenv, PythonRun):
     @property
     def _package_types(self) -> tuple[str, ...]:
         return *super()._package_types, UvPackage.KEY, UvEditablePackage.KEY
+
+    def _setup_env(self) -> None:
+        super(PythonRun, self)._setup_env()
+        if getattr(self.options, "skip_env_install", False):
+            _LOGGER.warning("skip installing dependencies and package")
+            return
+
+        groups: set[str] = self.conf["dependency_groups"]
+        uv_resolution: str = self.conf["uv_resolution"]
+
+        if uv_resolution and groups:
+            try:
+                root: Path = self.core["package_root"]
+            except KeyError:
+                root = self.core["tox_root"]
+            group_reqs = list(resolve_dependency_groups(root, groups))
+            deps_file = self.conf["deps"]
+            deps_reqs = [Requirement(line) for line in deps_file.lines()]
+            combined_reqs = deps_reqs + group_reqs
+
+            _LOGGER.info(
+                "combining deps and dependency groups for uv_resolution=%s to ensure correct resolution",
+                uv_resolution,
+            )
+            self._install(combined_reqs, PythonRun.__name__, "deps")
+        elif self.conf["pylock"]:
+            self._install_pylock()
+        else:
+            self._install_deps()
+            self._install_dependency_groups()
 
 
 __all__ = [

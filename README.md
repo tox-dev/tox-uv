@@ -203,4 +203,9 @@ This flag, set on a tox environment level, informs `uv` of the desired [resoluti
 This is an `uv` specific feature that may be used as an alternative to frozen constraints for test environments if the
 intention is to validate the lower bounds of your dependencies during test executions.
 
+**Note**: When using `uv_resolution` with `dependency_groups`, all dependencies from both `deps` and `dependency_groups`
+are combined into a single install operation. This ensures the resolution strategy applies correctly across all
+requirements, preventing sequential installations from resolving transitive dependencies before the strategy can apply
+to overlapping direct dependencies.
+
 [resolution strategy]: https://github.com/astral-sh/uv/blob/0.1.20/README.md#resolution-strategy
