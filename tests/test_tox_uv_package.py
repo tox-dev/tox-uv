@@ -54,6 +54,26 @@ def test_uv_package_requirements(tox_project: ToxProjectCreator) -> None:
     result.assert_success()
 
 
+def test_uv_package_list_sources(tox_project: ToxProjectCreator, demo_pkg_inline: Path) -> None:
+    ini = """
+    [testenv]
+    """
+    project = tox_project({"tox.ini": ini}, base=demo_pkg_inline)
+    pyproject = project.path / "pyproject.toml"
+    pyproject.write_text(
+        pyproject.read_text()
+        + """\
+[tool.uv.sources]
+some-dep = [
+  {index = "foo", marker = "sys_platform == 'linux'"},
+  {index = "bar", marker = "sys_platform == 'darwin'"},
+]
+"""
+    )
+    result = project.run()
+    result.assert_success()
+
+
 def test_uv_package_workspace(tox_project: ToxProjectCreator, demo_pkg_workspace: Path) -> None:
     """Tests ability to install uv workspace projects."""
     ini = """

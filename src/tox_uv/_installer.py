@@ -116,7 +116,7 @@ class UvInstaller(Pip):
             pyproject = tomllib.load(file_handler)
 
         sources = pyproject.get("tool", {}).get("uv", {}).get("sources", {})
-        return {key for key, val in sources.items() if val.get("workspace", False)}
+        return {key for key, val in sources.items() if isinstance(val, dict) and val.get("workspace", False)}
 
     def _install_list_of_deps(  # noqa: C901, PLR0912
         self,
