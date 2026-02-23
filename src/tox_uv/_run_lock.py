@@ -91,7 +91,7 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
             if not package_root.is_absolute():
                 package_root = self.core["tox_root"] / package_root
             cmd = [
-                "uv",
+                self.uv,
                 "sync",
             ]
             if package_root != self.core["tox_root"]:
