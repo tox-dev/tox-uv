@@ -623,3 +623,21 @@ def test_env_version_spec_free_threaded() -> None:
     uv_venv.set_base_python(python_info)
     with mock.patch("sys.version_info", (0, 0, 0)):  # prevent picking sys.executable
         assert uv_venv.env_version_spec() == "cpython3.13+freethreaded"
+
+
+def test_relative_workdir_with_changedir(tox_project: ToxProjectCreator) -> None:
+    project = tox_project({
+        "tox.ini": """\
+[tox]
+toxworkdir=.tox
+
+[testenv:demo]
+changedir={toxinidir}/sub
+package = skip
+commands = python -c "print('ok')"
+allowlist_externals = python
+""",
+    })
+    (project.path / "sub").mkdir()
+    result = project.run("-e", "demo")
+    result.assert_success()

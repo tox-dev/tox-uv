@@ -102,7 +102,10 @@ class UvVenv(Python, ABC):
         result["seed"] = self.conf["uv_seed"]
         if self.conf["uv_python_preference"] != "none":
             result["python_preference"] = self.conf["uv_python_preference"]
-        result["venv"] = str(self.venv_dir.relative_to(self.env_dir))
+        env_dir = cast("Path", self.conf["env_dir"])
+        if not env_dir.is_absolute():
+            env_dir = cast("Path", self.core["tox_root"]) / env_dir
+        result["venv"] = str(self.venv_dir.relative_to(env_dir))
         return result
 
     @property
@@ -187,7 +190,10 @@ class UvVenv(Python, ABC):
 
     @property
     def venv_dir(self) -> Path:
-        return cast("Path", self.conf["env_dir"])
+        result = cast("Path", self.conf["env_dir"])
+        if not result.is_absolute():
+            result = cast("Path", self.core["tox_root"]) / result
+        return result
 
     @property
     def environment_variables(self) -> dict[str, str]:
