@@ -46,7 +46,7 @@ package_root = src
             "py",
             "uv-sync",
             [
-                "uv",
+                uv,
                 "sync",
                 "--directory",
                 str(project.path / "src"),
@@ -100,7 +100,7 @@ def test_uv_lock_list_dependencies_command(tox_project: ToxProjectCreator) -> No
             "py",
             "uv-sync",
             [
-                "uv",
+                uv,
                 "sync",
                 "--locked",
                 "--python-preference",
@@ -162,7 +162,7 @@ def test_uv_lock_command(tox_project: ToxProjectCreator, verbose: str) -> None:
             "py",
             "uv-sync",
             [
-                "uv",
+                uv,
                 "sync",
                 "--locked",
                 "--python-preference",
@@ -214,7 +214,7 @@ def test_uv_lock_with_default_groups(tox_project: ToxProjectCreator) -> None:
                 str(project.path / ".tox" / "py"),
             ],
         ),
-        ("py", "uv-sync", ["uv", "sync", "--locked", "--python-preference", "system", "-v", "-p", sys.executable]),
+        ("py", "uv-sync", [uv, "sync", "--locked", "--python-preference", "system", "-v", "-p", sys.executable]),
     ]
     assert calls == expected
 
@@ -262,7 +262,7 @@ def test_uv_lock_with_install_pkg(tox_project: ToxProjectCreator, name: str) -> 
             "py",
             "uv-sync",
             [
-                "uv",
+                uv,
                 "sync",
                 "--locked",
                 "--python-preference",
@@ -322,7 +322,7 @@ def test_uv_sync_extra_flags(tox_project: ToxProjectCreator, uv_sync_locked: boo
             "py",
             "uv-sync",
             [
-                "uv",
+                uv,
                 "sync",
                 *(["--locked"] if uv_sync_locked else []),
                 "--python-preference",
@@ -375,7 +375,7 @@ def test_uv_sync_extra_flags_toml(tox_project: ToxProjectCreator) -> None:
             "py",
             "uv-sync",
             [
-                "uv",
+                uv,
                 "sync",
                 "--locked",
                 "--python-preference",
@@ -428,7 +428,7 @@ def test_uv_sync_dependency_groups(tox_project: ToxProjectCreator) -> None:
             "py",
             "uv-sync",
             [
-                "uv",
+                uv,
                 "sync",
                 "--locked",
                 "--python-preference",
@@ -492,7 +492,7 @@ def test_uv_sync_uv_python_preference(
             "py",
             "uv-sync",
             [
-                "uv",
+                uv,
                 "sync",
                 "--locked",
                 *injected,
@@ -586,7 +586,7 @@ def test_uv_package_non_editable(tox_project: ToxProjectCreator, monkeypatch: py
             "py",
             "uv-sync",
             [
-                "uv",
+                uv,
                 "sync",
                 "--locked",
                 "--python-preference",
@@ -656,7 +656,7 @@ def test_uv_package_uv_editable(tox_project: ToxProjectCreator, monkeypatch: pyt
             "py",
             "uv-sync",
             [
-                "uv",
+                uv,
                 "sync",
                 "--locked",
                 "--python-preference",
@@ -704,7 +704,7 @@ def test_skip_uv_package_skip(tox_project: ToxProjectCreator, monkeypatch: pytes
             "py",
             "uv-sync",
             [
-                "uv",
+                uv,
                 "sync",
                 "--locked",
                 "--python-preference",
@@ -752,7 +752,7 @@ def test_uv_lock_ith_resolution(tox_project: ToxProjectCreator) -> None:
             "py",
             "uv-sync",
             [
-                "uv",
+                uv,
                 "sync",
                 "--locked",
                 "--python-preference",
