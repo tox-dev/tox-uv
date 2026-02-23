@@ -101,13 +101,16 @@ Therefore, options like `deps` are ignored (and all others
 
 How to install the source tree package, must be one of:
 
-- `skip`,
-- `wheel`,
-- `editable` (default),
-- `uv` (use uv to install the project, rather than build wheel via `tox`),
-- `uv-editable` (use uv to install the project in editable mode, rather than build wheel via `tox`).
+- `skip` - do not install the project,
+- `wheel` - install the project as a non-editable wheel,
+- `editable` (default) - install the project in editable mode,
+- `uv` - with `uv-venv-runner` uses uv directly to install the project (bypassing tox's PEP-517 packaging), with
+  `uv-venv-lock-runner` behaves like `wheel`,
+- `uv-editable` - with `uv-venv-runner` uses uv directly to install in editable mode (bypassing tox's PEP-517
+  packaging), with `uv-venv-lock-runner` behaves like `editable`.
 
-You should use the latter two in case you need to use any non-standard features of `uv`, such as `tool.uv.sources`.
+With `uv-venv-runner`, prefer `uv`/`uv-editable` when you need non-standard features of `uv`, such as `tool.uv.sources`.
+With `uv-venv-lock-runner`, `uv sync` already handles installation natively so all modes work through it.
 
 ### `extras`
 
