@@ -17,6 +17,7 @@ will get both the benefits (performance) or downsides (bugs) of `uv`.
   - [extras](#extras)
   - [no_default_groups](#no_default_groups)
   - [dependency_groups](#dependency_groups)
+  - [only_groups](#only_groups)
   - [uv_sync_flags](#uv_sync_flags)
   - [uv_sync_locked](#uv_sync_locked)
   - [External package support](#external-package-support)
@@ -124,7 +125,19 @@ will be `true` if the `dependency_groups` is not empty and `false` otherwise.
 
 ### `dependency_groups`
 
-Specify [PEP 735 – Dependency Groups](https://peps.python.org/pep-0735/) to install.
+Specify [PEP 735 – Dependency Groups](https://peps.python.org/pep-0735/) to install **in addition to** the project and
+its dependencies (maps to `uv sync --group`). For example, `dependency_groups = ["test", "docs"]` installs the project,
+its default dependencies, and the `test` and `docs` groups.
+
+### `only_groups`
+
+Install **only** these [PEP 735 – Dependency Groups](https://peps.python.org/pep-0735/), excluding the project and all
+other dependencies (maps to `uv sync --only-group`). Use this when you need a dependency group in complete isolation,
+such as CI tooling from a private index. For example, `only_groups = ["ci"]` installs only the `ci` group without the
+project or any of its dependencies.
+
+**Key difference**: `dependency_groups` adds groups to the standard install, while `only_groups` replaces the entire
+install with just those groups.
 
 ### `uv_sync_flags`
 

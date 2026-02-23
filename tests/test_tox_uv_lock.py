@@ -767,3 +767,55 @@ def test_uv_lock_ith_resolution(tox_project: ToxProjectCreator) -> None:
     assert len(calls) == len(expected)
     for i in range(len(calls)):
         assert calls[i] == expected[i]
+
+
+@pytest.mark.usefixtures("clear_python_preference_env_var")
+def test_uv_sync_only_groups(tox_project: ToxProjectCreator) -> None:
+    project = tox_project({
+        "tox.toml": """\
+[env_run_base]
+runner = "uv-venv-lock-runner"
+only_groups = ["ci"]
+commands = [["python", "hello"]]
+"""
+    })
+    execute_calls = project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
+    result = project.run()
+    result.assert_success()
+
+    calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
+    uv = find_uv_bin()
+
+    expected = [
+        (
+            "py",
+            "venv",
+            [
+                uv,
+                "venv",
+                "-p",
+                sys.executable,
+                "--allow-existing",
+                "--python-preference",
+                "system",
+                str(project.path / ".tox" / "py"),
+            ],
+        ),
+        (
+            "py",
+            "uv-sync",
+            [
+                uv,
+                "sync",
+                "--locked",
+                "--python-preference",
+                "system",
+                "--only-group",
+                "ci",
+                "-p",
+                sys.executable,
+            ],
+        ),
+        ("py", "commands[0]", ["python", "hello"]),
+    ]
+    assert calls == expected
