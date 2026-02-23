@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 from typing import TYPE_CHECKING
 
 import pytest
@@ -37,13 +36,12 @@ def test_uv_package_artifact(
 
 
 def test_uv_package_editable_legacy(tox_project: ToxProjectCreator, demo_pkg_setuptools: Path) -> None:
-    ini = f"""
+    ini = """
     [testenv]
     package=editable-legacy
 
     [testenv:.pkg]
     uv_seed = true
-    {"deps = wheel" if sys.version_info >= (3, 12) else ""}
     """
     project = tox_project({"tox.ini": ini}, base=demo_pkg_setuptools)
     result = project.run()

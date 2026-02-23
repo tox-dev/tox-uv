@@ -41,7 +41,7 @@ dynamic = [
 dependencies = [
   "packaging>=26",
   "tomli>=2.4; python_version<'3.11'",
-  "tox<5,>=4.34.1",
+  "tox<5,>=4.40",
   "typing-extensions>=4.15; python_version<'3.10'",
   "uv<1,>=0.9.27",
 ]
