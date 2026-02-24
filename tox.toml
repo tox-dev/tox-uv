@@ -52,8 +52,8 @@ commands = [ [ "pre-commit", "run", "--all-files", "--show-diff-on-failure" ] ]
 [env.meta]
 description = "run meta package tests to verify build and version injection"
 skip_install = true
-dependency_groups = [ "test" ]
 deps = [ "hatchling>=1.28" ]
+dependency_groups = [ "test" ]
 commands = [
   [
     "python",
