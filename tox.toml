@@ -64,7 +64,7 @@ description = "run type check on code base"
 dependency_groups = [ "type" ]
 commands = [ [ "ty", "check", "--output-format", "concise", "--error-on-warning", "." ] ]
 
-[env."meta-3.10"]
+[env.meta]
 description = "run meta package tests to verify build and version injection"
 package = "skip"
 deps = [ "hatchling>=1.28" ]
@@ -101,158 +101,21 @@ commands = [
     "100",
   ],
 ]
+
+[env."meta-3.10"]
+base = [ "meta" ]
 
 [env."meta-3.11"]
-description = "run meta package tests to verify build and version injection"
-package = "skip"
-deps = [ "hatchling>=1.28" ]
-dependency_groups = [ "test" ]
-commands = [
-  [
-    "python",
-    "-m",
-    "pytest",
-    { replace = "posargs", extend = true, default = [
-      "--cov",
-      "{tox_root}{/}meta",
-      "--cov-config=pyproject.toml",
-      "--no-cov-on-fail",
-      "--cov-report",
-      "term-missing:skip-covered",
-      "--cov-context=test",
-      "--cov-report",
-      "html:{env_tmp_dir}{/}htmlcov",
-      "--cov-report",
-      "xml:{work_dir}{/}coverage.{env_name}.xml",
-      "--junitxml",
-      "{work_dir}{/}junit.{env_name}.xml",
-      "meta/tests",
-      "-v",
-    ] },
-  ],
-  [
-    "diff-cover",
-    "--compare-branch",
-    { replace = "env", name = "DIFF_AGAINST", default = "origin/main" },
-    "{work_dir}{/}coverage.{env_name}.xml",
-    "--fail-under",
-    "100",
-  ],
-]
+base = [ "meta" ]
 
 [env."meta-3.12"]
-description = "run meta package tests to verify build and version injection"
-package = "skip"
-deps = [ "hatchling>=1.28" ]
-dependency_groups = [ "test" ]
-commands = [
-  [
-    "python",
-    "-m",
-    "pytest",
-    { replace = "posargs", extend = true, default = [
-      "--cov",
-      "{tox_root}{/}meta",
-      "--cov-config=pyproject.toml",
-      "--no-cov-on-fail",
-      "--cov-report",
-      "term-missing:skip-covered",
-      "--cov-context=test",
-      "--cov-report",
-      "html:{env_tmp_dir}{/}htmlcov",
-      "--cov-report",
-      "xml:{work_dir}{/}coverage.{env_name}.xml",
-      "--junitxml",
-      "{work_dir}{/}junit.{env_name}.xml",
-      "meta/tests",
-      "-v",
-    ] },
-  ],
-  [
-    "diff-cover",
-    "--compare-branch",
-    { replace = "env", name = "DIFF_AGAINST", default = "origin/main" },
-    "{work_dir}{/}coverage.{env_name}.xml",
-    "--fail-under",
-    "100",
-  ],
-]
+base = [ "meta" ]
 
 [env."meta-3.13"]
-description = "run meta package tests to verify build and version injection"
-package = "skip"
-deps = [ "hatchling>=1.28" ]
-dependency_groups = [ "test" ]
-commands = [
-  [
-    "python",
-    "-m",
-    "pytest",
-    { replace = "posargs", extend = true, default = [
-      "--cov",
-      "{tox_root}{/}meta",
-      "--cov-config=pyproject.toml",
-      "--no-cov-on-fail",
-      "--cov-report",
-      "term-missing:skip-covered",
-      "--cov-context=test",
-      "--cov-report",
-      "html:{env_tmp_dir}{/}htmlcov",
-      "--cov-report",
-      "xml:{work_dir}{/}coverage.{env_name}.xml",
-      "--junitxml",
-      "{work_dir}{/}junit.{env_name}.xml",
-      "meta/tests",
-      "-v",
-    ] },
-  ],
-  [
-    "diff-cover",
-    "--compare-branch",
-    { replace = "env", name = "DIFF_AGAINST", default = "origin/main" },
-    "{work_dir}{/}coverage.{env_name}.xml",
-    "--fail-under",
-    "100",
-  ],
-]
+base = [ "meta" ]
 
 [env."meta-3.14"]
-description = "run meta package tests to verify build and version injection"
-package = "skip"
-deps = [ "hatchling>=1.28" ]
-dependency_groups = [ "test" ]
-commands = [
-  [
-    "python",
-    "-m",
-    "pytest",
-    { replace = "posargs", extend = true, default = [
-      "--cov",
-      "{tox_root}{/}meta",
-      "--cov-config=pyproject.toml",
-      "--no-cov-on-fail",
-      "--cov-report",
-      "term-missing:skip-covered",
-      "--cov-context=test",
-      "--cov-report",
-      "html:{env_tmp_dir}{/}htmlcov",
-      "--cov-report",
-      "xml:{work_dir}{/}coverage.{env_name}.xml",
-      "--junitxml",
-      "{work_dir}{/}junit.{env_name}.xml",
-      "meta/tests",
-      "-v",
-    ] },
-  ],
-  [
-    "diff-cover",
-    "--compare-branch",
-    { replace = "env", name = "DIFF_AGAINST", default = "origin/main" },
-    "{work_dir}{/}coverage.{env_name}.xml",
-    "--fail-under",
-    "100",
-  ],
-]
+base = [ "meta" ]
 
 [env.dev]
 description = "generate a DEV environment"
