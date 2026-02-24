@@ -1,5 +1,5 @@
 requires = [ "tox>=4.34.1", "tox-uv>=1.23" ]
-env_list = [ "3.14", "3.13", "3.12", "3.11", "3.10", "fix", "meta", "pkg_meta", "type" ]
+env_list = [ "3.14", "3.13", "3.12", "3.11", "3.10", "fix", "meta-3.14", "pkg_meta", "type" ]
 skip_missing_interpreters = true
 
 [env_run_base]
@@ -49,43 +49,40 @@ skip_install = true
 deps = [ "pre-commit-uv>=4.2" ]
 commands = [ [ "pre-commit", "run", "--all-files", "--show-diff-on-failure" ] ]
 
-[env.meta]
+[env."meta-3.14"]
 description = "run meta package tests to verify build and version injection"
-skip_install = true
+package = "skip"
 deps = [ "hatchling>=1.28" ]
 dependency_groups = [ "test" ]
-commands = [
-  [
-    "python",
-    "-m",
-    "pytest",
-    { replace = "posargs", extend = true, default = [
-      "--cov",
-      "{tox_root}{/}meta",
-      "--cov-config=pyproject.toml",
-      "--no-cov-on-fail",
-      "--cov-report",
-      "term-missing:skip-covered",
-      "--cov-context=test",
-      "--cov-report",
-      "html:{env_tmp_dir}{/}htmlcov",
-      "--cov-report",
-      "xml:{work_dir}{/}coverage.{env_name}.xml",
-      "--junitxml",
-      "{work_dir}{/}junit.{env_name}.xml",
-      "meta/tests",
-      "-v",
-    ] },
-  ],
-  [
-    "diff-cover",
-    "--compare-branch",
-    { replace = "env", name = "DIFF_AGAINST", default = "origin/main" },
-    "{work_dir}{/}coverage.{env_name}.xml",
-    "--fail-under",
-    "100",
-  ],
-]
+commands = [ [ "python", "-m", "pytest", { replace = "posargs", extend = true, default = [ "--cov", "{tox_root}{/}meta", "--cov-config=pyproject.toml", "--no-cov-on-fail", "--cov-report", "term-missing:skip-covered", "--cov-context=test", "--cov-report", "html:{env_tmp_dir}{/}htmlcov", "--cov-report", "xml:{work_dir}{/}coverage.{env_name}.xml", "--junitxml", "{work_dir}{/}junit.{env_name}.xml", "meta/tests", "-v" ] } ], [ "diff-cover", "--compare-branch", { replace = "env", name = "DIFF_AGAINST", default = "origin/main" }, "{work_dir}{/}coverage.{env_name}.xml", "--fail-under", "100" ] ]
+
+[env."meta-3.13"]
+description = "run meta package tests to verify build and version injection"
+package = "skip"
+deps = [ "hatchling>=1.28" ]
+dependency_groups = [ "test" ]
+commands = [ [ "python", "-m", "pytest", { replace = "posargs", extend = true, default = [ "--cov", "{tox_root}{/}meta", "--cov-config=pyproject.toml", "--no-cov-on-fail", "--cov-report", "term-missing:skip-covered", "--cov-context=test", "--cov-report", "html:{env_tmp_dir}{/}htmlcov", "--cov-report", "xml:{work_dir}{/}coverage.{env_name}.xml", "--junitxml", "{work_dir}{/}junit.{env_name}.xml", "meta/tests", "-v" ] } ], [ "diff-cover", "--compare-branch", { replace = "env", name = "DIFF_AGAINST", default = "origin/main" }, "{work_dir}{/}coverage.{env_name}.xml", "--fail-under", "100" ] ]
+
+[env."meta-3.12"]
+description = "run meta package tests to verify build and version injection"
+package = "skip"
+deps = [ "hatchling>=1.28" ]
+dependency_groups = [ "test" ]
+commands = [ [ "python", "-m", "pytest", { replace = "posargs", extend = true, default = [ "--cov", "{tox_root}{/}meta", "--cov-config=pyproject.toml", "--no-cov-on-fail", "--cov-report", "term-missing:skip-covered", "--cov-context=test", "--cov-report", "html:{env_tmp_dir}{/}htmlcov", "--cov-report", "xml:{work_dir}{/}coverage.{env_name}.xml", "--junitxml", "{work_dir}{/}junit.{env_name}.xml", "meta/tests", "-v" ] } ], [ "diff-cover", "--compare-branch", { replace = "env", name = "DIFF_AGAINST", default = "origin/main" }, "{work_dir}{/}coverage.{env_name}.xml", "--fail-under", "100" ] ]
+
+[env."meta-3.11"]
+description = "run meta package tests to verify build and version injection"
+package = "skip"
+deps = [ "hatchling>=1.28" ]
+dependency_groups = [ "test" ]
+commands = [ [ "python", "-m", "pytest", { replace = "posargs", extend = true, default = [ "--cov", "{tox_root}{/}meta", "--cov-config=pyproject.toml", "--no-cov-on-fail", "--cov-report", "term-missing:skip-covered", "--cov-context=test", "--cov-report", "html:{env_tmp_dir}{/}htmlcov", "--cov-report", "xml:{work_dir}{/}coverage.{env_name}.xml", "--junitxml", "{work_dir}{/}junit.{env_name}.xml", "meta/tests", "-v" ] } ], [ "diff-cover", "--compare-branch", { replace = "env", name = "DIFF_AGAINST", default = "origin/main" }, "{work_dir}{/}coverage.{env_name}.xml", "--fail-under", "100" ] ]
+
+[env."meta-3.10"]
+description = "run meta package tests to verify build and version injection"
+package = "skip"
+deps = [ "hatchling>=1.28" ]
+dependency_groups = [ "test" ]
+commands = [ [ "python", "-m", "pytest", { replace = "posargs", extend = true, default = [ "--cov", "{tox_root}{/}meta", "--cov-config=pyproject.toml", "--no-cov-on-fail", "--cov-report", "term-missing:skip-covered", "--cov-context=test", "--cov-report", "html:{env_tmp_dir}{/}htmlcov", "--cov-report", "xml:{work_dir}{/}coverage.{env_name}.xml", "--junitxml", "{work_dir}{/}junit.{env_name}.xml", "meta/tests", "-v" ] } ], [ "diff-cover", "--compare-branch", { replace = "env", name = "DIFF_AGAINST", default = "origin/main" }, "{work_dir}{/}coverage.{env_name}.xml", "--fail-under", "100" ] ]
 
 [env.pkg_meta]
 description = "check that the long description is valid"
