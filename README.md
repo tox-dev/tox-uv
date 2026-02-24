@@ -11,6 +11,8 @@ will get both the benefits (performance) or downsides (bugs) of `uv`.
 <!--ts-->
 
 - [How to use](#how-to-use)
+  - [Installation options](#installation-options)
+  - [uv discovery](#uv-discovery)
 - [tox environment types provided](#tox-environment-types-provided)
 - [uv.lock support](#uvlock-support)
   - [package](#package)
@@ -39,6 +41,42 @@ tox --version # validate you are using the installed tox
 tox r -e py312 # will use uv
 tox --runner virtualenv r -e py312 # will use virtualenv+pip
 ```
+
+### Installation options
+
+`tox-uv` is distributed as two packages:
+
+- **`tox-uv`** (recommended): Meta package that includes both the plugin and a bundled `uv` binary. This ensures `uv` is
+  always available and provides the best out-of-box experience.
+
+- **`tox-uv-bare`**: Plugin-only package without the bundled `uv` binary. Use this in containerized environments
+  (Docker, Kubernetes) where `uv` is pre-installed in the system to avoid downloading duplicate binaries.
+
+Example Docker usage with `tox-uv-bare`:
+
+```dockerfile
+FROM python:3.12
+RUN pip install uv tox tox-uv-bare
+# uv is already in the container, no need to bundle it again
+```
+
+### uv discovery
+
+`tox-uv` discovers the `uv` binary in the following order:
+
+1. **`TOX_UV_PATH` environment variable**: Explicitly specify the `uv` binary location. Useful for testing custom `uv`
+   builds or when `uv` is installed in a non-standard location.
+
+   ```bash
+   export TOX_UV_PATH=/custom/path/to/uv
+   tox r
+   ```
+
+1. **Bundled `uv`** (when using `tox-uv` meta package): Uses the `uv` binary included with the `tox-uv` package.
+
+1. **System `uv`** (when using `tox-uv-bare` or if bundled `uv` not found): Searches for `uv` in your system `PATH`.
+
+If `uv` cannot be found, `tox-uv` will raise an error with installation instructions.
 
 ## tox environment types provided
 

@@ -76,6 +76,7 @@ build.targets.sdist.include = [
   "/src",
   "/tests",
 ]
+build.targets.wheel.packages = [ "src/tox_uv" ]
 version.source = "vcs"
 
 [tool.ruff]

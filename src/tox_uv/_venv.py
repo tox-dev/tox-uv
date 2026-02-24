@@ -186,8 +186,31 @@ class UvVenv(Python, ABC):
         """
         return VirtualEnv.python_spec_for_path(path)  # pragma: win32 no cover
 
+    @staticmethod
+    def _get_uv_version(uv_path: str) -> str:
+        try:
+            result = subprocess.run(  # noqa: S603
+                [uv_path, "--version"],
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=5,
+            )
+            return result.stdout.strip() if result.returncode == 0 else "unknown"
+        except (subprocess.TimeoutExpired, OSError):
+            return "unknown"
+
     @cached_property
     def uv(self) -> str:
+        # Check for explicit override first
+        if uv_env := os.environ.get("TOX_UV_PATH"):
+            if not (uv_path := shutil.which(uv_env)):
+                msg = f"TOX_UV_PATH={uv_env} not found in PATH"
+                raise RuntimeError(msg)
+            version = self._get_uv_version(uv_path)
+            _LOGGER.warning("using uv from TOX_UV_PATH: %s (%s)", uv_path, version)
+            return uv_path
+
         # Try bundled uv (when installed via tox-uv meta package)
         with contextlib.suppress(ImportError, FileNotFoundError):
             from uv import find_uv_bin  # noqa: PLC0415
@@ -201,22 +224,13 @@ class UvVenv(Python, ABC):
             msg = (
                 "uv not found. Either:\n"
                 "  1. Install with bundled uv: pip install tox-uv\n"
-                "  2. Install tox-uv-bare and ensure system uv is in PATH: which uv"
+                "  2. Install tox-uv-bare and ensure system uv is in PATH: which uv\n"
+                "  3. Set TOX_UV_PATH environment variable to uv binary location"
             )
             raise RuntimeError(msg)
 
-        try:
-            result = subprocess.run(  # noqa: S603
-                [uv_path, "--version"],
-                capture_output=True,
-                text=True,
-                check=False,
-                timeout=5,
-            )
-            version = result.stdout.strip() if result.returncode == 0 else "unknown"
-        except (subprocess.TimeoutExpired, OSError):
-            version = "unknown"
-        _LOGGER.warning("using system uv from PATH: %s (%s)", uv_path, version)
+        version = self._get_uv_version(uv_path)
+        _LOGGER.debug("using system uv from PATH: %s (%s)", uv_path, version)
         return uv_path
 
     @property

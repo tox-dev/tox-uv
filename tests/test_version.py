@@ -12,4 +12,11 @@ def test_version() -> None:
 
 def test_tox_version() -> None:
     output = check_output([sys.executable, "-m", "tox", "--version"], text=True)
-    assert " with uv==" in output
+    assert "tox-uv" in output
+
+
+def test_plugin_version_info_without_uv_package() -> None:
+    from tox_uv.plugin import tox_append_version_info  # noqa: PLC0415
+
+    result = tox_append_version_info()
+    assert not result

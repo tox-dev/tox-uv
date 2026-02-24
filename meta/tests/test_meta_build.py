@@ -52,3 +52,29 @@ def test_uv_dependency_present(built_wheel: Path) -> None:
 def test_wheel_contains_placeholder_module(built_wheel: Path) -> None:
     with zipfile.ZipFile(built_wheel) as whl:
         assert "tox_uv/__init__.py" in whl.namelist()
+
+
+def test_build_hook_updates_metadata() -> None:
+    from meta.hatch_build import CustomMetadataHook  # noqa: PLC0415
+
+    hook = CustomMetadataHook("test", {})
+    metadata = {
+        "version": "1.2.3",
+        "dependencies": ["tox-uv-bare", "uv<1,>=0.9.27"],
+    }
+    hook.update(metadata)
+
+    assert metadata["dependencies"] == ["tox-uv-bare==1.2.3", "uv<1,>=0.9.27"]
+
+
+def test_build_hook_preserves_other_dependencies() -> None:
+    from meta.hatch_build import CustomMetadataHook  # noqa: PLC0415
+
+    hook = CustomMetadataHook("test", {})
+    metadata = {
+        "version": "2.0.0",
+        "dependencies": ["other-package>=1.0", "tox-uv-bare", "another-dep"],
+    }
+    hook.update(metadata)
+
+    assert metadata["dependencies"] == ["other-package>=1.0", "tox-uv-bare==2.0.0", "another-dep"]

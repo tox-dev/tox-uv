@@ -53,15 +53,37 @@ commands = [ [ "pre-commit", "run", "--all-files", "--show-diff-on-failure" ] ]
 description = "run meta package tests to verify build and version injection"
 skip_install = true
 dependency_groups = [ "test" ]
+deps = [ "hatchling>=1.28" ]
 commands = [
   [
     "python",
     "-m",
     "pytest",
     { replace = "posargs", extend = true, default = [
+      "--cov",
+      "{tox_root}{/}meta",
+      "--cov-config=pyproject.toml",
+      "--no-cov-on-fail",
+      "--cov-report",
+      "term-missing:skip-covered",
+      "--cov-context=test",
+      "--cov-report",
+      "html:{env_tmp_dir}{/}htmlcov",
+      "--cov-report",
+      "xml:{work_dir}{/}coverage.{env_name}.xml",
+      "--junitxml",
+      "{work_dir}{/}junit.{env_name}.xml",
       "meta/tests",
       "-v",
     ] },
+  ],
+  [
+    "diff-cover",
+    "--compare-branch",
+    { replace = "env", name = "DIFF_AGAINST", default = "origin/main" },
+    "{work_dir}{/}coverage.{env_name}.xml",
+    "--fail-under",
+    "100",
   ],
 ]
 
