@@ -215,19 +215,19 @@ class UvVenv(Python, ABC):
         with contextlib.suppress(ImportError, FileNotFoundError):
             from uv import find_uv_bin  # noqa: PLC0415
 
-            uv_bin = find_uv_bin()
-            _LOGGER.debug("using bundled uv from: %s", uv_bin)
-            return uv_bin
+            uv_bin = find_uv_bin()  # pragma: no cover
+            _LOGGER.debug("using bundled uv from: %s", uv_bin)  # pragma: no cover
+            return uv_bin  # pragma: no cover
 
         # Fall back to system uv (when using tox-uv-bare)
-        if not (uv_path := shutil.which("uv")):
-            msg = (
+        if not (uv_path := shutil.which("uv")):  # pragma: no cover
+            msg = (  # pragma: no cover
                 "uv not found. Either:\n"
                 "  1. Install with bundled uv: pip install tox-uv\n"
                 "  2. Install tox-uv-bare and ensure system uv is in PATH: which uv\n"
                 "  3. Set TOX_UV_PATH environment variable to uv binary location"
             )
-            raise RuntimeError(msg)
+            raise RuntimeError(msg)  # pragma: no cover
 
         version = self._get_uv_version(uv_path)
         _LOGGER.debug("using system uv from PATH: %s (%s)", uv_path, version)

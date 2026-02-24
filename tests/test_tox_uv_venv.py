@@ -19,6 +19,7 @@ from tox.tox_env.python.api import PythonInfo, VersionInfo
 from tox_uv._venv import PythonPreference, UvVenv
 
 if TYPE_CHECKING:
+    from pytest_mock import MockerFixture
     from tox.pytest import ToxProjectCreator
 
 
@@ -659,6 +660,37 @@ def test_uv_path_env_var_valid(tox_project: ToxProjectCreator, monkeypatch: pyte
     uv_path = shutil.which("uv")
     assert uv_path is not None
     monkeypatch.setenv("TOX_UV_PATH", "uv")
+    project = tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python --version"})
+    result = project.run()
+    result.assert_success()
+
+
+def test_uv_version_timeout(tox_project: ToxProjectCreator, mocker: MockerFixture) -> None:
+    mock_run = mocker.patch("subprocess.run", side_effect=subprocess.TimeoutExpired("uv", 5))
+    project = tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python --version"})
+    result = project.run()
+    result.assert_success()
+    mock_run.assert_called()
+
+
+def test_uv_version_os_error(tox_project: ToxProjectCreator, mocker: MockerFixture) -> None:
+    mock_run = mocker.patch("subprocess.run", side_effect=OSError("mock error"))
+    project = tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python --version"})
+    result = project.run()
+    result.assert_success()
+    mock_run.assert_called()
+
+
+def test_uv_bundled_import_error(tox_project: ToxProjectCreator, mocker: MockerFixture) -> None:
+    original_import = __builtins__.__import__  # type: ignore[attr-defined]
+
+    def mock_import(name: str, *args: object, **kwargs: object) -> object:
+        if name == "uv":
+            msg = "mocked import error"
+            raise ImportError(msg)
+        return original_import(name, *args, **kwargs)
+
+    mocker.patch("builtins.__import__", side_effect=mock_import)
     project = tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python --version"})
     result = project.run()
     result.assert_success()
