@@ -682,7 +682,9 @@ def test_uv_version_os_error(tox_project: ToxProjectCreator, mocker: MockerFixtu
 
 
 def test_uv_bundled_import_error(tox_project: ToxProjectCreator, mocker: MockerFixture) -> None:
-    original_import = __builtins__.__import__  # type: ignore[attr-defined]
+    import builtins
+
+    original_import = builtins.__import__
 
     def mock_import(name: str, *args: object, **kwargs: object) -> object:
         if name == "uv":
