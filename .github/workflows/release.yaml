@@ -19,8 +19,10 @@ jobs:
           enable-cache: true
           cache-dependency-glob: "pyproject.toml"
           github-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build package
+      - name: Build tox-uv-bare package
         run: uv build --python 3.14 --python-preference only-managed --sdist --wheel . --out-dir dist
+      - name: Build tox-uv meta package
+        run: uv build --python 3.14 --python-preference only-managed --wheel meta --out-dir dist
       - name: Store the distribution packages
         uses: actions/upload-artifact@v6
         with:
