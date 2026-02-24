@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import shutil
 import sys
 from typing import TYPE_CHECKING
 
 import pytest
-from uv import find_uv_bin
 
 if TYPE_CHECKING:
     from tox.pytest import ToxProjectCreator
@@ -25,7 +25,7 @@ package_root = src
     result.assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
-    uv = find_uv_bin()
+    uv = shutil.which("uv")
     expected = [
         (
             "py",
@@ -79,7 +79,7 @@ def test_uv_lock_list_dependencies_command(tox_project: ToxProjectCreator) -> No
     result.assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
-    uv = find_uv_bin()
+    uv = shutil.which("uv")
     expected = [
         (
             "py",
@@ -140,7 +140,7 @@ def test_uv_lock_command(tox_project: ToxProjectCreator, verbose: str) -> None:
     result.assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
-    uv = find_uv_bin()
+    uv = shutil.which("uv")
     v_args = ["-v"] if verbose not in {"", "-v"} else []
     expected = [
         (
@@ -197,7 +197,7 @@ def test_uv_lock_with_default_groups(tox_project: ToxProjectCreator) -> None:
     result.assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
-    uv = find_uv_bin()
+    uv = shutil.which("uv")
     expected = [
         (
             "py",
@@ -241,7 +241,7 @@ def test_uv_lock_with_install_pkg(tox_project: ToxProjectCreator, name: str) -> 
     result.assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
-    uv = find_uv_bin()
+    uv = shutil.which("uv")
     expected = [
         (
             "py",
@@ -301,7 +301,7 @@ def test_uv_sync_extra_flags(tox_project: ToxProjectCreator, uv_sync_locked: boo
     result.assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
-    uv = find_uv_bin()
+    uv = shutil.which("uv")
 
     expected = [
         (
@@ -354,7 +354,7 @@ def test_uv_sync_extra_flags_toml(tox_project: ToxProjectCreator) -> None:
     result.assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
-    uv = find_uv_bin()
+    uv = shutil.which("uv")
 
     expected = [
         (
@@ -407,7 +407,7 @@ def test_uv_sync_dependency_groups(tox_project: ToxProjectCreator) -> None:
     result.assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
-    uv = find_uv_bin()
+    uv = shutil.which("uv")
 
     expected = [
         (
@@ -472,7 +472,7 @@ def test_uv_sync_uv_python_preference(
     result.assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
-    uv = find_uv_bin()
+    uv = shutil.which("uv")
 
     expected = [
         (
@@ -524,7 +524,7 @@ def test_skip_uv_sync(tox_project: ToxProjectCreator, monkeypatch: pytest.Monkey
     result.assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
-    uv = find_uv_bin()
+    uv = shutil.which("uv")
 
     expected = [
         (
@@ -565,7 +565,7 @@ def test_uv_package_non_editable(tox_project: ToxProjectCreator, monkeypatch: py
     result.assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
-    uv = find_uv_bin()
+    uv = shutil.which("uv")
 
     expected = [
         (
@@ -635,7 +635,7 @@ def test_uv_package_uv_editable(tox_project: ToxProjectCreator, monkeypatch: pyt
     result.assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
-    uv = find_uv_bin()
+    uv = shutil.which("uv")
 
     expected = [
         (
@@ -683,7 +683,7 @@ def test_skip_uv_package_skip(tox_project: ToxProjectCreator, monkeypatch: pytes
     result.assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
-    uv = find_uv_bin()
+    uv = shutil.which("uv")
 
     expected = [
         (
@@ -732,7 +732,7 @@ def test_uv_lock_ith_resolution(tox_project: ToxProjectCreator) -> None:
     result.assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
-    uv = find_uv_bin()
+    uv = shutil.which("uv")
     expected = [
         (
             "py",
@@ -784,7 +784,7 @@ commands = [["python", "hello"]]
     result.assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
-    uv = find_uv_bin()
+    uv = shutil.which("uv")
 
     expected = [
         (

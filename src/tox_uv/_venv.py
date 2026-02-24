@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 import os
+import shutil
+import subprocess  # noqa: S404
 import sys
 import sysconfig
 from abc import ABC
@@ -20,7 +23,6 @@ from tox.execute.request import StdinSource
 from tox.tox_env.errors import Skip
 from tox.tox_env.python.api import Python, PythonInfo, VersionInfo
 from tox.tox_env.python.virtual_env.api import VirtualEnv
-from uv import find_uv_bin
 from virtualenv.discovery.py_spec import PythonSpec
 
 from ._installer import UvInstaller
@@ -184,9 +186,52 @@ class UvVenv(Python, ABC):
         """
         return VirtualEnv.python_spec_for_path(path)  # pragma: win32 no cover
 
-    @property
+    @staticmethod
+    def _get_uv_version(uv_path: str) -> str:
+        try:
+            result = subprocess.run(  # noqa: S603
+                [uv_path, "--version"],
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=5,
+            )
+            return result.stdout.strip() if result.returncode == 0 else "unknown"
+        except (subprocess.TimeoutExpired, OSError):
+            return "unknown"
+
+    @cached_property
     def uv(self) -> str:
-        return find_uv_bin()
+        # Check for explicit override first
+        if uv_env := os.environ.get("TOX_UV_PATH"):
+            if not (uv_path := shutil.which(uv_env)):
+                msg = f"TOX_UV_PATH={uv_env} not found in PATH"
+                raise RuntimeError(msg)
+            version = self._get_uv_version(uv_path)
+            _LOGGER.warning("using uv from TOX_UV_PATH: %s (%s)", uv_path, version)
+            return uv_path
+
+        # Try bundled uv (when installed via tox-uv meta package)
+        with contextlib.suppress(ImportError, FileNotFoundError):
+            from uv import find_uv_bin  # type: ignore[import-not-found]  # noqa: PLC0415
+
+            uv_bin = find_uv_bin()  # pragma: no cover
+            _LOGGER.debug("using bundled uv from: %s", uv_bin)  # pragma: no cover
+            return uv_bin  # pragma: no cover
+
+        # Fall back to system uv (when using tox-uv-bare)
+        if not (uv_path := shutil.which("uv")):  # pragma: no cover
+            msg = (  # pragma: no cover
+                "uv not found. Either:\n"
+                "  1. Install with bundled uv: pip install tox-uv\n"
+                "  2. Install tox-uv-bare and ensure system uv is in PATH: which uv\n"
+                "  3. Set TOX_UV_PATH environment variable to uv binary location"
+            )
+            raise RuntimeError(msg)  # pragma: no cover
+
+        version = self._get_uv_version(uv_path)
+        _LOGGER.debug("using system uv from PATH: %s (%s)", uv_path, version)
+        return uv_path
 
     @property
     def venv_dir(self) -> Path:

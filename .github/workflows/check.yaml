@@ -39,6 +39,11 @@ jobs:
           - env: "3.14"
             os: macos-15
             suffix: -macos
+          - env: meta-3.14
+          - env: meta-3.13
+          - env: meta-3.12
+          - env: meta-3.11
+          - env: meta-3.10
     steps:
       - uses: actions/checkout@v6
         with:
@@ -51,8 +56,11 @@ jobs:
       - name: Install tox
         run: uv tool install --python-preference only-managed --python 3.14 tox --with .
       - name: Install Python
-        if: startsWith(matrix.env, '3.') && matrix.env != '3.14'
-        run: uv python install --python-preference only-managed ${{ matrix.env }}
+        if: (startsWith(matrix.env, '3.') && matrix.env != '3.14') || startsWith(matrix.env, 'meta-')
+        run: |
+          VERSION="${{ matrix.env }}"
+          VERSION="${VERSION#meta-}"
+          uv python install --python-preference only-managed "$VERSION"
       - name: Setup test suite
         run: tox run -vv --notest --skip-missing-interpreters false -e ${{ matrix.env }}
         env:

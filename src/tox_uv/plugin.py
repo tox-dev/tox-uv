@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from importlib.metadata import version
+from importlib.metadata import PackageNotFoundError, version
 from typing import TYPE_CHECKING
 
 from tox.plugin import impl
@@ -37,7 +37,11 @@ def tox_add_option(parser: ToxParser) -> None:
 
 
 def tox_append_version_info() -> str:
-    return f"with uv=={version('uv')}"
+    try:
+        uv_version = version("uv")
+    except PackageNotFoundError:
+        return ""
+    return f"with uv=={uv_version}"
 
 
 __all__ = [

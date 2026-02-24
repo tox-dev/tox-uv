@@ -5,10 +5,10 @@ import os
 import os.path
 import pathlib
 import platform
+import shutil
 import subprocess
 import sys
 from configparser import ConfigParser
-from importlib.metadata import version
 from typing import TYPE_CHECKING, get_args
 from unittest import mock
 
@@ -19,6 +19,7 @@ from tox.tox_env.python.api import PythonInfo, VersionInfo
 from tox_uv._venv import PythonPreference, UvVenv
 
 if TYPE_CHECKING:
+    from pytest_mock import MockerFixture
     from tox.pytest import ToxProjectCreator
 
 
@@ -336,7 +337,10 @@ def test_uv_env_has_access_to_plugin_uv(tox_project: ToxProjectCreator) -> None:
     result = project.run()
 
     result.assert_success()
-    ver = version("uv")
+    uv_path = shutil.which("uv")
+    assert uv_path is not None
+    uv_result = subprocess.run([uv_path, "--version"], capture_output=True, text=True, check=True)
+    ver = uv_result.stdout.strip().split()[1]
     assert f"uv {ver}" in result.out
 
 
@@ -439,9 +443,13 @@ def test_uv_env_python_not_in_path(tox_project: ToxProjectCreator) -> None:
     ver = sys.version_info
     exe_ext = ".exe" if sys.platform == "win32" else ""
     python_exe = f"python{ver.major}.{ver.minor}{exe_ext}"
+    uv_path = shutil.which("uv")
+    uv_dir = str(pathlib.Path(uv_path).parent) if uv_path else None
     env = dict(os.environ)
     env["PATH"] = os.path.pathsep.join(
-        path for path in env["PATH"].split(os.path.pathsep) if not (pathlib.Path(path) / python_exe).is_file()
+        path
+        for path in env["PATH"].split(os.path.pathsep)
+        if not (pathlib.Path(path) / python_exe).is_file() or path == uv_dir
     )
 
     # Make sure the Python interpreter can find our Tox module
@@ -640,4 +648,54 @@ allowlist_externals = python
     })
     (project.path / "sub").mkdir()
     result = project.run("-e", "demo")
+    result.assert_success()
+
+
+def test_uv_path_env_var_invalid(tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TOX_UV_PATH", "nonexistent_uv_binary")
+    project = tox_project({"tox.ini": "[testenv]\npackage=skip"})
+    with pytest.raises(RuntimeError, match="TOX_UV_PATH=nonexistent_uv_binary not found in PATH"):
+        project.run()
+
+
+def test_uv_path_env_var_valid(tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch) -> None:
+    uv_path = shutil.which("uv")
+    assert uv_path is not None
+    monkeypatch.setenv("TOX_UV_PATH", "uv")
+    project = tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python --version"})
+    result = project.run()
+    result.assert_success()
+
+
+def test_uv_version_timeout(tox_project: ToxProjectCreator, mocker: MockerFixture) -> None:
+    mock_run = mocker.patch("subprocess.run", side_effect=subprocess.TimeoutExpired("uv", 5))
+    project = tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python --version"})
+    result = project.run()
+    result.assert_success()
+    mock_run.assert_called()
+
+
+def test_uv_version_os_error(tox_project: ToxProjectCreator, mocker: MockerFixture) -> None:
+    mock_run = mocker.patch("subprocess.run", side_effect=OSError("mock error"))
+    project = tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python --version"})
+    result = project.run()
+    result.assert_success()
+    mock_run.assert_called()
+
+
+def test_uv_bundled_import_error(tox_project: ToxProjectCreator, mocker: MockerFixture) -> None:
+    import builtins  # noqa: PLC0415
+    from typing import Any  # noqa: PLC0415
+
+    original_import = builtins.__import__
+
+    def mock_import(name: str, *args: Any, **kwargs: Any) -> Any:  # noqa: ANN401
+        if name == "uv":
+            msg = "mocked import error"
+            raise ImportError(msg)
+        return original_import(name, *args, **kwargs)
+
+    mocker.patch("builtins.__import__", side_effect=mock_import)
+    project = tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python --version"})
+    result = project.run()
     result.assert_success()
