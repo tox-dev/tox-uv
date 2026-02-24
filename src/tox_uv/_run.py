@@ -42,12 +42,7 @@ class UvVenvRunner(UvVenv, PythonRun):
     def _package_types(self) -> tuple[str, ...]:
         return *super()._package_types, UvPackage.KEY, UvEditablePackage.KEY
 
-    def _setup_env(self) -> None:
-        super(PythonRun, self)._setup_env()
-        if getattr(self.options, "skip_env_install", False):
-            _LOGGER.warning("skip installing dependencies and package")
-            return
-
+    def _install_deps(self) -> None:
         groups: set[str] = self.conf["dependency_groups"]
         uv_resolution: str = self.conf["uv_resolution"]
 
@@ -66,11 +61,16 @@ class UvVenvRunner(UvVenv, PythonRun):
                 uv_resolution,
             )
             self._install(combined_reqs, PythonRun.__name__, "deps")
-        elif self.conf["pylock"]:
-            self._install_pylock()
         else:
-            self._install_deps()
-            self._install_dependency_groups()
+            super()._install_deps()
+
+    def _install_dependency_groups(self) -> None:
+        groups: set[str] = self.conf["dependency_groups"]
+        uv_resolution: str = self.conf["uv_resolution"]
+
+        if uv_resolution and groups:
+            return
+        super()._install_dependency_groups()
 
 
 __all__ = [
