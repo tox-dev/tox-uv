@@ -337,7 +337,9 @@ def test_uv_env_has_access_to_plugin_uv(tox_project: ToxProjectCreator) -> None:
     result = project.run()
 
     result.assert_success()
-    uv_result = subprocess.run([shutil.which("uv"), "--version"], capture_output=True, text=True, check=True)
+    uv_path = shutil.which("uv")
+    assert uv_path is not None
+    uv_result = subprocess.run([uv_path, "--version"], capture_output=True, text=True, check=True)
     ver = uv_result.stdout.strip().split()[1]
     assert f"uv {ver}" in result.out
 
@@ -682,11 +684,12 @@ def test_uv_version_os_error(tox_project: ToxProjectCreator, mocker: MockerFixtu
 
 
 def test_uv_bundled_import_error(tox_project: ToxProjectCreator, mocker: MockerFixture) -> None:
-    import builtins
+    import builtins  # noqa: PLC0415
+    from typing import Any  # noqa: PLC0415
 
     original_import = builtins.__import__
 
-    def mock_import(name: str, *args: object, **kwargs: object) -> object:
+    def mock_import(name: str, *args: Any, **kwargs: Any) -> Any:  # noqa: ANN401
         if name == "uv":
             msg = "mocked import error"
             raise ImportError(msg)

@@ -165,3 +165,4 @@ html.skip_covered = false
 
 [tool.ty]
 environment.python-version = "3.14"
+src.exclude = [ "meta" ]

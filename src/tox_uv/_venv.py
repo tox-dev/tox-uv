@@ -213,7 +213,7 @@ class UvVenv(Python, ABC):
 
         # Try bundled uv (when installed via tox-uv meta package)
         with contextlib.suppress(ImportError, FileNotFoundError):
-            from uv import find_uv_bin  # noqa: PLC0415
+            from uv import find_uv_bin  # type: ignore[import-not-found]  # noqa: PLC0415
 
             uv_bin = find_uv_bin()  # pragma: no cover
             _LOGGER.debug("using bundled uv from: %s", uv_bin)  # pragma: no cover
