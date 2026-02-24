@@ -58,7 +58,7 @@ def test_build_hook_updates_metadata() -> None:
     from meta.hatch_build import CustomMetadataHook  # noqa: PLC0415
 
     hook = CustomMetadataHook("test", {})
-    metadata = {
+    metadata: dict[str, object] = {
         "version": "1.2.3",
         "dependencies": ["tox-uv-bare", "uv<1,>=0.9.27"],
     }
@@ -71,10 +71,32 @@ def test_build_hook_preserves_other_dependencies() -> None:
     from meta.hatch_build import CustomMetadataHook  # noqa: PLC0415
 
     hook = CustomMetadataHook("test", {})
-    metadata = {
+    metadata: dict[str, object] = {
         "version": "2.0.0",
         "dependencies": ["other-package>=1.0", "tox-uv-bare", "another-dep"],
     }
     hook.update(metadata)
 
     assert metadata["dependencies"] == ["other-package>=1.0", "tox-uv-bare==2.0.0", "another-dep"]
+
+
+def test_build_hook_injects_root_readme() -> None:
+    from meta.hatch_build import CustomMetadataHook  # noqa: PLC0415
+
+    hook = CustomMetadataHook("test", {})
+    metadata: dict[str, object] = {"version": "1.0.0", "dependencies": []}
+    hook.update(metadata)
+
+    readme = metadata["readme"]
+    assert isinstance(readme, dict)
+    assert readme["content-type"] == "text/markdown"
+    assert readme["text"] == (Path(__file__).parents[2] / "README.md").read_text()
+
+
+def test_wheel_contains_root_readme(built_wheel: Path) -> None:
+    with zipfile.ZipFile(built_wheel) as whl:
+        metadata_files = [name for name in whl.namelist() if name.endswith("/METADATA")]
+        metadata = whl.read(metadata_files[0]).decode()
+
+    root_readme = (Path(__file__).parents[2] / "README.md").read_text()
+    assert root_readme in metadata

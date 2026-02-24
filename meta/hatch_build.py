@@ -1,6 +1,8 @@
 # ruff: noqa: INP001
 from __future__ import annotations
 
+from pathlib import Path
+
 from hatchling.metadata.plugin.interface import MetadataHookInterface
 
 
@@ -11,3 +13,7 @@ class CustomMetadataHook(MetadataHookInterface):
         metadata["dependencies"] = [
             f"tox-uv-bare=={version}" if dep.startswith("tox-uv-bare") else dep for dep in dependencies
         ]
+        metadata["readme"] = {
+            "content-type": "text/markdown",
+            "text": (Path(__file__).parent.parent / "README.md").read_text(),
+        }

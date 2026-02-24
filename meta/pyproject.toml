@@ -8,7 +8,6 @@ requires = [
 [project]
 name = "tox-uv"
 description = "Integration of uv with tox (meta package with bundled uv)."
-readme = "README.md"
 keywords = [
   "environments",
   "isolated",
@@ -36,6 +35,7 @@ classifiers = [
   "Topic :: System",
 ]
 dynamic = [
+  "readme",
   "version",
 ]
 dependencies = [
