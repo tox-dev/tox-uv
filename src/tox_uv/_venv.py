@@ -267,6 +267,7 @@ class UvVenv(Python, ABC):
         version_spec = self.env_version_spec()
 
         cmd: list[str] = [self.uv, "venv", "-p", version_spec, "--allow-existing"]
+        cmd.append(f"--prompt={self.core._root.name}[{self.name}]")  # noqa: SLF001
         if self.options.verbosity > 3:  # noqa: PLR2004
             cmd.append("-v")
         if self.conf["uv_seed"]:
