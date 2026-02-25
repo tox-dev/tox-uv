@@ -26,6 +26,7 @@ package_root = src
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
     uv = shutil.which("uv")
+    prompt = f"{project.path.name}[py]"
     expected = [
         (
             "py",
@@ -36,6 +37,7 @@ package_root = src
                 "-p",
                 sys.executable,
                 "--allow-existing",
+                f"--prompt={prompt}",
                 "-v",
                 "--python-preference",
                 "system",
@@ -80,6 +82,7 @@ def test_uv_lock_list_dependencies_command(tox_project: ToxProjectCreator) -> No
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
     uv = shutil.which("uv")
+    prompt = f"{project.path.name}[py]"
     expected = [
         (
             "py",
@@ -90,6 +93,7 @@ def test_uv_lock_list_dependencies_command(tox_project: ToxProjectCreator) -> No
                 "-p",
                 sys.executable,
                 "--allow-existing",
+                f"--prompt={prompt}",
                 "-v",
                 "--python-preference",
                 "system",
@@ -142,6 +146,7 @@ def test_uv_lock_command(tox_project: ToxProjectCreator, verbose: str) -> None:
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
     uv = shutil.which("uv")
     v_args = ["-v"] if verbose not in {"", "-v"} else []
+    prompt = f"{project.path.name}[py]"
     expected = [
         (
             "py",
@@ -152,6 +157,7 @@ def test_uv_lock_command(tox_project: ToxProjectCreator, verbose: str) -> None:
                 "-p",
                 sys.executable,
                 "--allow-existing",
+                f"--prompt={prompt}",
                 *v_args,
                 "--python-preference",
                 "system",
@@ -198,6 +204,7 @@ def test_uv_lock_with_default_groups(tox_project: ToxProjectCreator) -> None:
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
     uv = shutil.which("uv")
+    prompt = f"{project.path.name}[py]"
     expected = [
         (
             "py",
@@ -208,6 +215,7 @@ def test_uv_lock_with_default_groups(tox_project: ToxProjectCreator) -> None:
                 "-p",
                 sys.executable,
                 "--allow-existing",
+                f"--prompt={prompt}",
                 "-v",
                 "--python-preference",
                 "system",
@@ -242,6 +250,7 @@ def test_uv_lock_with_install_pkg(tox_project: ToxProjectCreator, name: str) -> 
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
     uv = shutil.which("uv")
+    prompt = f"{project.path.name}[py]"
     expected = [
         (
             "py",
@@ -252,6 +261,7 @@ def test_uv_lock_with_install_pkg(tox_project: ToxProjectCreator, name: str) -> 
                 "-p",
                 sys.executable,
                 "--allow-existing",
+                f"--prompt={prompt}",
                 "-v",
                 "--python-preference",
                 "system",
@@ -302,6 +312,7 @@ def test_uv_sync_extra_flags(tox_project: ToxProjectCreator, uv_sync_locked: boo
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
     uv = shutil.which("uv")
+    prompt = f"{project.path.name}[py]"
 
     expected = [
         (
@@ -313,6 +324,7 @@ def test_uv_sync_extra_flags(tox_project: ToxProjectCreator, uv_sync_locked: boo
                 "-p",
                 sys.executable,
                 "--allow-existing",
+                f"--prompt={prompt}",
                 "--python-preference",
                 "system",
                 str(project.path / ".tox" / "py"),
@@ -355,6 +367,7 @@ def test_uv_sync_extra_flags_toml(tox_project: ToxProjectCreator) -> None:
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
     uv = shutil.which("uv")
+    prompt = f"{project.path.name}[py]"
 
     expected = [
         (
@@ -366,6 +379,7 @@ def test_uv_sync_extra_flags_toml(tox_project: ToxProjectCreator) -> None:
                 "-p",
                 sys.executable,
                 "--allow-existing",
+                f"--prompt={prompt}",
                 "--python-preference",
                 "system",
                 str(project.path / ".tox" / "py"),
@@ -408,6 +422,7 @@ def test_uv_sync_dependency_groups(tox_project: ToxProjectCreator) -> None:
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
     uv = shutil.which("uv")
+    prompt = f"{project.path.name}[py]"
 
     expected = [
         (
@@ -419,6 +434,7 @@ def test_uv_sync_dependency_groups(tox_project: ToxProjectCreator) -> None:
                 "-p",
                 sys.executable,
                 "--allow-existing",
+                f"--prompt={prompt}",
                 "--python-preference",
                 "system",
                 str(project.path / ".tox" / "py"),
@@ -473,6 +489,7 @@ def test_uv_sync_uv_python_preference(
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
     uv = shutil.which("uv")
+    prompt = f"{project.path.name}[py]"
 
     expected = [
         (
@@ -484,6 +501,7 @@ def test_uv_sync_uv_python_preference(
                 "-p",
                 sys.executable,
                 "--allow-existing",
+                f"--prompt={prompt}",
                 *injected,
                 str(project.path / ".tox" / "py"),
             ],
@@ -525,6 +543,7 @@ def test_skip_uv_sync(tox_project: ToxProjectCreator, monkeypatch: pytest.Monkey
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
     uv = shutil.which("uv")
+    prompt = f"{project.path.name}[py]"
 
     expected = [
         (
@@ -536,6 +555,7 @@ def test_skip_uv_sync(tox_project: ToxProjectCreator, monkeypatch: pytest.Monkey
                 "-p",
                 sys.executable,
                 "--allow-existing",
+                f"--prompt={prompt}",
                 "--python-preference",
                 "system",
                 str(project.path / ".tox" / "py"),
@@ -566,6 +586,7 @@ def test_uv_package_non_editable(tox_project: ToxProjectCreator, monkeypatch: py
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
     uv = shutil.which("uv")
+    prompt = f"{project.path.name}[py]"
 
     expected = [
         (
@@ -577,6 +598,7 @@ def test_uv_package_non_editable(tox_project: ToxProjectCreator, monkeypatch: py
                 "-p",
                 sys.executable,
                 "--allow-existing",
+                f"--prompt={prompt}",
                 "--python-preference",
                 "system",
                 str(project.path / ".tox" / "py"),
@@ -636,6 +658,7 @@ def test_uv_package_uv_editable(tox_project: ToxProjectCreator, monkeypatch: pyt
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
     uv = shutil.which("uv")
+    prompt = f"{project.path.name}[py]"
 
     expected = [
         (
@@ -647,6 +670,7 @@ def test_uv_package_uv_editable(tox_project: ToxProjectCreator, monkeypatch: pyt
                 "-p",
                 sys.executable,
                 "--allow-existing",
+                f"--prompt={prompt}",
                 "--python-preference",
                 "system",
                 str(project.path / ".tox" / "py"),
@@ -684,6 +708,7 @@ def test_skip_uv_package_skip(tox_project: ToxProjectCreator, monkeypatch: pytes
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
     uv = shutil.which("uv")
+    prompt = f"{project.path.name}[py]"
 
     expected = [
         (
@@ -695,6 +720,7 @@ def test_skip_uv_package_skip(tox_project: ToxProjectCreator, monkeypatch: pytes
                 "-p",
                 sys.executable,
                 "--allow-existing",
+                f"--prompt={prompt}",
                 "--python-preference",
                 "system",
                 str(project.path / ".tox" / "py"),
@@ -733,6 +759,7 @@ def test_uv_lock_ith_resolution(tox_project: ToxProjectCreator) -> None:
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
     uv = shutil.which("uv")
+    prompt = f"{project.path.name}[py]"
     expected = [
         (
             "py",
@@ -743,6 +770,7 @@ def test_uv_lock_ith_resolution(tox_project: ToxProjectCreator) -> None:
                 "-p",
                 sys.executable,
                 "--allow-existing",
+                f"--prompt={prompt}",
                 "--python-preference",
                 "system",
                 str(project.path / ".tox" / "py"),
@@ -785,7 +813,7 @@ commands = [["python", "hello"]]
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
     uv = shutil.which("uv")
-
+    prompt = f"{project.path.name}[py]"
     expected = [
         (
             "py",
@@ -796,6 +824,7 @@ commands = [["python", "hello"]]
                 "-p",
                 sys.executable,
                 "--allow-existing",
+                f"--prompt={prompt}",
                 "--python-preference",
                 "system",
                 str(project.path / ".tox" / "py"),
