@@ -27,7 +27,7 @@ jobs:
       - name: Build tox-uv meta package
         run: uv build --python 3.14 --python-preference only-managed --wheel meta --out-dir dist
       - name: Store the distribution packages
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.dists-artifact-name }}
           path: dist/*
