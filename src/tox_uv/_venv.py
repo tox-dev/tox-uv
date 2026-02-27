@@ -22,7 +22,9 @@ from tox.execute.local_sub_process import LocalSubProcessExecutor
 from tox.execute.request import StdinSource
 from tox.tox_env.errors import Skip
 from tox.tox_env.python.api import Python, PythonInfo, VersionInfo
-from tox.tox_env.python.virtual_env.api import VirtualEnv
+from virtualenv.app_data import make_app_data
+from virtualenv.discovery.cached_py_info import from_exe
+from virtualenv.discovery.py_info import PythonInfo as VirtualenvPythonInfo
 from virtualenv.discovery.py_spec import PythonSpec
 
 from ._installer import UvInstaller
@@ -126,7 +128,7 @@ class UvVenv(Python, ABC):
     def runs_on_platform(self) -> str:
         return sys.platform
 
-    def _get_python(self, base_python: list[str]) -> PythonInfo | None:  # noqa: PLR6301
+    def _get_python(self, base_python: list[str]) -> PythonInfo | None:
         for base in base_python:  # pragma: no branch
             if base == sys.executable:
                 version_info = sys.version_info
@@ -147,23 +149,30 @@ class UvVenv(Python, ABC):
                 )
             base_path = Path(base)
             if base_path.is_absolute():  # pragma: win32 no cover
-                info = VirtualEnv.get_virtualenv_py_info(base_path)
+                info = self._get_virtualenv_py_info(base_path)
+                vi = info.version_info
                 return PythonInfo(
                     implementation=info.implementation,
-                    version_info=VersionInfo(*info.version_info),
+                    version_info=VersionInfo(
+                        major=int(vi.major),
+                        minor=int(vi.minor),
+                        micro=int(vi.micro),
+                        releaselevel=str(vi.releaselevel),
+                        serial=int(vi.serial),
+                    ),
                     version=info.version,
                     is_64=info.architecture == 64,  # noqa: PLR2004
                     platform=info.platform,
                     extra={"executable": base},
-                    free_threaded=info.free_threaded,
+                    free_threaded=bool(info.free_threaded),
                 )
             spec = PythonSpec.from_string_spec(base)
             return PythonInfo(
                 implementation=spec.implementation or "CPython",
                 version_info=VersionInfo(
-                    major=spec.major,
-                    minor=spec.minor,
-                    micro=spec.micro,
+                    major=spec.major or 0,
+                    minor=spec.minor or 0,
+                    micro=spec.micro or 0,
                     releaselevel="",
                     serial=0,
                 ),
@@ -171,10 +180,22 @@ class UvVenv(Python, ABC):
                 is_64=spec.architecture == 64,  # noqa: PLR2004
                 platform=sys.platform,
                 extra={"architecture": spec.architecture},
-                free_threaded=spec.free_threaded,
+                free_threaded=bool(spec.free_threaded),
             )
 
         return None  # pragma: no cover
+
+    @staticmethod
+    def _get_virtualenv_py_info(path: Path) -> VirtualenvPythonInfo:  # pragma: win32 no cover
+        result = from_exe(
+            VirtualenvPythonInfo,
+            make_app_data(None, read_only=False, env=os.environ),
+            str(path),
+        )
+        if result is None:  # pragma: no cover
+            msg = f"failed to discover Python info for {path}"
+            raise RuntimeError(msg)
+        return result
 
     @classmethod
     def python_spec_for_path(cls, path: Path) -> PythonSpec:
@@ -184,7 +205,10 @@ class UvVenv(Python, ABC):
         :param path: the path investigated
         :return: the found spec
         """
-        return VirtualEnv.python_spec_for_path(path)  # pragma: win32 no cover
+        info = cls._get_virtualenv_py_info(path)  # pragma: win32 no cover
+        return PythonSpec.from_string_spec(  # pragma: win32 no cover
+            f"{info.implementation}{info.version_info.major}{info.version_info.minor}-{info.architecture}",
+        )
 
     @staticmethod
     def _get_uv_version(uv_path: str) -> str:
