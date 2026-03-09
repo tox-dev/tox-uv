@@ -14,7 +14,7 @@ commands = [
     "python",
     "-m",
     "pytest",
-    { replace = "posargs", extend = true, default = [
+    { replace = "posargs", default = [
       "--cov",
       "{env_site_packages_dir}{/}tox_uv",
       "--cov",
@@ -31,7 +31,7 @@ commands = [
       "--junitxml",
       "{work_dir}{/}junit.{env_name}.xml",
       "tests",
-    ] },
+    ], extend = true },
   ],
   [
     "diff-cover",
@@ -64,6 +64,15 @@ description = "run type check on code base"
 dependency_groups = [ "type" ]
 commands = [ [ "ty", "check", "--output-format", "concise", "--error-on-warning", "." ] ]
 
+[env.dev]
+description = "generate a DEV environment"
+package = "editable"
+dependency_groups = [ "dev" ]
+commands = [
+  [ "uv", "pip", "tree" ],
+  [ "python", "-c", "import sys; print(sys.executable)" ],
+]
+
 [env.meta]
 description = "run meta package tests to verify build and version injection"
 package = "skip"
@@ -74,7 +83,7 @@ commands = [
     "python",
     "-m",
     "pytest",
-    { replace = "posargs", extend = true, default = [
+    { replace = "posargs", default = [
       "--cov",
       "{tox_root}{/}meta",
       "--cov-config=pyproject.toml",
@@ -90,7 +99,7 @@ commands = [
       "{work_dir}{/}junit.{env_name}.xml",
       "meta/tests",
       "-v",
-    ] },
+    ], extend = true },
   ],
   [
     "diff-cover",
@@ -116,12 +125,3 @@ base = [ "meta" ]
 
 [env."meta-3.14"]
 base = [ "meta" ]
-
-[env.dev]
-description = "generate a DEV environment"
-package = "editable"
-dependency_groups = [ "dev" ]
-commands = [
-  [ "uv", "pip", "tree" ],
-  [ "python", "-c", "import sys; print(sys.executable)" ],
-]
