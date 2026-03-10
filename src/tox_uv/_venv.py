@@ -9,12 +9,10 @@ import os
 import shutil
 import subprocess  # noqa: S404
 import sys
-import sysconfig
 from abc import ABC
 from functools import cached_property
 from importlib.resources import as_file, files
 from pathlib import Path
-from platform import python_implementation
 from typing import TYPE_CHECKING, Any, Final, Literal, TypeAlias, cast
 
 from tox.config.loader.str_convert import StrConvert
@@ -130,43 +128,31 @@ class UvVenv(Python, ABC):
 
     def _get_python(self, base_python: list[str]) -> PythonInfo | None:
         for base in base_python:  # pragma: no branch
-            if base == sys.executable:
-                version_info = sys.version_info
-                return PythonInfo(
-                    implementation=python_implementation(),
-                    version_info=VersionInfo(
-                        major=version_info.major,
-                        minor=version_info.minor,
-                        micro=version_info.micro,
-                        releaselevel=version_info.releaselevel,
-                        serial=version_info.serial,
-                    ),
-                    version=sys.version,
-                    is_64=sys.maxsize > 2**32,
-                    platform=sys.platform,
-                    extra={},
-                    free_threaded=sysconfig.get_config_var("Py_GIL_DISABLED") == 1,
-                )
             base_path = Path(base)
             if base_path.is_absolute():  # pragma: win32 no cover
-                info = self._get_virtualenv_py_info(base_path)
-                vi = info.version_info
-                return PythonInfo(
-                    implementation=info.implementation,
-                    version_info=VersionInfo(
-                        major=int(vi.major),
-                        minor=int(vi.minor),
-                        micro=int(vi.micro),
-                        releaselevel=str(vi.releaselevel),
-                        serial=int(vi.serial),
-                    ),
-                    version=info.version,
-                    is_64=info.architecture == 64,  # noqa: PLR2004
-                    platform=info.platform,
-                    extra={"executable": base},
-                    free_threaded=bool(info.free_threaded),
-                )
-            spec = PythonSpec.from_string_spec(base)
+                env_spec = PythonSpec.from_string_spec(self.name)
+                if env_spec.major is not None:
+                    spec = env_spec
+                else:
+                    info = self._get_virtualenv_py_info(base_path)
+                    vi = info.version_info
+                    return PythonInfo(
+                        implementation=info.implementation,
+                        version_info=VersionInfo(
+                            major=int(vi.major),
+                            minor=int(vi.minor),
+                            micro=int(vi.micro),
+                            releaselevel=str(vi.releaselevel),
+                            serial=int(vi.serial),
+                        ),
+                        version=info.version,
+                        is_64=info.architecture == 64,  # noqa: PLR2004
+                        platform=info.platform,
+                        extra={"executable": str(base_path)},
+                        free_threaded=bool(info.free_threaded),
+                    )
+            else:
+                spec = PythonSpec.from_string_spec(base)
             return PythonInfo(
                 implementation=spec.implementation or "CPython",
                 version_info=VersionInfo(
@@ -337,20 +323,17 @@ class UvVenv(Python, ABC):
         return self.venv_dir / "lib" / f"{impl}{py.version_dot}" / "site-packages"
 
     def env_version_spec(self) -> str:
+        if executable := self.base_python.extra.get("executable"):
+            return executable
         base = self.base_python.version_info
         imp = self.base_python.impl_lower
-        executable = self.base_python.extra.get("executable")
         architecture = self.base_python.extra.get("architecture")
         free_threaded = self.base_python.free_threaded
-        if executable:  # pragma: win32 no cover
-            version_spec = str(executable)
-        elif (
-            architecture is None
-            and (base.major, base.minor) == sys.version_info[:2]
-            and (sys.implementation.name.lower() == imp)
-            and ((sysconfig.get_config_var("Py_GIL_DISABLED") == 1) == free_threaded)
-        ):
-            version_spec = sys.executable
+        if architecture is not None and self.base_python.platform == "win32":
+            uv_arch = {32: "x86", 64: "x86_64"}[architecture]
+            uv_imp = imp or ""
+            free_threaded_tag = "+freethreaded" if free_threaded else ""
+            version_spec = f"{uv_imp}-{base.major}.{base.minor}{free_threaded_tag}-windows-{uv_arch}-none"
         else:
             uv_imp = imp or ""
             free_threaded_tag = "+freethreaded" if free_threaded else ""
@@ -358,9 +341,6 @@ class UvVenv(Python, ABC):
                 version_spec = f"{uv_imp}"
             elif not base.minor:
                 version_spec = f"{uv_imp}{base.major}{free_threaded_tag}"
-            elif architecture is not None and self.base_python.platform == "win32":
-                uv_arch = {32: "x86", 64: "x86_64"}[architecture]
-                version_spec = f"{uv_imp}-{base.major}.{base.minor}{free_threaded_tag}-windows-{uv_arch}-none"
             else:
                 version_spec = f"{uv_imp}{base.major}.{base.minor}{free_threaded_tag}"
         return version_spec
