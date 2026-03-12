@@ -29,6 +29,16 @@ def test_uv_venv_self(tox_project: ToxProjectCreator) -> None:
     result.assert_success()
 
 
+@pytest.mark.parametrize("env_name", ["doc8", "flake8", "check2"])
+def test_uv_venv_non_python_env_name_with_trailing_digit(tox_project: ToxProjectCreator, env_name: str) -> None:
+    project = tox_project({
+        "tox.ini": f"[testenv:{env_name}]\nskip_install = true\ncommands = python --version",
+    })
+    result = project.run("-vve", env_name)
+    result.assert_success()
+    assert f"-p {env_name}" not in result.out
+
+
 def test_uv_venv_pass_env(tox_project: ToxProjectCreator) -> None:
     project = tox_project({"tox.ini": "[testenv]\npackage=skip"})
     result = project.run("c", "-k", "pass_env")
