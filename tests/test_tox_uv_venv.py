@@ -574,6 +574,18 @@ def test_get_python_free_threaded(base_python: str, is_free_threaded: int | None
     assert python_info.free_threaded == is_free_threaded
 
 
+@pytest.mark.parametrize("env_name", ["pypy", "cpython"])
+def test_get_python_abs_path_with_impl(env_name: str) -> None:
+    create_args = mock.Mock()
+    create_args.conf = mock.MagicMock()
+    create_args.conf.__getitem__.return_value = env_name
+    uv_venv = _TestUvVenv(create_args=create_args)
+    python_info = uv_venv.get_python_info(sys.executable)
+    assert python_info is not None
+    expected_impl = "CPython" if env_name == "cpython" else env_name
+    assert python_info.implementation.lower() == expected_impl.lower()
+
+
 def test_env_version_spec_no_architecture() -> None:
     uv_venv = _TestUvVenv(create_args=mock.MagicMock())
     python_info = PythonInfo(
