@@ -182,7 +182,6 @@ def test_uv_venv_spec_pypy(
 @pytest.mark.parametrize(
     ("implementation", "expected_implementation", "expected_name"),
     [
-        ("", "cpython", "cpython"),
         ("py", "cpython", "cpython"),
         ("pypy", "pypy", "pypy"),
     ],
@@ -284,6 +283,15 @@ def test_uv_venv_spec_abs_path_conflict_impl(
     result = project.run("-vv", "-e", env)
     result.assert_failed()
     assert f"failed with env name {env} conflicting with base python {other_interpreter_exe}" in result.out
+
+
+@pytest.mark.parametrize("env_name", ["control2", "build3", "lint", "myenv"])
+def test_uv_venv_non_python_env_name(tox_project: ToxProjectCreator, env_name: str) -> None:
+    project = tox_project({
+        "tox.ini": f"[testenv:{env_name}]\npackage=skip\nskip_install=true\ncommands=python --version"
+    })
+    result = project.run("-vve", env_name)
+    result.assert_success()
 
 
 def test_uv_venv_na(tox_project: ToxProjectCreator) -> None:
@@ -526,6 +534,16 @@ class _TestUvVenv(UvVenv):
 
     def get_python_info(self, base_python: str) -> PythonInfo | None:
         return self._get_python([base_python])
+
+
+def test_get_python_abs_path_with_python_env_name() -> None:  # pragma: win32 no cover
+    uv_venv = _TestUvVenv(create_args=mock.Mock())
+    with mock.patch.object(type(uv_venv), "name", new_callable=mock.PropertyMock, return_value="py999"):
+        python_info = uv_venv.get_python_info(sys.executable)
+    assert python_info is not None
+    assert python_info.version_info.major == 9
+    assert python_info.version_info.minor == 99
+    assert python_info.implementation == "CPython"
 
 
 @pytest.mark.parametrize(
