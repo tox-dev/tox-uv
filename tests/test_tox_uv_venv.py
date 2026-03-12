@@ -536,6 +536,16 @@ class _TestUvVenv(UvVenv):
         return self._get_python([base_python])
 
 
+def test_get_python_abs_path_with_python_env_name() -> None:  # pragma: win32 no cover
+    uv_venv = _TestUvVenv(create_args=mock.Mock())
+    with mock.patch.object(type(uv_venv), "name", new_callable=mock.PropertyMock, return_value="py999"):
+        python_info = uv_venv.get_python_info(sys.executable)
+    assert python_info is not None
+    assert python_info.version_info.major == 9
+    assert python_info.version_info.minor == 99
+    assert python_info.implementation == "CPython"
+
+
 @pytest.mark.parametrize(
     ("base_python", "architecture"), [("python3.11", None), ("python3.11-32", 32), ("python3.11-64", 64)]
 )
