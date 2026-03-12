@@ -136,6 +136,8 @@ class UvVenv(Python, ABC):
                 )
                 if env_spec.major is not None and has_python_factor:
                     spec = env_spec
+                elif (base_from_name := self.extract_base_python(self.name)) is not None:
+                    spec = PythonSpec.from_string_spec(base_from_name)
                 else:
                     info = self._get_virtualenv_py_info(base_path)
                     vi = info.version_info
