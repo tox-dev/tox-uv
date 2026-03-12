@@ -51,5 +51,5 @@ urls.Tracker = "https://github.com/tox-dev/tox-uv/issues"
 [tool.hatch]
 version.source = "vcs"
 version.raw-options.root = ".."
-build.targets.wheel.packages = [ "tox_uv" ]
+build.targets.wheel.force-include."__init__.py" = "tox_uv_meta/__init__.py"
 metadata.hooks.custom.path = "hatch_build.py"
