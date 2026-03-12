@@ -19,7 +19,7 @@ from tox.config.loader.str_convert import StrConvert
 from tox.execute.local_sub_process import LocalSubProcessExecutor
 from tox.execute.request import StdinSource
 from tox.tox_env.errors import Skip
-from tox.tox_env.python.api import Python, PythonInfo, VersionInfo
+from tox.tox_env.python.api import PY_FACTORS_RE, PY_FACTORS_RE_EXPLICIT_VERSION, Python, PythonInfo, VersionInfo
 from virtualenv.app_data import make_app_data
 from virtualenv.discovery.cached_py_info import from_exe
 from virtualenv.discovery.py_info import PythonInfo as VirtualenvPythonInfo
@@ -131,7 +131,10 @@ class UvVenv(Python, ABC):
             base_path = Path(base)
             if base_path.is_absolute():  # pragma: win32 no cover
                 env_spec = PythonSpec.from_string_spec(self.name)
-                if env_spec.major is not None:
+                has_python_factor = any(
+                    PY_FACTORS_RE.match(f) or PY_FACTORS_RE_EXPLICIT_VERSION.match(f) for f in self.name.split("-")
+                )
+                if env_spec.major is not None and has_python_factor:
                     spec = env_spec
                 else:
                     info = self._get_virtualenv_py_info(base_path)

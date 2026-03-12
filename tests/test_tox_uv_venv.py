@@ -182,7 +182,6 @@ def test_uv_venv_spec_pypy(
 @pytest.mark.parametrize(
     ("implementation", "expected_implementation", "expected_name"),
     [
-        ("", "cpython", "cpython"),
         ("py", "cpython", "cpython"),
         ("pypy", "pypy", "pypy"),
     ],
@@ -284,6 +283,15 @@ def test_uv_venv_spec_abs_path_conflict_impl(
     result = project.run("-vv", "-e", env)
     result.assert_failed()
     assert f"failed with env name {env} conflicting with base python {other_interpreter_exe}" in result.out
+
+
+@pytest.mark.parametrize("env_name", ["control2", "build3", "lint", "myenv"])
+def test_uv_venv_non_python_env_name(tox_project: ToxProjectCreator, env_name: str) -> None:
+    project = tox_project({
+        "tox.ini": f"[testenv:{env_name}]\npackage=skip\nskip_install=true\ncommands=python --version"
+    })
+    result = project.run("-vve", env_name)
+    result.assert_success()
 
 
 def test_uv_venv_na(tox_project: ToxProjectCreator) -> None:
