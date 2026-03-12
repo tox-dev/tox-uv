@@ -51,7 +51,13 @@ def test_uv_dependency_present(built_wheel: Path) -> None:
 
 def test_wheel_contains_placeholder_module(built_wheel: Path) -> None:
     with zipfile.ZipFile(built_wheel) as whl:
-        assert "tox_uv/__init__.py" in whl.namelist()
+        assert "tox_uv_meta/__init__.py" in whl.namelist()
+
+
+def test_wheel_does_not_contain_tox_uv_package(built_wheel: Path) -> None:
+    with zipfile.ZipFile(built_wheel) as whl:
+        tox_uv_files = [name for name in whl.namelist() if name.startswith("tox_uv/")]
+        assert not tox_uv_files, f"Meta package should not contain tox_uv package, found: {tox_uv_files}"
 
 
 def test_build_hook_updates_metadata() -> None:
