@@ -134,6 +134,10 @@ builtin = "clear,usage,en-GB_to_en-US"
 write-changes = true
 count = true
 
+[tool.ty]
+environment.python-version = "3.14"
+src.exclude = [ "meta" ]
+
 [tool.pytest]
 ini_options.norecursedirs = "tests/data/*"
 ini_options.verbosity_assertions = 2
@@ -162,7 +166,3 @@ report.omit = [
 ]
 html.show_contexts = true
 html.skip_covered = false
-
-[tool.ty]
-environment.python-version = "3.14"
-src.exclude = [ "meta" ]
