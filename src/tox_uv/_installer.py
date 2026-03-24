@@ -27,7 +27,8 @@ from ._package_types import UvEditablePackage, UvPackage
 if TYPE_CHECKING:
     from tox.config.main import Config
     from tox.tox_env.package import PathPackage
-    from tox.tox_env.python.api import Python
+
+    from ._venv import UvVenv
 
 
 _LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
@@ -36,7 +37,10 @@ _LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
 class UvInstaller(Pip):
     """Pip is a python installer that can install packages as defined by PEP-508 and PEP-517."""
 
-    def __init__(self, tox_env: Python, with_list_deps: bool = True) -> None:  # noqa: FBT001, FBT002
+    if TYPE_CHECKING:
+        _env: UvVenv
+
+    def __init__(self, tox_env: UvVenv, with_list_deps: bool = True) -> None:  # noqa: FBT001, FBT002
         self._with_list_deps = with_list_deps
         super().__init__(tox_env)
 
@@ -45,7 +49,7 @@ class UvInstaller(Pip):
 
     @property
     def uv(self) -> str:
-        return self._env.uv  # type: ignore[attr-defined,no-any-return]
+        return self._env.uv
 
     def _register_config(self) -> None:
         super()._register_config()
