@@ -77,7 +77,7 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
         )
         self.conf.add_config(
             keys=["package"],
-            of_type=cast(type[str], Literal["editable", "wheel", "skip", "uv", "uv-editable"]),
+            of_type=cast("type[str]", Literal["editable", "wheel", "skip", "uv", "uv-editable"]),
             default="editable",
             desc="How should the package be installed",
         )
