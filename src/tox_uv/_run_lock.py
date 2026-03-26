@@ -75,9 +75,9 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
             default=True,
             desc="When set to 'false', it will remove `--locked` argument from 'uv sync' implicit arguments.",
         )
-        self.conf.add_config(  # type: ignore[call-overload]
+        self.conf.add_config(
             keys=["package"],
-            of_type=Literal["editable", "wheel", "skip", "uv", "uv-editable"],
+            of_type=cast("type[str]", Literal["editable", "wheel", "skip", "uv", "uv-editable"]),
             default="editable",
             desc="How should the package be installed",
         )
