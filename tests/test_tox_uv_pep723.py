@@ -14,24 +14,6 @@ from tox_uv.plugin import tox_register_tox_env
 if TYPE_CHECKING:
     from tox.pytest import ToxProjectCreator
 
-_PY_VER = f"{sys.version_info.major}.{sys.version_info.minor}"
-
-_SCRIPT_WITH_DEPS = dedent("""\
-    # /// script
-    # dependencies = ["setuptools"]
-    # ///
-    print('ok')
-""")
-
-_SCRIPT_REQUIRES_PYTHON = dedent(f"""\
-    # /// script
-    # requires-python = ">={_PY_VER}"
-    # ///
-    print("ok")
-""")
-
-_SCRIPT_BARE = 'print("ok")\n'
-
 
 def _tox_ini(runner: str = "uv-venv-pep-723", extra: str = "") -> str:
     lines = ["[testenv:check]", f"runner = {runner}", "script = check.py"]
@@ -49,7 +31,13 @@ def _run(project: ToxProjectCreator, files: dict[str, str], *extra_args: str) ->
 
 @pytest.mark.usefixtures("clear_python_preference_env_var")
 def test_deps_installed(tox_project: ToxProjectCreator) -> None:
-    result, execute_calls = _run(tox_project, {"tox.ini": _tox_ini(), "check.py": _SCRIPT_WITH_DEPS})
+    script = dedent("""\
+        # /// script
+        # dependencies = ["setuptools"]
+        # ///
+        print('ok')
+    """)
+    result, execute_calls = _run(tox_project, {"tox.ini": _tox_ini(), "check.py": script})
     result.assert_success()
     install_cmds = [i[0][3].cmd for i in execute_calls.call_args_list if "install" in i[0][3].run_id]
     assert any("setuptools" in arg for cmd in install_cmds for arg in cmd)
@@ -57,13 +45,21 @@ def test_deps_installed(tox_project: ToxProjectCreator) -> None:
 
 @pytest.mark.usefixtures("clear_python_preference_env_var")
 @pytest.mark.parametrize(
-    ("script", "test_id"),
+    "script",
     [
-        pytest.param(_SCRIPT_REQUIRES_PYTHON, "only-requires-python", id="only-requires-python"),
-        pytest.param(_SCRIPT_BARE, "no-metadata", id="no-metadata"),
+        pytest.param(
+            dedent(f"""\
+                # /// script
+                # requires-python = ">={sys.version_info.major}.{sys.version_info.minor}"
+                # ///
+                print("ok")
+            """),
+            id="only-requires-python",
+        ),
+        pytest.param('print("ok")\n', id="no-metadata"),
     ],
 )
-def test_no_deps_installed(tox_project: ToxProjectCreator, script: str, test_id: str) -> None:  # noqa: ARG001
+def test_no_deps_installed(tox_project: ToxProjectCreator, script: str) -> None:
     result, execute_calls = _run(tox_project, {"tox.ini": _tox_ini(), "check.py": script})
     result.assert_success()
     assert not [i for i in execute_calls.call_args_list if "install" in i[0][3].run_id]
@@ -71,9 +67,15 @@ def test_no_deps_installed(tox_project: ToxProjectCreator, script: str, test_id:
 
 @pytest.mark.usefixtures("clear_python_preference_env_var")
 def test_custom_commands_override(tox_project: ToxProjectCreator) -> None:
+    script = dedent("""\
+        # /// script
+        # dependencies = ["setuptools"]
+        # ///
+        print('ok')
+    """)
     result, execute_calls = _run(
         tox_project,
-        {"tox.ini": _tox_ini(extra="commands = python -c \"print('custom')\""), "check.py": _SCRIPT_WITH_DEPS},
+        {"tox.ini": _tox_ini(extra="commands = python -c \"print('custom')\""), "check.py": script},
     )
     result.assert_success()
     cmd_calls = [i[0][3].cmd for i in execute_calls.call_args_list if i[0][3].run_id == "commands[0]"]
@@ -82,7 +84,9 @@ def test_custom_commands_override(tox_project: ToxProjectCreator) -> None:
 
 @pytest.mark.usefixtures("clear_python_preference_env_var")
 def test_default_commands_forward_posargs(tox_project: ToxProjectCreator) -> None:
-    result, execute_calls = _run(tox_project, {"tox.ini": _tox_ini(), "check.py": _SCRIPT_BARE}, "--", "arg1", "arg2")
+    result, execute_calls = _run(
+        tox_project, {"tox.ini": _tox_ini(), "check.py": 'print("ok")\n'}, "--", "arg1", "arg2"
+    )
     result.assert_success()
     cmd = next(i[0][3].cmd for i in execute_calls.call_args_list if i[0][3].run_id == "commands[0]")
     assert "arg1" in cmd
@@ -91,7 +95,13 @@ def test_default_commands_forward_posargs(tox_project: ToxProjectCreator) -> Non
 
 @pytest.mark.usefixtures("clear_python_preference_env_var")
 def test_requires_python_satisfied(tox_project: ToxProjectCreator) -> None:
-    result, _ = _run(tox_project, {"tox.ini": _tox_ini(), "check.py": _SCRIPT_REQUIRES_PYTHON})
+    script = dedent(f"""\
+        # /// script
+        # requires-python = ">={sys.version_info.major}.{sys.version_info.minor}"
+        # ///
+        print("ok")
+    """)
+    result, _ = _run(tox_project, {"tox.ini": _tox_ini(), "check.py": script})
     result.assert_success()
 
 
@@ -110,9 +120,13 @@ def test_requires_python_not_satisfied(tox_project: ToxProjectCreator) -> None:
 
 @pytest.mark.usefixtures("clear_python_preference_env_var")
 def test_skip_env_install(tox_project: ToxProjectCreator) -> None:
-    result, execute_calls = _run(
-        tox_project, {"tox.ini": _tox_ini(), "check.py": _SCRIPT_WITH_DEPS}, "--skip-env-install"
-    )
+    script = dedent("""\
+        # /// script
+        # dependencies = ["setuptools"]
+        # ///
+        print('ok')
+    """)
+    result, execute_calls = _run(tox_project, {"tox.ini": _tox_ini(), "check.py": script}, "--skip-env-install")
     result.assert_success()
     assert not [i for i in execute_calls.call_args_list if "install" in i[0][3].run_id]
 
@@ -126,9 +140,14 @@ def test_missing_script_file(tox_project: ToxProjectCreator) -> None:
 
 @pytest.mark.usefixtures("clear_python_preference_env_var")
 def test_base_python_rejected(tox_project: ToxProjectCreator) -> None:
+    script = dedent(f"""\
+        # /// script
+        # requires-python = ">={sys.version_info.major}.{sys.version_info.minor}"
+        # ///
+    """)
     result, _ = _run(
         tox_project,
-        {"tox.ini": _tox_ini(extra="base_python = python3"), "check.py": _SCRIPT_REQUIRES_PYTHON},
+        {"tox.ini": _tox_ini(extra="base_python = python3"), "check.py": script},
     )
     result.assert_failed()
     assert "cannot set base_python" in result.out
@@ -143,9 +162,13 @@ def test_base_python_rejected(tox_project: ToxProjectCreator) -> None:
     ],
 )
 def test_uses_uv_venv(tox_project: ToxProjectCreator, runner: str) -> None:
-    result, execute_calls = _run(
-        tox_project, {"tox.ini": _tox_ini(runner=runner), "check.py": _SCRIPT_WITH_DEPS}, "-vv"
-    )
+    script = dedent("""\
+        # /// script
+        # dependencies = ["setuptools"]
+        # ///
+        print('ok')
+    """)
+    result, execute_calls = _run(tox_project, {"tox.ini": _tox_ini(runner=runner), "check.py": script}, "-vv")
     result.assert_success()
     venv_calls = [i[0][3].cmd for i in execute_calls.call_args_list if i[0][3].run_id == "venv"]
     assert venv_calls
