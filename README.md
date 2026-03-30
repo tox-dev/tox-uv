@@ -14,6 +14,7 @@ will get both the benefits (performance) or downsides (bugs) of `uv`.
   - [Installation options](#installation-options)
   - [uv discovery](#uv-discovery)
 - [tox environment types provided](#tox-environment-types-provided)
+- [PEP 723 inline script metadata](#pep-723-inline-script-metadata)
 - [uv.lock support](#uvlock-support)
   - [package](#package)
   - [extras](#extras)
@@ -87,8 +88,53 @@ This package will provide the following new tox environments:
 - `uv-venv-lock-runner` is the ID for the tox environments [runner](https://tox.wiki/en/4.12.1/config.html#runner) for
   environments using `uv.lock` (note we can’t detect the presence of the `uv.lock` file to enable this because that
   would break environments not using the lock file - such as your linter).
+- `uv-venv-pep-723` is the ID for the [PEP 723](https://peps.python.org/pep-0723/) inline script metadata runner. When
+  `tox-uv` is installed, `virtualenv-pep-723` is also transparently backed by uv.
 - `uv-venv-pep-517` is the ID for the PEP-517 packaging environment.
 - `uv-venv-cmd-builder` is the ID for the external cmd builder.
+
+## PEP 723 inline script metadata
+
+[PEP 723](https://peps.python.org/pep-0723/) lets Python scripts declare their dependencies and required Python version
+inline via comment blocks.
+
+Given a script `tools/check.py`:
+
+```python
+# /// script
+# requires-python = ">=3.12"
+# dependencies = ["requests>=2.31", "rich"]
+# ///
+
+import requests
+from rich import print
+
+print(requests.get("https://httpbin.org/get").json())
+```
+
+Configure tox to run it:
+
+```ini
+[testenv:check]
+runner = virtualenv-pep-723
+script = tools/check.py
+```
+
+When `tox-uv` is installed, `virtualenv-pep-723` is transparently backed by uv. You can also use
+`runner = uv-venv-pep-723` to explicitly request the uv-backed runner regardless of plugin installation.
+
+To disable the automatic promotion and use tox's built-in virtualenv+pip implementation, set `TOX_UV_NO_PEP723=1`.
+
+Run with `tox r -e check`. Positional arguments are forwarded: `tox r -e check -- --verbose`.
+
+To override the default command (which runs the script), set `commands` as usual:
+
+```ini
+[testenv:check]
+runner = virtualenv-pep-723
+script = tools/check.py
+commands = python -m pytest tests/
+```
 
 ## uv.lock support
 
