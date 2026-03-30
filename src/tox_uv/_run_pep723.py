@@ -29,8 +29,8 @@ class UvVenvPep723Runner(Pep723Mixin, UvVenv, RunToxEnv):
     def _external_pkg_tox_env_type(self) -> str:
         raise NotImplementedError
 
-    def _build_packages(self) -> list[Package]:  # noqa: PLR6301
-        return []
+    def _build_packages(self) -> list[Package]:
+        raise NotImplementedError
 
 
 __all__ = [
