@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
@@ -137,7 +138,7 @@ def test_virtualenv_pep723_promoted_to_uv(tox_project: ToxProjectCreator) -> Non
     result.assert_success()
     venv_calls = [i[0][3].cmd for i in execute_calls.call_args_list if i[0][3].run_id == "venv"]
     assert venv_calls
-    assert venv_calls[0][0].endswith("uv")
+    assert Path(venv_calls[0][0]).stem == "uv"
     assert venv_calls[0][1] == "venv"
 
 
@@ -166,5 +167,5 @@ def test_uses_uv_venv(tox_project: ToxProjectCreator) -> None:
     result.assert_success()
     venv_calls = [i[0][3].cmd for i in execute_calls.call_args_list if i[0][3].run_id == "venv"]
     assert venv_calls
-    assert venv_calls[0][0].endswith("uv")
+    assert Path(venv_calls[0][0]).stem == "uv"
     assert venv_calls[0][1] == "venv"
