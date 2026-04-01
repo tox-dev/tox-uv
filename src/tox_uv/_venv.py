@@ -155,7 +155,7 @@ class UvVenv(Python, ABC):
                         platform=info.platform,
                         extra={"executable": str(base_path)},
                         free_threaded=bool(info.free_threaded),
-                        machine=info.machine
+                        machine=info.machine,
                     )
             else:
                 spec = PythonSpec.from_string_spec(base)
@@ -173,7 +173,7 @@ class UvVenv(Python, ABC):
                 platform=sys.platform,
                 extra={"architecture": spec.architecture},
                 free_threaded=bool(spec.free_threaded),
-                machine=spec.machine
+                machine=spec.machine,
             )
 
         return None  # pragma: no cover
@@ -367,10 +367,7 @@ class UvVenv(Python, ABC):
 
                 uv_arch = arch_map.get((self.base_python.machine or "").lower())
                 uv_libc = os.environ.get("UV_LIBC", "gnu" if uv_os == "linux" else "none")
-                version_spec = (
-                    f"{uv_imp}-{base.major}.{base.minor}"
-                    f"{free_threaded_tag}-{uv_os}-{uv_arch}-{uv_libc}"
-                )
+                version_spec = f"{uv_imp}-{base.major}.{base.minor}{free_threaded_tag}-{uv_os}-{uv_arch}-{uv_libc}"
             else:
                 version_spec = f"{uv_imp}{base.major}.{base.minor}{free_threaded_tag}"
         return version_spec
