@@ -673,6 +673,223 @@ def test_env_version_spec_free_threaded() -> None:
         assert uv_venv.env_version_spec() == "cpython3.13+freethreaded"
 
 
+def test_env_version_spec_machine_none() -> None:
+    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+    python_info = PythonInfo(
+        implementation="cpython",
+        version_info=VersionInfo(
+            major=3,
+            minor=11,
+            micro=9,
+            releaselevel="",
+            serial=0,
+        ),
+        version="",
+        is_64=True,
+        platform="linux",
+        extra={"architecture": None},
+        machine=None,
+    )
+    uv_venv.set_base_python(python_info)
+    with mock.patch("sys.version_info", (0, 0, 0)):  # prevent picking sys.executable
+        assert uv_venv.env_version_spec() == "cpython3.11"
+
+
+def test_env_version_spec_machine_none_with_architecture() -> None:
+    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+    python_info = PythonInfo(
+        implementation="cpython",
+        version_info=VersionInfo(
+            major=3,
+            minor=11,
+            micro=9,
+            releaselevel="",
+            serial=0,
+        ),
+        version="",
+        is_64=True,
+        platform="linux",
+        extra={"architecture": 64},
+        machine=None,
+    )
+    uv_venv.set_base_python(python_info)
+    with mock.patch("sys.version_info", (0, 0, 0)):  # prevent picking sys.executable
+        # When machine is None, uv_arch becomes None, so version_spec includes None
+        assert uv_venv.env_version_spec() == "cpython-3.11-linux-None-gnu"
+
+
+@pytest.mark.parametrize(
+    ("machine", "expected_uv_arch"),
+    [
+        ("arm64", "aarch64"),
+        ("aarch64", "aarch64"),
+        ("amd64", "x86_64"),
+        ("x86_64", "x86_64"),
+        ("x86", "i686"),
+        ("i386", "i686"),
+        ("i686", "i686"),
+    ],
+)
+def test_env_version_spec_machine_architecture_mapping(machine: str, expected_uv_arch: str) -> None:
+    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+    python_info = PythonInfo(
+        implementation="cpython",
+        version_info=VersionInfo(
+            major=3,
+            minor=11,
+            micro=9,
+            releaselevel="",
+            serial=0,
+        ),
+        version="",
+        is_64=True,
+        platform="linux",
+        extra={"architecture": None},
+        machine=machine,
+    )
+    uv_venv.set_base_python(python_info)
+    with mock.patch("sys.version_info", (0, 0, 0)):  # prevent picking sys.executable
+        assert uv_venv.env_version_spec() == f"cpython-3.11-linux-{expected_uv_arch}-gnu"
+
+
+def test_env_version_spec_machine_x86_64_macos_32bit() -> None:
+    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+    python_info = PythonInfo(
+        implementation="cpython",
+        version_info=VersionInfo(
+            major=3,
+            minor=11,
+            micro=9,
+            releaselevel="",
+            serial=0,
+        ),
+        version="",
+        is_64=True,
+        platform="darwin",
+        extra={"architecture": 32},
+        machine="x86_64",
+    )
+    uv_venv.set_base_python(python_info)
+    with mock.patch("sys.version_info", (0, 0, 0)):  # prevent picking sys.executable
+        # On macOS with 32-bit architecture, x86_64 maps to i686
+        assert uv_venv.env_version_spec() == "cpython-3.11-macos-i686-none"
+
+
+def test_env_version_spec_machine_x86_64_macos_64bit() -> None:
+    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+    python_info = PythonInfo(
+        implementation="cpython",
+        version_info=VersionInfo(
+            major=3,
+            minor=11,
+            micro=9,
+            releaselevel="",
+            serial=0,
+        ),
+        version="",
+        is_64=True,
+        platform="darwin",
+        extra={"architecture": 64},
+        machine="x86_64",
+    )
+    uv_venv.set_base_python(python_info)
+    with mock.patch("sys.version_info", (0, 0, 0)):  # prevent picking sys.executable
+        # On macOS with 64-bit architecture, x86_64 maps to x86_64
+        assert uv_venv.env_version_spec() == "cpython-3.11-macos-x86_64-none"
+
+
+def test_env_version_spec_machine_x86_64_macos_no_architecture() -> None:
+    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+    python_info = PythonInfo(
+        implementation="cpython",
+        version_info=VersionInfo(
+            major=3,
+            minor=11,
+            micro=9,
+            releaselevel="",
+            serial=0,
+        ),
+        version="",
+        is_64=True,
+        platform="darwin",
+        extra={"architecture": None},
+        machine="x86_64",
+    )
+    uv_venv.set_base_python(python_info)
+    with mock.patch("sys.version_info", (0, 0, 0)):  # prevent picking sys.executable
+        # On macOS with no architecture specified, x86_64 maps to x86_64
+        assert uv_venv.env_version_spec() == "cpython-3.11-macos-x86_64-none"
+
+
+def test_env_version_spec_machine_arm64_macos_32bit() -> None:
+    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+    python_info = PythonInfo(
+        implementation="cpython",
+        version_info=VersionInfo(
+            major=3,
+            minor=11,
+            micro=9,
+            releaselevel="",
+            serial=0,
+        ),
+        version="",
+        is_64=True,
+        platform="darwin",
+        extra={"architecture": 32},
+        machine="arm64",
+    )
+    uv_venv.set_base_python(python_info)
+    with mock.patch("sys.version_info", (0, 0, 0)):  # prevent picking sys.executable
+        # On macOS, arm64 always maps to aarch64 regardless of architecture setting
+        assert uv_venv.env_version_spec() == "cpython-3.11-macos-aarch64-none"
+
+
+def test_env_version_spec_machine_arm64_macos_64bit() -> None:
+    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+    python_info = PythonInfo(
+        implementation="cpython",
+        version_info=VersionInfo(
+            major=3,
+            minor=11,
+            micro=9,
+            releaselevel="",
+            serial=0,
+        ),
+        version="",
+        is_64=True,
+        platform="darwin",
+        extra={"architecture": 64},
+        machine="arm64",
+    )
+    uv_venv.set_base_python(python_info)
+    with mock.patch("sys.version_info", (0, 0, 0)):  # prevent picking sys.executable
+        # On macOS, arm64 always maps to aarch64 regardless of architecture setting
+        assert uv_venv.env_version_spec() == "cpython-3.11-macos-aarch64-none"
+
+
+def test_env_version_spec_machine_arm64_macos_no_architecture() -> None:
+    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+    python_info = PythonInfo(
+        implementation="cpython",
+        version_info=VersionInfo(
+            major=3,
+            minor=11,
+            micro=9,
+            releaselevel="",
+            serial=0,
+        ),
+        version="",
+        is_64=True,
+        platform="darwin",
+        extra={"architecture": None},
+        machine="arm64",
+    )
+    uv_venv.set_base_python(python_info)
+    with mock.patch("sys.version_info", (0, 0, 0)):  # prevent picking sys.executable
+        # On macOS, arm64 always maps to aarch64 regardless of architecture setting
+        assert uv_venv.env_version_spec() == "cpython-3.11-macos-aarch64-none"
+
+
 def test_relative_workdir_with_changedir(tox_project: ToxProjectCreator) -> None:
     project = tox_project({
         "tox.ini": """\
