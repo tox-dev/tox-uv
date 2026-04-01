@@ -126,12 +126,12 @@ base = [ "meta" ]
 [env."meta-3.14"]
 base = [ "meta" ]
 
-[env."meta-3.14-x86_64-macos"]
-base_python ="cpython3.14-64-x86_64"
-prefix = "arch -x86_64"
-base = [ "meta" ]
-
 [env."meta-3.14-arm64-macos"]
 base_python = "cpython3.14-64-aarch64"
-prefix = "arch -arm64"
 base = [ "meta" ]
+prefix = "arch -arm64"
+
+[env."meta-3.14-x86_64-macos"]
+base_python = "cpython3.14-64-x86_64"
+base = [ "meta" ]
+prefix = "arch -x86_64"
