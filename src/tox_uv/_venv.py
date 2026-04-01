@@ -365,7 +365,7 @@ class UvVenv(Python, ABC):
                     "i686": "i686",
                 }
 
-                uv_arch = arch_map.get(self.base_python.machine.lower())
+                uv_arch = arch_map.get((self.base_python.machine or "").lower())
                 uv_libc = os.environ.get("UV_LIBC", "gnu" if uv_os == "linux" else "none")
                 version_spec = (
                     f"{uv_imp}-{base.major}.{base.minor}"
