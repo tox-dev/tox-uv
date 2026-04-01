@@ -9,6 +9,7 @@ import os
 import shutil
 import subprocess  # noqa: S404
 import sys
+import typing
 from abc import ABC
 from functools import cached_property
 from importlib.resources import as_file, files
@@ -155,6 +156,7 @@ class UvVenv(Python, ABC):
                         platform=info.platform,
                         extra={"executable": str(base_path)},
                         free_threaded=bool(info.free_threaded),
+                        machine=info.machine,
                     )
             else:
                 spec = PythonSpec.from_string_spec(base)
@@ -172,6 +174,7 @@ class UvVenv(Python, ABC):
                 platform=sys.platform,
                 extra={"architecture": spec.architecture},
                 free_threaded=bool(spec.free_threaded),
+                machine=spec.machine,
             )
 
         return None  # pragma: no cover
@@ -327,6 +330,17 @@ class UvVenv(Python, ABC):
         impl = "pypy" if py.implementation == "pypy" else "python"
         return self.venv_dir / "lib" / f"{impl}{py.version_dot}" / "site-packages"
 
+    _OS_MAP: typing.ClassVar[typing.Mapping[str, str]] = {
+        "darwin": "macos",
+        "win32": "windows",
+    }
+    _LIBC_MAP: typing.ClassVar[typing.Mapping[str, typing.Mapping[str, str]]] = {
+        "linux": {"glibc": "gnu", "musl": "musl", "": "gnu"}
+    }
+    _NOMACHINE_FALLBACK: typing.ClassVar[typing.Mapping[str, typing.Mapping[int, str]]] = {
+        "windows": {32: "x86", 64: "x86_64"}
+    }
+
     def env_version_spec(self) -> str:
         if executable := self.base_python.extra.get("executable"):
             return executable
@@ -334,20 +348,43 @@ class UvVenv(Python, ABC):
         imp = self.base_python.impl_lower
         architecture = self.base_python.extra.get("architecture")
         free_threaded = self.base_python.free_threaded
-        if architecture is not None and self.base_python.platform == "win32":
-            uv_arch = {32: "x86", 64: "x86_64"}[architecture]
-            uv_imp = imp or ""
-            free_threaded_tag = "+freethreaded" if free_threaded else ""
-            version_spec = f"{uv_imp}-{base.major}.{base.minor}{free_threaded_tag}-windows-{uv_arch}-none"
+
+        uv_imp = imp or ""
+        free_threaded_tag = "+freethreaded" if free_threaded else ""
+        if not base.major:  # pragma: win32 no cover
+            version_spec = f"{uv_imp}"
+        elif not base.minor:
+            version_spec = f"{uv_imp}{base.major}{free_threaded_tag}"
+        elif architecture or self.base_python.machine:
+
+            def normalise_os(raw_os: str) -> str:
+                return self._OS_MAP.get(raw_os, raw_os)
+
+            uv_os = normalise_os(self.base_python.platform.lower())
+            machine_map = {
+                "arm64": "aarch64",
+                "aarch64": "aarch64",
+                "amd64": "x86_64",
+                "x86_64": (
+                    {"macos": {32: "i686"}}.get(uv_os, {}).get(architecture, "x86_64")
+                    if isinstance(architecture, int)
+                    else "x86_64"
+                ),
+                "x86": {"windows": "x86"}.get(uv_os, "i686"),
+                "i386": "i686",
+                "i686": "i686",
+            }
+            machine_fallback = (
+                self._NOMACHINE_FALLBACK.get(uv_os, {}).get(architecture, "") if isinstance(architecture, int) else ""
+            )
+            base_python_machine = (self.base_python.machine or "").lower()
+            uv_machine = machine_map.get(base_python_machine, machine_fallback)
+            uv_libc = self._LIBC_MAP.get(uv_os, {}).get(self.base_python.extra.get("libc", "").lower(), "none")
+            version_spec = f"{uv_imp}-{base.major}.{base.minor}{free_threaded_tag}" + (
+                f"-{uv_os}-{uv_machine}-{uv_libc}" if all([uv_machine, uv_os, uv_libc]) else ""
+            )
         else:
-            uv_imp = imp or ""
-            free_threaded_tag = "+freethreaded" if free_threaded else ""
-            if not base.major:  # pragma: win32 no cover
-                version_spec = f"{uv_imp}"
-            elif not base.minor:
-                version_spec = f"{uv_imp}{base.major}{free_threaded_tag}"
-            else:
-                version_spec = f"{uv_imp}{base.major}.{base.minor}{free_threaded_tag}"
+            version_spec = f"{uv_imp}{base.major}.{base.minor}{free_threaded_tag}"
         return version_spec
 
     @cached_property
@@ -361,6 +398,7 @@ class UvVenv(Python, ABC):
             outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="venv-query", show=False)
         outcome.assert_success()
         res = json.loads(outcome.out)
+        extras = {k: v for k, v in {"libc": next(iter(res["libc"]), None)}.items() if v}
         return PythonInfo(
             implementation=res["implementation"],
             version_info=VersionInfo(
@@ -373,7 +411,7 @@ class UvVenv(Python, ABC):
             version=res["version"],
             is_64=res["is_64"],
             platform=sys.platform,
-            extra={},
+            extra=extras,
         )
 
 

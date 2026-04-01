@@ -34,14 +34,17 @@ jobs:
         os:
           - ubuntu-24.04
         suffix:
-          - ""
+          - "-linux-x86_64-gnu"
         include:
           - env: "3.14"
             os: windows-2025
-            suffix: -windows
+            suffix: -windows-x86_64-msvc
           - env: "3.14"
             os: macos-15
-            suffix: -macos
+            suffix: -macos-aarch64-none
+          - env: "3.14"
+            os: macos-15
+            suffix: -macos-x86_64-none
           - env: meta-3.14
           - env: meta-3.13
           - env: meta-3.12
@@ -64,7 +67,16 @@ jobs:
         run: |
           VERSION="${{ matrix.env }}"
           VERSION="${VERSION#meta-}"
-          uv python install --python-preference only-managed "$VERSION"
+
+          if [[ "$VERSION" =~ -arm64(-|$) || "$VERSION" =~ -x86_64(-|$) ]]; then
+            # For explicit per-arch macOS meta env names, use the same value directly.
+            UV_VERSION="cpython-$VERSION"
+          else
+            # For non-arch-specific values, keep existing behavior.
+            UV_VERSION="cpython-$VERSION${{ matrix.suffix }}"
+          fi
+
+          uv python install --python-preference only-managed "$UV_VERSION"
       - name: Setup test suite
         run: tox run -vv --notest --skip-missing-interpreters false -e ${{ matrix.env }}
         env:
