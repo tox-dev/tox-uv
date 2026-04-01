@@ -155,6 +155,7 @@ class UvVenv(Python, ABC):
                         platform=info.platform,
                         extra={"executable": str(base_path)},
                         free_threaded=bool(info.free_threaded),
+                        machine=info.machine
                     )
             else:
                 spec = PythonSpec.from_string_spec(base)
@@ -172,6 +173,7 @@ class UvVenv(Python, ABC):
                 platform=sys.platform,
                 extra={"architecture": spec.architecture},
                 free_threaded=bool(spec.free_threaded),
+                machine=spec.machine
             )
 
         return None  # pragma: no cover
@@ -346,6 +348,29 @@ class UvVenv(Python, ABC):
                 version_spec = f"{uv_imp}"
             elif not base.minor:
                 version_spec = f"{uv_imp}{base.major}{free_threaded_tag}"
+            elif architecture or self.base_python.machine:
+                os_map = {
+                    "darwin": "macos",
+                    "linux": "linux",
+                    "windows": "windows",
+                }
+                uv_os = os_map.get(self.base_python.platform.lower())
+                arch_map = {
+                    "arm64": "aarch64",
+                    "aarch64": "aarch64",
+                    "amd64": "x86_64",
+                    "x86_64": "i686" if (uv_os == "macos" and architecture == 32) else "x86_64",
+                    "x86": "i686",
+                    "i386": "i686",
+                    "i686": "i686",
+                }
+
+                uv_arch = arch_map.get(self.base_python.machine.lower())
+                uv_libc = os.environ.get("UV_LIBC", "gnu" if uv_os == "linux" else "none")
+                version_spec = (
+                    f"{uv_imp}-{base.major}.{base.minor}"
+                    f"{free_threaded_tag}-{uv_os}-{uv_arch}-{uv_libc}"
+                )
             else:
                 version_spec = f"{uv_imp}{base.major}.{base.minor}{free_threaded_tag}"
         return version_spec
