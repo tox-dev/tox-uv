@@ -33,6 +33,28 @@ if TYPE_CHECKING:
 
 _LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
 
+_UV_RESOLUTION_ENV_VARS: frozenset[str] = frozenset({
+    "UV_CONSTRAINT",
+    "UV_DEFAULT_INDEX",
+    "UV_EXCLUDE",
+    "UV_EXCLUDE_NEWER",
+    "UV_EXTRA_INDEX_URL",
+    "UV_FIND_LINKS",
+    "UV_FORK_STRATEGY",
+    "UV_INDEX",
+    "UV_INDEX_STRATEGY",
+    "UV_INDEX_URL",
+    "UV_KEYRING_PROVIDER",
+    "UV_NO_INDEX",
+    "UV_NO_SOURCES",
+    "UV_OFFLINE",
+    "UV_OVERRIDE",
+    "UV_PRERELEASE",
+    "UV_REQUIRE_HASHES",
+    "UV_RESOLUTION",
+    "UV_TORCH_BACKEND",
+})
+
 
 class UvInstaller(Pip):
     """Pip is a python installer that can install packages as defined by PEP-508 and PEP-517."""
@@ -43,6 +65,9 @@ class UvInstaller(Pip):
     def __init__(self, tox_env: UvVenv, with_list_deps: bool = True) -> None:  # noqa: FBT001, FBT002
         self._with_list_deps = with_list_deps
         super().__init__(tox_env)
+
+    def _install_env_vars(self) -> dict[str, str]:
+        return {k: v for k, v in self._env.environment_variables.items() if k in _UV_RESOLUTION_ENV_VARS}
 
     def freeze_cmd(self) -> list[str]:
         return [self.uv, "--color", "never", "pip", "freeze"]
@@ -161,13 +186,15 @@ class UvInstaller(Pip):
         req_of_type = f"{of_type}_deps" if groups["pkg"] or groups["dev_pkg"] else of_type
         for value in groups.values():
             value.sort()
-        with self._env.cache.compare(groups["req"], section, req_of_type) as (eq, old):
+        cache_value = {"req": groups["req"], "env": self._install_env_vars()}
+        with self._env.cache.compare(cache_value, section, req_of_type) as (eq, old):
             if not eq:  # pragma: no branch
-                miss = sorted(set(old or []) - set(groups["req"]))
-                if miss:  # no way yet to know what to uninstall here (transitive dependencies?) # pragma: no branch
+                old_req: list[str] = old["req"] if isinstance(old, dict) else (old or [])
+                miss = sorted(set(old_req) - set(groups["req"]))
+                if miss:  # no way yet to know what to uninstall here (transitive dependencies?)  # pragma: no branch
                     msg = f"dependencies removed: {', '.join(str(i) for i in miss)}"  # pragma: no cover
-                    raise Recreate(msg)  # pragma: no branch                     # pragma: no cover
-                new_deps = sorted(set(groups["req"]) - set(old or []))
+                    raise Recreate(msg)  # pragma: no cover
+                new_deps = sorted(set(groups["req"]) - set(old_req)) or list(groups["req"])
                 if new_deps:  # pragma: no branch
                     self._execute_installer(new_deps, req_of_type)
         install_args = ["--reinstall"]

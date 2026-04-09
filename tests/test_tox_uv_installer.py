@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from textwrap import dedent
 from typing import TYPE_CHECKING
 
 import pytest
@@ -245,6 +246,63 @@ version = "0.1.0"
     result = project.run("-vv")
     result.assert_failed()
     assert "uv cannot install" in result.out
+
+
+def test_uv_resolution_env_var_change_reinstalls(tox_project: ToxProjectCreator) -> None:
+    project = tox_project({
+        "tox.ini": """
+                [testenv]
+                deps = tomli
+                package = skip
+            """,
+    })
+    execute_calls = project.patch_execute(lambda r: 0 if "install" in r.run_id else None)
+
+    result = project.run("r")
+    result.assert_success()
+    assert execute_calls.call_count == 1
+    execute_calls.reset_mock()
+
+    (project.path / "tox.ini").write_text(
+        dedent("""
+            [testenv]
+            deps = tomli
+            package = skip
+            setenv = UV_EXCLUDE_NEWER = 2024-01-01
+        """)
+    )
+    result = project.run("r")
+    result.assert_success()
+    assert execute_calls.call_count == 1
+
+
+def test_uv_non_resolution_env_var_change_no_reinstall(tox_project: ToxProjectCreator) -> None:
+    project = tox_project({
+        "tox.ini": """
+                [testenv]
+                deps = tomli
+                package = skip
+                setenv = UV_CONCURRENT_DOWNLOADS = 4
+            """,
+    })
+    execute_calls = project.patch_execute(lambda r: 0 if "install" in r.run_id else None)
+
+    result = project.run("r")
+    result.assert_success()
+    assert execute_calls.call_count == 1
+    execute_calls.reset_mock()
+
+    (project.path / "tox.ini").write_text(
+        dedent("""
+            [testenv]
+            deps = tomli
+            package = skip
+            setenv = UV_CONCURRENT_DOWNLOADS = 8
+        """)
+    )
+    result = project.run("r")
+    result.assert_success()
+    assert execute_calls.call_count == 0
 
 
 def test_uv_install_broken_venv(tox_project: ToxProjectCreator) -> None:
