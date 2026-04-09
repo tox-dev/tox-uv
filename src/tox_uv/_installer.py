@@ -66,9 +66,6 @@ class UvInstaller(Pip):
         self._with_list_deps = with_list_deps
         super().__init__(tox_env)
 
-    def _install_env_vars(self) -> dict[str, str]:
-        return {k: v for k, v in self._env.environment_variables.items() if k in _UV_RESOLUTION_ENV_VARS}
-
     def freeze_cmd(self) -> list[str]:
         return [self.uv, "--color", "never", "pip", "freeze"]
 
@@ -210,6 +207,9 @@ class UvInstaller(Pip):
             for entry in groups["dev_pkg"]:
                 install_args.extend(("-e", str(entry)))
             self._execute_installer(install_args, of_type)
+
+    def _install_env_vars(self) -> dict[str, str]:
+        return {k: v for k, v in self._env.environment_variables.items() if k in _UV_RESOLUTION_ENV_VARS}
 
 
 __all__ = [
