@@ -233,8 +233,8 @@ installed into the environment you can do:
 uv_sync_flags = --no-editable, --inexact
 ```
 
-If `--frozen` is included in `uv_sync_flags`, tox-uv will automatically suppress the implicit `--locked` argument
-since the two flags are mutually exclusive in uv:
+If `--frozen` is included in `uv_sync_flags`, tox-uv will automatically suppress the implicit `--locked` argument since
+the two flags are mutually exclusive in uv:
 
 ```ini
 uv_sync_flags = --frozen
@@ -246,8 +246,8 @@ By default tox-uv will call `uv sync` with `--locked` argument, which is incompa
 `--prerelease` or `--upgrade ` that you might want to add to `uv_sync_flags` for some test scenarios. You can set this
 to `false` to avoid such conflicts.
 
-If the `UV_FROZEN` environment variable is set to a truthy value, tox-uv will automatically suppress `--locked` and
-pass `--frozen` to `uv sync` instead. This is useful in CI environments where the lockfile was created on a different
+If the `UV_FROZEN` environment variable is set to a truthy value, tox-uv will automatically suppress `--locked` and pass
+`--frozen` to `uv sync` instead. This is useful in CI environments where the lockfile was created on a different
 platform and platform-specific metadata validation should be skipped:
 
 ```bash
