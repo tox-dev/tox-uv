@@ -89,7 +89,7 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
         )
         add_skip_missing_interpreters_to_core(self.core, self.options)
 
-    def _setup_env(self) -> None:  # noqa: C901,PLR0912
+    def _setup_env(self) -> None:  # noqa: C901,PLR0912,PLR0914,PLR0915
         super()._setup_env()
         install_pkg = getattr(self.options, "install_pkg", None)
         if not getattr(self.options, "skip_uv_sync", False):
