@@ -102,8 +102,14 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
             ]
             if package_root != self.core["tox_root"]:
                 cmd.extend(("--directory", str(package_root)))
-            if self.conf["uv_sync_locked"]:
+            env_vars = self.environment_variables
+            uv_frozen_val = env_vars.get("UV_FROZEN", "")
+            uv_frozen = uv_frozen_val.lower() not in ("", "0", "false", "no", "off")
+            frozen_in_flags = "--frozen" in self.conf["uv_sync_flags"]
+            if self.conf["uv_sync_locked"] and not uv_frozen and not frozen_in_flags:
                 cmd.append("--locked")
+            elif uv_frozen and not frozen_in_flags:
+                cmd.append("--frozen")
             if self.conf["uv_python_preference"] != "none":
                 cmd.extend(("--python-preference", self.conf["uv_python_preference"]))
             if self.conf["uv_resolution"]:
