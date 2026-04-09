@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 if TYPE_CHECKING:
+    from tox.execute.request import ExecuteRequest
     from tox.pytest import ToxProjectCreator
 
 
@@ -256,12 +257,21 @@ def test_uv_resolution_env_var_change_reinstalls(tox_project: ToxProjectCreator)
                 package = skip
             """,
     })
-    execute_calls = project.patch_execute(lambda r: 0 if "install" in r.run_id else None)
+    install_count = 0
+
+    def handle(r: ExecuteRequest) -> int | None:
+        nonlocal install_count
+        if "install" in r.run_id:
+            install_count += 1
+            return 0
+        return None
+
+    project.patch_execute(handle)
 
     result = project.run("r")
     result.assert_success()
-    assert execute_calls.call_count == 1
-    execute_calls.reset_mock()
+    assert install_count == 1
+    install_count = 0
 
     (project.path / "tox.ini").write_text(
         dedent("""
@@ -273,7 +283,7 @@ def test_uv_resolution_env_var_change_reinstalls(tox_project: ToxProjectCreator)
     )
     result = project.run("r")
     result.assert_success()
-    assert execute_calls.call_count == 1
+    assert install_count == 1
 
 
 def test_uv_non_resolution_env_var_change_no_reinstall(tox_project: ToxProjectCreator) -> None:
@@ -285,12 +295,21 @@ def test_uv_non_resolution_env_var_change_no_reinstall(tox_project: ToxProjectCr
                 setenv = UV_CONCURRENT_DOWNLOADS = 4
             """,
     })
-    execute_calls = project.patch_execute(lambda r: 0 if "install" in r.run_id else None)
+    install_count = 0
+
+    def handle(r: ExecuteRequest) -> int | None:
+        nonlocal install_count
+        if "install" in r.run_id:
+            install_count += 1
+            return 0
+        return None
+
+    project.patch_execute(handle)
 
     result = project.run("r")
     result.assert_success()
-    assert execute_calls.call_count == 1
-    execute_calls.reset_mock()
+    assert install_count == 1
+    install_count = 0
 
     (project.path / "tox.ini").write_text(
         dedent("""
@@ -302,7 +321,7 @@ def test_uv_non_resolution_env_var_change_no_reinstall(tox_project: ToxProjectCr
     )
     result = project.run("r")
     result.assert_success()
-    assert execute_calls.call_count == 0
+    assert install_count == 0
 
 
 def test_uv_install_broken_venv(tox_project: ToxProjectCreator) -> None:
