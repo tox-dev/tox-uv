@@ -423,7 +423,7 @@ def test_uv_sync_locked_suppressed_by_uv_frozen_env(
     result.assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
-    uv = shutil.which("uv")
+    shutil.which("uv")
     uv_sync_cmd = next(cmd for _, run_id, cmd in calls if run_id == "uv-sync")
     assert "--locked" not in uv_sync_cmd
     assert "--frozen" in uv_sync_cmd
@@ -445,7 +445,7 @@ def test_uv_sync_locked_suppressed_by_frozen_flag(tox_project: ToxProjectCreator
     result.assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
-    uv = shutil.which("uv")
+    shutil.which("uv")
     uv_sync_cmd = next(cmd for _, run_id, cmd in calls if run_id == "uv-sync")
     assert "--locked" not in uv_sync_cmd
     assert "--frozen" in uv_sync_cmd

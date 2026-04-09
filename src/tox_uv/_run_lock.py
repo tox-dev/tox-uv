@@ -104,7 +104,7 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
                 cmd.extend(("--directory", str(package_root)))
             env_vars = self.environment_variables
             uv_frozen_val = env_vars.get("UV_FROZEN", "")
-            uv_frozen = uv_frozen_val.lower() not in ("", "0", "false", "no", "off")
+            uv_frozen = uv_frozen_val.lower() not in {"", "0", "false", "no", "off"}
             frozen_in_flags = "--frozen" in self.conf["uv_sync_flags"]
             if self.conf["uv_sync_locked"] and not uv_frozen and not frozen_in_flags:
                 cmd.append("--locked")
