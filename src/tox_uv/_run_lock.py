@@ -89,59 +89,11 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
         )
         add_skip_missing_interpreters_to_core(self.core, self.options)
 
-    def _setup_env(self) -> None:  # noqa: C901,PLR0912,PLR0914,PLR0915
+    def _setup_env(self) -> None:
         super()._setup_env()
         install_pkg = getattr(self.options, "install_pkg", None)
         if not getattr(self.options, "skip_uv_sync", False):
-            package_root: Path = self.conf["package_root"]
-            if not package_root.is_absolute():
-                package_root = self.core["tox_root"] / package_root
-            cmd = [
-                self.uv,
-                "sync",
-            ]
-            if package_root != self.core["tox_root"]:
-                cmd.extend(("--directory", str(package_root)))
-            env_vars = self.environment_variables
-            uv_frozen_val = env_vars.get("UV_FROZEN", "")
-            uv_frozen = uv_frozen_val.lower() not in {"", "0", "false", "no", "off"}
-            frozen_in_flags = "--frozen" in self.conf["uv_sync_flags"]
-            if self.conf["uv_sync_locked"] and not uv_frozen and not frozen_in_flags:
-                cmd.append("--locked")
-            if uv_frozen and not frozen_in_flags:
-                cmd.append("--frozen")
-            if self.conf["uv_python_preference"] != "none":
-                cmd.extend(("--python-preference", self.conf["uv_python_preference"]))
-            if self.conf["uv_resolution"]:
-                cmd.extend(("--resolution", self.conf["uv_resolution"]))
-            for extra in cast("set[str]", sorted(self.conf["extras"])):
-                cmd.extend(("--extra", extra))
-            groups = sorted(self.conf["dependency_groups"])
-            if self.conf["no_default_groups"]:
-                cmd.append("--no-default-groups")
-            package = self.conf["package"]
-            if install_pkg is not None or package == "skip":
-                cmd.append("--no-install-project")
-            if self.options.verbosity > 3:  # noqa: PLR2004
-                cmd.append("-v")
-            if package in {"wheel", "uv"}:
-                project_file = package_root / "pyproject.toml"
-                name = None
-                if project_file.exists():
-                    with project_file.open("rb") as file_handler:
-                        raw = tomllib.load(file_handler)
-                    name = raw.get("project", {}).get("name")
-                if name is None:
-                    msg = "Could not detect project name"
-                    raise HandledError(msg)
-                cmd.extend(("--no-editable", "--reinstall-package", name))
-            for group in groups:
-                cmd.extend(("--group", group))
-            for group in sorted(self.conf["only_groups"]):
-                cmd.extend(("--only-group", group))
-            cmd.extend(self.conf["uv_sync_flags"])
-            cmd.extend(("-p", self.env_version_spec()))
-
+            cmd = self._build_uv_sync_cmd(install_pkg)
             show = self.options.verbosity > 2  # noqa: PLR2004
             outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="uv-sync", show=show)
             outcome.assert_success()
@@ -150,11 +102,70 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
             pkg = (WheelPackage if path.suffix == ".whl" else SdistPackage)(path, deps=[])
             self._install([pkg], "install-pkg", of_type="external")
 
+    def _build_uv_sync_cmd(self, install_pkg: str | None) -> list[str]:
+        package_root = self._resolved_package_root()
+        cmd = [self.uv, "sync"]
+        if package_root != self.core["tox_root"]:
+            cmd.extend(("--directory", str(package_root)))
+        self._add_lock_flags(cmd)
+        if self.conf["uv_python_preference"] != "none":
+            cmd.extend(("--python-preference", self.conf["uv_python_preference"]))
+        if self.conf["uv_resolution"]:
+            cmd.extend(("--resolution", self.conf["uv_resolution"]))
+        for extra in cast("set[str]", sorted(self.conf["extras"])):
+            cmd.extend(("--extra", extra))
+        if self.conf["no_default_groups"]:
+            cmd.append("--no-default-groups")
+        package = self.conf["package"]
+        if install_pkg is not None or package == "skip":
+            cmd.append("--no-install-project")
+        if self.options.verbosity > 3:  # noqa: PLR2004
+            cmd.append("-v")
+        if package in {"wheel", "uv"}:
+            cmd.extend(_no_editable_args(package_root))
+        self._add_group_args(cmd)
+        cmd.extend(self.conf["uv_sync_flags"])
+        cmd.extend(("-p", self.env_version_spec()))
+        return cmd
+
+    def _resolved_package_root(self) -> Path:
+        package_root: Path = self.conf["package_root"]
+        if not package_root.is_absolute():
+            package_root = self.core["tox_root"] / package_root
+        return package_root
+
+    def _add_lock_flags(self, cmd: list[str]) -> None:
+        uv_frozen_val = self.environment_variables.get("UV_FROZEN", "")
+        uv_frozen = uv_frozen_val.lower() not in {"", "0", "false", "no", "off"}
+        frozen_in_flags = "--frozen" in self.conf["uv_sync_flags"]
+        if self.conf["uv_sync_locked"] and not uv_frozen and not frozen_in_flags:
+            cmd.append("--locked")
+        if uv_frozen and not frozen_in_flags:
+            cmd.append("--frozen")
+
+    def _add_group_args(self, cmd: list[str]) -> None:
+        for group in sorted(self.conf["dependency_groups"]):
+            cmd.extend(("--group", group))
+        for group in sorted(self.conf["only_groups"]):
+            cmd.extend(("--only-group", group))
+
     @property
     def environment_variables(self) -> dict[str, str]:
         env = super().environment_variables
         env["UV_PROJECT_ENVIRONMENT"] = str(self.venv_dir)
         return env
+
+
+def _no_editable_args(package_root: Path) -> list[str]:
+    project_file = package_root / "pyproject.toml"
+    name = None
+    if project_file.exists():
+        with project_file.open("rb") as file_handler:
+            name = tomllib.load(file_handler).get("project", {}).get("name")
+    if name is None:
+        msg = "Could not detect project name"
+        raise HandledError(msg)
+    return ["--no-editable", "--reinstall-package", name]
 
 
 __all__ = [

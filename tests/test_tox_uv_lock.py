@@ -406,15 +406,28 @@ def test_uv_sync_extra_flags_toml(tox_project: ToxProjectCreator) -> None:
 
 
 @pytest.mark.usefixtures("clear_python_preference_env_var")
-def test_uv_sync_locked_suppressed_by_uv_frozen_env(
-    tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch
+@pytest.mark.parametrize(
+    ("uv_frozen_env", "tox_ini_extra"),
+    [
+        pytest.param("1", "", id="uv_frozen_env"),
+        pytest.param("1", "uv_sync_locked = false", id="frozen_env_with_locked_disabled"),
+        pytest.param(None, "uv_sync_flags = --frozen", id="frozen_flag"),
+    ],
+)
+def test_uv_sync_frozen_suppresses_locked(
+    tox_project: ToxProjectCreator,
+    monkeypatch: pytest.MonkeyPatch,
+    uv_frozen_env: str | None,
+    tox_ini_extra: str,
 ) -> None:
-    monkeypatch.setenv("UV_FROZEN", "1")
+    if uv_frozen_env is not None:
+        monkeypatch.setenv("UV_FROZEN", uv_frozen_env)
+    extra = f"\n    {tox_ini_extra}" if tox_ini_extra else ""
     project = tox_project({
-        "tox.ini": """
+        "tox.ini": f"""
     [testenv]
     runner = uv-venv-lock-runner
-    no_default_groups = false
+    no_default_groups = false{extra}
     commands = python hello
     """
     })
@@ -423,53 +436,6 @@ def test_uv_sync_locked_suppressed_by_uv_frozen_env(
     result.assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
-    shutil.which("uv")
-    uv_sync_cmd = next(cmd for _, run_id, cmd in calls if run_id == "uv-sync")
-    assert "--locked" not in uv_sync_cmd
-    assert "--frozen" in uv_sync_cmd
-
-
-@pytest.mark.usefixtures("clear_python_preference_env_var")
-def test_uv_sync_frozen_env_with_locked_disabled(
-    tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setenv("UV_FROZEN", "1")
-    project = tox_project({
-        "tox.ini": """
-    [testenv]
-    runner = uv-venv-lock-runner
-    no_default_groups = false
-    uv_sync_locked = false
-    commands = python hello
-    """
-    })
-    execute_calls = project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
-    result = project.run()
-    result.assert_success()
-
-    calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
-    uv_sync_cmd = next(cmd for _, run_id, cmd in calls if run_id == "uv-sync")
-    assert "--locked" not in uv_sync_cmd
-    assert "--frozen" in uv_sync_cmd
-
-
-@pytest.mark.usefixtures("clear_python_preference_env_var")
-def test_uv_sync_locked_suppressed_by_frozen_flag(tox_project: ToxProjectCreator) -> None:
-    project = tox_project({
-        "tox.ini": """
-    [testenv]
-    runner = uv-venv-lock-runner
-    no_default_groups = false
-    uv_sync_flags = --frozen
-    commands = python hello
-    """
-    })
-    execute_calls = project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
-    result = project.run()
-    result.assert_success()
-
-    calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
-    shutil.which("uv")
     uv_sync_cmd = next(cmd for _, run_id, cmd in calls if run_id == "uv-sync")
     assert "--locked" not in uv_sync_cmd
     assert "--frozen" in uv_sync_cmd

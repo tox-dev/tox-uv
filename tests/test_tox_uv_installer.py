@@ -249,14 +249,28 @@ version = "0.1.0"
     assert "uv cannot install" in result.out
 
 
-def test_uv_resolution_env_var_change_reinstalls(tox_project: ToxProjectCreator) -> None:
-    project = tox_project({
-        "tox.ini": """
-                [testenv]
-                deps = tomli
-                package = skip
-            """,
-    })
+@pytest.mark.parametrize(
+    ("initial_setenv", "changed_setenv", "expected_reinstall"),
+    [
+        pytest.param("", "UV_EXCLUDE_NEWER = 2024-01-01", True, id="resolution_env_var_change"),
+        pytest.param(
+            "UV_CONCURRENT_DOWNLOADS = 4", "UV_CONCURRENT_DOWNLOADS = 8", False, id="non_resolution_env_var_change"
+        ),
+    ],
+)
+def test_uv_env_var_change_reinstall(
+    tox_project: ToxProjectCreator,
+    initial_setenv: str,
+    changed_setenv: str,
+    expected_reinstall: bool,
+) -> None:
+    initial_ini = dedent(f"""
+        [testenv]
+        deps = tomli
+        package = skip
+        {"setenv = " + initial_setenv if initial_setenv else ""}
+    """)
+    project = tox_project({"tox.ini": initial_ini})
     install_count = 0
 
     def handle(r: ExecuteRequest) -> int | None:
@@ -274,54 +288,16 @@ def test_uv_resolution_env_var_change_reinstalls(tox_project: ToxProjectCreator)
     install_count = 0
 
     (project.path / "tox.ini").write_text(
-        dedent("""
-            [testenv]
-            deps = tomli
-            package = skip
-            setenv = UV_EXCLUDE_NEWER = 2024-01-01
-        """)
+        dedent(f"""
+        [testenv]
+        deps = tomli
+        package = skip
+        setenv = {changed_setenv}
+    """)
     )
     result = project.run("r")
     result.assert_success()
-    assert install_count == 1
-
-
-def test_uv_non_resolution_env_var_change_no_reinstall(tox_project: ToxProjectCreator) -> None:
-    project = tox_project({
-        "tox.ini": """
-                [testenv]
-                deps = tomli
-                package = skip
-                setenv = UV_CONCURRENT_DOWNLOADS = 4
-            """,
-    })
-    install_count = 0
-
-    def handle(r: ExecuteRequest) -> int | None:
-        nonlocal install_count
-        if "install" in r.run_id:
-            install_count += 1
-            return 0
-        return None
-
-    project.patch_execute(handle)
-
-    result = project.run("r")
-    result.assert_success()
-    assert install_count == 1
-    install_count = 0
-
-    (project.path / "tox.ini").write_text(
-        dedent("""
-            [testenv]
-            deps = tomli
-            package = skip
-            setenv = UV_CONCURRENT_DOWNLOADS = 8
-        """)
-    )
-    result = project.run("r")
-    result.assert_success()
-    assert install_count == 0
+    assert install_count == (1 if expected_reinstall else 0)
 
 
 def test_uv_install_broken_venv(tox_project: ToxProjectCreator) -> None:
