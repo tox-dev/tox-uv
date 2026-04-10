@@ -264,13 +264,14 @@ def test_uv_env_var_change_reinstall(
     changed_setenv: str,
     expected_reinstall: bool,
 ) -> None:
-    initial_ini = dedent(f"""
-        [testenv]
-        deps = tomli
-        package = skip
-        {"setenv = " + initial_setenv if initial_setenv else ""}
-    """)
-    project = tox_project({"tox.ini": initial_ini})
+    project = tox_project({
+        "tox.ini": dedent(f"""
+            [testenv]
+            deps = tomli
+            package = skip
+            {"setenv = " + initial_setenv if initial_setenv else ""}
+        """),
+    })
     install_count = 0
 
     def handle(r: ExecuteRequest) -> int | None:

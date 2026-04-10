@@ -93,14 +93,20 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
         super()._setup_env()
         install_pkg = getattr(self.options, "install_pkg", None)
         if not getattr(self.options, "skip_uv_sync", False):
-            cmd = self._build_uv_sync_cmd(install_pkg)
-            show = self.options.verbosity > 2  # noqa: PLR2004
-            outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="uv-sync", show=show)
+            outcome = self.execute(
+                self._build_uv_sync_cmd(install_pkg),
+                stdin=StdinSource.OFF,
+                run_id="uv-sync",
+                show=self.options.verbosity > 2,  # noqa: PLR2004
+            )
             outcome.assert_success()
         if install_pkg is not None:
             path = Path(install_pkg)
-            pkg = (WheelPackage if path.suffix == ".whl" else SdistPackage)(path, deps=[])
-            self._install([pkg], "install-pkg", of_type="external")
+            self._install(
+                [(WheelPackage if path.suffix == ".whl" else SdistPackage)(path, deps=[])],
+                "install-pkg",
+                of_type="external",
+            )
 
     def _build_uv_sync_cmd(self, install_pkg: str | None) -> list[str]:
         package_root = self._resolved_package_root()
@@ -135,8 +141,7 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
         return package_root
 
     def _add_lock_flags(self, cmd: list[str]) -> None:
-        uv_frozen_val = self.environment_variables.get("UV_FROZEN", "")
-        uv_frozen = uv_frozen_val.lower() not in {"", "0", "false", "no", "off"}
+        uv_frozen = self.environment_variables.get("UV_FROZEN", "").lower() not in {"", "0", "false", "no", "off"}
         frozen_in_flags = "--frozen" in self.conf["uv_sync_flags"]
         if self.conf["uv_sync_locked"] and not uv_frozen and not frozen_in_flags:
             cmd.append("--locked")

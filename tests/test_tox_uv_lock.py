@@ -422,12 +422,11 @@ def test_uv_sync_frozen_suppresses_locked(
 ) -> None:
     if uv_frozen_env is not None:
         monkeypatch.setenv("UV_FROZEN", uv_frozen_env)
-    extra = f"\n    {tox_ini_extra}" if tox_ini_extra else ""
     project = tox_project({
         "tox.ini": f"""
     [testenv]
     runner = uv-venv-lock-runner
-    no_default_groups = false{extra}
+    no_default_groups = false{f"{chr(10)}    {tox_ini_extra}" if tox_ini_extra else ""}
     commands = python hello
     """
     })
@@ -435,8 +434,7 @@ def test_uv_sync_frozen_suppresses_locked(
     result = project.run()
     result.assert_success()
 
-    calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
-    uv_sync_cmd = next(cmd for _, run_id, cmd in calls if run_id == "uv-sync")
+    uv_sync_cmd = next(i[0][3].cmd for i in execute_calls.call_args_list if i[0][3].run_id == "uv-sync")
     assert "--locked" not in uv_sync_cmd
     assert "--frozen" in uv_sync_cmd
 
