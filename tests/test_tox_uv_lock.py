@@ -406,6 +406,40 @@ def test_uv_sync_extra_flags_toml(tox_project: ToxProjectCreator) -> None:
 
 
 @pytest.mark.usefixtures("clear_python_preference_env_var")
+@pytest.mark.parametrize(
+    ("uv_frozen_env", "tox_ini_extra"),
+    [
+        pytest.param("1", "", id="uv_frozen_env"),
+        pytest.param("1", "uv_sync_locked = false", id="frozen_env_with_locked_disabled"),
+        pytest.param(None, "uv_sync_flags = --frozen", id="frozen_flag"),
+    ],
+)
+def test_uv_sync_frozen_suppresses_locked(
+    tox_project: ToxProjectCreator,
+    monkeypatch: pytest.MonkeyPatch,
+    uv_frozen_env: str | None,
+    tox_ini_extra: str,
+) -> None:
+    if uv_frozen_env is not None:
+        monkeypatch.setenv("UV_FROZEN", uv_frozen_env)
+    project = tox_project({
+        "tox.ini": f"""
+    [testenv]
+    runner = uv-venv-lock-runner
+    no_default_groups = false{f"{chr(10)}    {tox_ini_extra}" if tox_ini_extra else ""}
+    commands = python hello
+    """
+    })
+    execute_calls = project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
+    result = project.run()
+    result.assert_success()
+
+    uv_sync_cmd = next(i[0][3].cmd for i in execute_calls.call_args_list if i[0][3].run_id == "uv-sync")
+    assert "--locked" not in uv_sync_cmd
+    assert "--frozen" in uv_sync_cmd
+
+
+@pytest.mark.usefixtures("clear_python_preference_env_var")
 def test_uv_sync_dependency_groups(tox_project: ToxProjectCreator) -> None:
     project = tox_project({
         "tox.toml": """
