@@ -183,7 +183,8 @@ class UvInstaller(Pip):
         req_of_type = f"{of_type}_deps" if groups["pkg"] or groups["dev_pkg"] else of_type
         for value in groups.values():
             value.sort()
-        cache_value = {"req": groups["req"], "env": self._install_env_vars()}
+        constraint_args = self.constraints.as_root_args
+        cache_value = {"req": groups["req"], "env": self._install_env_vars(), "constraints": constraint_args}
         with self._env.cache.compare(cache_value, section, req_of_type) as (eq, old):
             if not eq:  # pragma: no branch
                 old_req: list[str] = old["req"] if isinstance(old, dict) else (old or [])
@@ -193,13 +194,14 @@ class UvInstaller(Pip):
                     raise Recreate(msg)  # pragma: no cover
                 new_deps = sorted(set(groups["req"]) - set(old_req)) or list(groups["req"])
                 if new_deps:  # pragma: no branch
+                    new_deps.extend(constraint_args)
                     self._execute_installer(new_deps, req_of_type)
         install_args = ["--reinstall"]
         if groups["uv"]:
-            self._execute_installer(install_args + groups["uv"], of_type)
+            self._execute_installer(install_args + groups["uv"] + constraint_args, of_type)
         if groups["uv_editable"]:
             requirements = list(chain.from_iterable(("-e", entry) for entry in groups["uv_editable"]))
-            self._execute_installer(install_args + requirements, of_type)
+            self._execute_installer(install_args + requirements + constraint_args, of_type)
         install_args.append("--no-deps")
         if groups["pkg"]:
             self._execute_installer(install_args + groups["pkg"], of_type)

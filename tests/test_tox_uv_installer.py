@@ -330,3 +330,34 @@ def test_uv_install_broken_venv(tox_project: ToxProjectCreator) -> None:
     result = project.run("run", "-v")
     result.assert_success()
     assert "recreate env because existing venv is broken" in result.out
+
+
+def test_uv_install_with_constraints_for_deps(tox_project: ToxProjectCreator) -> None:
+    project = tox_project({
+        "tox.ini": dedent("""
+            [testenv]
+            package = skip
+            dependency_groups = test
+            constraints = constraints.txt
+        """),
+        "pyproject.toml": dedent("""
+            [project]
+            name = "test-pkg"
+            version = "0.1.0"
+
+            [dependency-groups]
+            test = ["pytest>=8.0.0"]
+        """),
+        "constraints.txt": "pytest==8.3.0\n",
+    })
+    execute_calls = project.patch_execute(lambda r: 0 if "install" in r.run_id else None)
+
+    result = project.run("-vv")
+    result.assert_success()
+
+    install_calls = [call[0][3].cmd for call in execute_calls.call_args_list if "install" in call[0][3].run_id]
+    assert len(install_calls) == 1
+    cmd = install_calls[0][2:]  # skip uv binary and "pip"
+    assert cmd[0] == "install"
+    assert "pytest>=8.0.0" in cmd
+    assert "-c" in cmd
