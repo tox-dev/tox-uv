@@ -125,6 +125,8 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
         package = self.conf["package"]
         if install_pkg is not None or package == "skip":
             cmd.append("--no-install-project")
+        if self.conf["recreate"] and "--reinstall" not in self.conf["uv_sync_flags"]:
+            cmd.append("--reinstall")
         if self.options.verbosity > 3:  # noqa: PLR2004
             cmd.append("-v")
         if package in {"wheel", "uv"}:
