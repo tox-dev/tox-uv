@@ -882,3 +882,31 @@ commands = [["python", "hello"]]
         ("py", "commands[0]", ["python", "hello"]),
     ]
     assert calls == expected
+
+
+@pytest.mark.usefixtures("clear_python_preference_env_var")
+@pytest.mark.parametrize(
+    ("extra_tox_ini", "run_args", "expected_count"),
+    [
+        pytest.param("", ("--recreate",), 1, id="recreate-adds-reinstall"),
+        pytest.param("uv_sync_flags = --reinstall", ("--recreate",), 1, id="recreate-skips-when-user-set"),
+        pytest.param("", (), 0, id="no-recreate-omits-reinstall"),
+    ],
+)
+def test_uv_lock_recreate_reinstall(
+    tox_project: ToxProjectCreator, extra_tox_ini: str, run_args: tuple[str, ...], expected_count: int
+) -> None:
+    project = tox_project({
+        "tox.ini": f"""
+    [testenv]
+    runner = uv-venv-lock-runner
+    {extra_tox_ini}
+    """
+    })
+    execute_calls = project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
+    result = project.run("run", "--notest", *run_args)
+    result.assert_success()
+
+    calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
+    uv_sync_call = next(c for c in calls if c[1] == "uv-sync")
+    assert uv_sync_call[2].count("--reinstall") == expected_count
