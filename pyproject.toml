@@ -71,13 +71,13 @@ lint = [ "pre-commit-uv>=4.2" ]
 pkg-meta = [ "check-wheel-contents>=0.6.3", "twine>=6.2", "uv>=0.9.27" ]
 
 [tool.hatch]
+version.source = "vcs"
 build.hooks.vcs.version-file = "src/tox_uv/version.py"
+build.targets.wheel.packages = [ "src/tox_uv" ]
 build.targets.sdist.include = [
   "/src",
   "/tests",
 ]
-build.targets.wheel.packages = [ "src/tox_uv" ]
-version.source = "vcs"
 
 [tool.ruff]
 line-length = 120
@@ -135,8 +135,8 @@ write-changes = true
 count = true
 
 [tool.ty]
-environment.python-version = "3.14"
 src.exclude = [ "meta" ]
+environment.python-version = "3.14"
 
 [tool.pytest]
 ini_options.norecursedirs = "tests/data/*"
