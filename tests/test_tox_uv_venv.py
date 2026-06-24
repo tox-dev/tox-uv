@@ -181,7 +181,7 @@ def test_uv_venv_spec_pypy(
     project = tox_project({"tox.ini": f"[tox]\nenv_list = {pypy}"})
     try:
         result = project.run("config", "-vv")
-    except tox.tox_env.errors.Skip:  # pragma: win32 no cover
+    except tox.tox_env.errors.Skip:  # pragma: no cover (PyPy might be available on the system)
         stdout, _ = capfd.readouterr()
     else:  # pragma: no cover (PyPy might not be available on the system)
         stdout = result.out
