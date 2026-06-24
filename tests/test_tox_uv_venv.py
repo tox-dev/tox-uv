@@ -181,7 +181,7 @@ def test_uv_venv_spec_pypy(
     project = tox_project({"tox.ini": f"[tox]\nenv_list = {pypy}"})
     try:
         result = project.run("config", "-vv")
-    except tox.tox_env.errors.Skip:  # pragma: win32 no cover
+    except tox.tox_env.errors.Skip:  # pragma: no cover (PyPy might be available on the system)
         stdout, _ = capfd.readouterr()
     else:  # pragma: no cover (PyPy might not be available on the system)
         stdout = result.out
@@ -305,16 +305,19 @@ def test_uv_venv_non_python_env_name(tox_project: ToxProjectCreator, env_name: s
 
 
 def test_uv_venv_na(tox_project: ToxProjectCreator) -> None:
-    # skip_missing_interpreters is true by default
-    project = tox_project({"tox.ini": "[testenv]\npackage=skip\nbase_python=1.0"})
+    # an unavailable interpreter is skipped (exit 1), not a hard error, when skip_missing_interpreters is on
+    project = tox_project({
+        "tox.ini": "[tox]\nskip_missing_interpreters=true\n[testenv]\npackage=skip\nbase_python=1.0"
+    })
     result = project.run("-vv")
     result.assert_failed(code=1)
 
 
 def test_uv_venv_na_uv_072(tox_project: ToxProjectCreator) -> None:
-    # Test uv==0.7.2
-    # skip_missing_interpreters is true by default
-    project = tox_project({"tox.ini": "[testenv]\npackage=skip\nbase_python=1.0\nrequires=uv==0.7.2"})
+    # an unavailable interpreter is skipped (exit 1), not a hard error, when skip_missing_interpreters is on
+    project = tox_project({
+        "tox.ini": "[tox]\nskip_missing_interpreters=true\n[testenv]\npackage=skip\nbase_python=1.0\nrequires=uv==0.7.2"
+    })
     result = project.run("-vv")
     result.assert_failed(code=1)
 
