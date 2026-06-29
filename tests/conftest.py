@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from collections.abc import Generator
 
 
-@pytest.fixture(autouse=True)  # noqa: RUF076
+@pytest.fixture(autouse=True)
 def mock_settings_env_vars() -> Generator[None, None, None]:
     """Isolated testing from user's environment."""
     with mock.patch.dict(os.environ, {"TOX_USER_CONFIG_FILE": os.devnull}):
