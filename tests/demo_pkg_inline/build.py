@@ -75,7 +75,7 @@ metadata_files = {
 
 def build_wheel(
     wheel_directory: str,
-    config_settings: dict[str, str] | None = None,  # noqa: ARG001
+    config_settings: dict[str, str] | None = None,  # ruff:ignore[unused-function-argument]
     metadata_directory: str | None = None,
 ) -> str:
     base_name = f"{name_in_artifact}-{version}-py{sys.version_info[0]}-none-any.whl"
@@ -92,11 +92,11 @@ def build_wheel(
         else:
             for arc_name, data in metadata_files.items():
                 zip_file_handler.writestr(arc_name, dedent(data).strip())
-    print(f"created wheel {path}")  # noqa: T201
+    print(f"created wheel {path}")  # ruff:ignore[print]
     return base_name
 
 
-def get_requires_for_build_wheel(config_settings: dict[str, str] | None = None) -> list[str]:  # noqa: ARG001
+def get_requires_for_build_wheel(config_settings: dict[str, str] | None = None) -> list[str]:  # ruff:ignore[unused-function-argument]
     return []  # pragma: no cover # only executed in non-host pythons
 
 
@@ -108,7 +108,7 @@ def build_editable(
     return build_wheel(wheel_directory, config_settings, metadata_directory)
 
 
-def build_sdist(sdist_directory: str, config_settings: dict[str, str] | None = None) -> str:  # noqa: ARG001
+def build_sdist(sdist_directory: str, config_settings: dict[str, str] | None = None) -> str:  # ruff:ignore[unused-function-argument]
     result = f"{name_in_artifact}-{version}.tar.gz"  # pragma: win32 cover
     with tarfile.open(str(Path(sdist_directory) / result), "w:gz") as tar:  # pragma: win32 cover
         root = Path(__file__).parent  # pragma: win32 cover
@@ -117,5 +117,5 @@ def build_sdist(sdist_directory: str, config_settings: dict[str, str] | None = N
     return result  # pragma: win32 cover
 
 
-def get_requires_for_build_sdist(config_settings: dict[str, str] | None = None) -> list[str]:  # noqa: ARG001
+def get_requires_for_build_sdist(config_settings: dict[str, str] | None = None) -> list[str]:  # ruff:ignore[unused-function-argument]
     return []  # pragma: no cover # only executed in non-host pythons

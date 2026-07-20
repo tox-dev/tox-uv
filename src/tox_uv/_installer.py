@@ -62,7 +62,7 @@ class UvInstaller(Pip):
     if TYPE_CHECKING:
         _env: UvVenv
 
-    def __init__(self, tox_env: UvVenv, with_list_deps: bool = True) -> None:  # noqa: FBT001, FBT002
+    def __init__(self, tox_env: UvVenv, with_list_deps: bool = True) -> None:  # ruff:ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument]
         self._with_list_deps = with_list_deps
         super().__init__(tox_env)
 
@@ -91,9 +91,9 @@ class UvInstaller(Pip):
             post_process=uv_resolution_post_process,
         )
 
-    def default_install_command(self, conf: Config, env_name: str | None) -> Command:  # noqa: ARG002
+    def default_install_command(self, conf: Config, env_name: str | None) -> Command:  # ruff:ignore[unused-method-argument]
         cmd = [self.uv, "pip", "install", "{opts}", "{packages}"]
-        if self._env.options.verbosity > 3:  # noqa: PLR2004
+        if self._env.options.verbosity > 3:  # ruff:ignore[magic-value-comparison]
             cmd.append("-v")
         return Command(cmd)
 
@@ -117,7 +117,7 @@ class UvInstaller(Pip):
             install_command[opts_at : opts_at + 1] = opts
         return cmd
 
-    def install(self, arguments: Any, section: str, of_type: str) -> None:  # noqa: ANN401
+    def install(self, arguments: Any, section: str, of_type: str) -> None:  # ruff:ignore[any-type]
         # can happen if the original python was upgraded to a newer version and
         # the symlinks become orphan.
         if not self._env.env_python().resolve().is_file():
@@ -134,7 +134,7 @@ class UvInstaller(Pip):
 
     @cached_property
     def _sourced_pkg_names(self) -> set[str]:
-        pyproject_file = self._env.conf._conf.src_path.parent / "pyproject.toml"  # noqa: SLF001
+        pyproject_file = self._env.conf._conf.src_path.parent / "pyproject.toml"  # ruff:ignore[private-member-access]
         if not pyproject_file.exists():  # pragma: no cover
             return set()
         with pyproject_file.open("rb") as file_handler:
@@ -143,7 +143,7 @@ class UvInstaller(Pip):
         sources = pyproject.get("tool", {}).get("uv", {}).get("sources", {})
         return {key for key, val in sources.items() if isinstance(val, dict) and val.get("workspace", False)}
 
-    def _install_list_of_deps(  # noqa: C901, PLR0912
+    def _install_list_of_deps(  # ruff:ignore[complex-structure, too-many-branches]
         self,
         arguments: Sequence[
             Requirement | WheelPackage | SdistPackage | EditableLegacyPackage | EditablePackage | PathPackage

@@ -6,7 +6,7 @@ from hatchling.metadata.plugin.interface import MetadataHookInterface
 
 
 class CustomMetadataHook(MetadataHookInterface):
-    def update(self, metadata: dict[str, object]) -> None:  # noqa: PLR6301
+    def update(self, metadata: dict[str, object]) -> None:  # ruff:ignore[no-self-use]
         version = metadata["version"]
         dependencies: list[str] = metadata.get("dependencies", [])  # type: ignore[assignment]
         metadata["dependencies"] = [

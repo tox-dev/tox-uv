@@ -28,7 +28,7 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
     def id() -> str:
         return "uv-venv-lock-runner"
 
-    def _register_package_conf(self) -> bool:  # noqa: PLR6301
+    def _register_package_conf(self) -> bool:  # ruff:ignore[no-self-use]
         return False
 
     @property
@@ -97,7 +97,7 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
                 self._build_uv_sync_cmd(install_pkg),
                 stdin=StdinSource.OFF,
                 run_id="uv-sync",
-                show=self.options.verbosity > 2,  # noqa: PLR2004
+                show=self.options.verbosity > 2,  # ruff:ignore[magic-value-comparison]
             )
             outcome.assert_success()
         if install_pkg is not None:
@@ -127,7 +127,7 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
             cmd.append("--no-install-project")
         if self.conf["recreate"] and "--reinstall" not in self.conf["uv_sync_flags"]:
             cmd.append("--reinstall")
-        if self.options.verbosity > 3:  # noqa: PLR2004
+        if self.options.verbosity > 3:  # ruff:ignore[magic-value-comparison]
             cmd.append("-v")
         if package in {"wheel", "uv"}:
             cmd.extend(_no_editable_args(package_root))

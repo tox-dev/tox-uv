@@ -5,7 +5,7 @@ import platform
 import sys
 from platform import python_implementation
 
-print(  # noqa: T201
+print(  # ruff:ignore[print]
     json.dumps({
         "implementation": python_implementation().lower(),
         "version_info": sys.version_info,

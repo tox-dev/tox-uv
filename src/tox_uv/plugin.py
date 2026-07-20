@@ -25,10 +25,10 @@ def tox_register_tox_env(register: ToxEnvRegister) -> None:
     register.add_run_env(UvVenvLockRunner)
     register.add_run_env(UvVenvPep723Runner)
     if not StrConvert.to_bool(os.environ.get("TOX_UV_NO_PEP723", "false")):
-        register._run_envs["virtualenv-pep-723"] = UvVenvPep723Runner  # noqa: SLF001
+        register._run_envs["virtualenv-pep-723"] = UvVenvPep723Runner  # ruff:ignore[private-member-access]
     register.add_package_env(UvVenvPep517Packager)
     register.add_package_env(UvVenvCmdBuilder)
-    register._default_run_env = UvVenvRunner.id()  # noqa: SLF001
+    register._default_run_env = UvVenvRunner.id()  # ruff:ignore[private-member-access]
 
 
 @impl

@@ -7,7 +7,7 @@ import json
 import logging
 import os
 import shutil
-import subprocess  # noqa: S404
+import subprocess  # ruff:ignore[suspicious-subprocess-import]
 import sys
 import typing
 from abc import ABC
@@ -63,13 +63,13 @@ class UvVenv(Python, ABC):
         self.conf.add_config(
             keys=["system_site_packages", "sitepackages"],
             of_type=bool,
-            default=lambda conf, name: StrConvert().to_bool(  # noqa: ARG005
+            default=lambda conf, name: StrConvert().to_bool(  # ruff:ignore[unused-lambda-argument]
                 self.environment_variables.get("VIRTUALENV_SYSTEM_SITE_PACKAGES", "False"),
             ),
             desc="create virtual environments that also have access to globally installed packages.",
         )
 
-        def uv_python_preference_default(conf: object, name: object) -> str:  # noqa: ARG001
+        def uv_python_preference_default(conf: object, name: object) -> str:  # ruff:ignore[unused-function-argument]
             return (
                 "none"
                 if {"UV_NO_MANAGED_PYTHON", "UV_MANAGED_PYTHON"} & set(os.environ)
@@ -152,7 +152,7 @@ class UvVenv(Python, ABC):
                             serial=int(vi.serial),
                         ),
                         version=info.version,
-                        is_64=info.architecture == 64,  # noqa: PLR2004
+                        is_64=info.architecture == 64,  # ruff:ignore[magic-value-comparison]
                         platform=info.platform,
                         extra={"executable": str(base_path)},
                         free_threaded=bool(info.free_threaded),
@@ -170,7 +170,7 @@ class UvVenv(Python, ABC):
                     serial=0,
                 ),
                 version=str(spec),
-                is_64=spec.architecture == 64,  # noqa: PLR2004
+                is_64=spec.architecture == 64,  # ruff:ignore[magic-value-comparison]
                 platform=sys.platform,
                 extra={"architecture": spec.architecture},
                 free_threaded=bool(spec.free_threaded),
@@ -207,7 +207,7 @@ class UvVenv(Python, ABC):
     @staticmethod
     def _get_uv_version(uv_path: str) -> str:
         try:
-            result = subprocess.run(  # noqa: S603
+            result = subprocess.run(  # ruff:ignore[subprocess-without-shell-equals-true]
                 [uv_path, "--version"],
                 capture_output=True,
                 text=True,
@@ -231,7 +231,7 @@ class UvVenv(Python, ABC):
 
         # Try bundled uv (when installed via tox-uv meta package)
         with contextlib.suppress(ImportError, FileNotFoundError):
-            from uv import find_uv_bin  # type: ignore[import-not-found]  # noqa: PLC0415
+            from uv import find_uv_bin  # type: ignore[import-not-found]  # ruff:ignore[import-outside-top-level]
 
             uv_bin = find_uv_bin()  # pragma: no cover
             _LOGGER.debug("using bundled uv from: %s", uv_bin)  # pragma: no cover
@@ -285,8 +285,8 @@ class UvVenv(Python, ABC):
         version_spec = self.env_version_spec()
 
         cmd: list[str] = [self.uv, "venv", "-p", version_spec, "--allow-existing"]
-        cmd.append(f"--prompt={self.core._root.name}[{self.name}]")  # noqa: SLF001
-        if self.options.verbosity > 3:  # noqa: PLR2004
+        cmd.append(f"--prompt={self.core._root.name}[{self.name}]")  # ruff:ignore[private-member-access]
+        if self.options.verbosity > 3:  # ruff:ignore[magic-value-comparison]
             cmd.append("-v")
         if self.conf["uv_seed"]:
             cmd.append("--seed")
@@ -316,7 +316,7 @@ class UvVenv(Python, ABC):
     def env_bin_dir(self) -> Path:
         if sys.platform == "win32":  # pragma: win32 cover
             return self.venv_dir / "Scripts"
-        else:  # pragma: win32 no cover # noqa: RET505
+        else:  # pragma: win32 no cover # ruff:ignore[superfluous-else-return]
             return self.venv_dir / "bin"
 
     def env_python(self) -> Path:
