@@ -18,7 +18,7 @@ class UvVenvPep723Runner(Pep723Mixin, UvVenv, RunToxEnv):
     def id() -> str:
         return "uv-venv-pep-723"
 
-    def _register_package_conf(self) -> bool:  # noqa: PLR6301
+    def _register_package_conf(self) -> bool:  # ruff:ignore[no-self-use]
         return False
 
     @property

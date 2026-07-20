@@ -61,7 +61,7 @@ def test_wheel_does_not_contain_tox_uv_package(built_wheel: Path) -> None:
 
 
 def test_build_hook_updates_metadata() -> None:
-    from meta.hatch_build import CustomMetadataHook  # noqa: PLC0415
+    from meta.hatch_build import CustomMetadataHook  # ruff:ignore[import-outside-top-level]
 
     hook = CustomMetadataHook("test", {})
     metadata: dict[str, object] = {
@@ -74,7 +74,7 @@ def test_build_hook_updates_metadata() -> None:
 
 
 def test_build_hook_preserves_other_dependencies() -> None:
-    from meta.hatch_build import CustomMetadataHook  # noqa: PLC0415
+    from meta.hatch_build import CustomMetadataHook  # ruff:ignore[import-outside-top-level]
 
     hook = CustomMetadataHook("test", {})
     metadata: dict[str, object] = {
@@ -87,7 +87,7 @@ def test_build_hook_preserves_other_dependencies() -> None:
 
 
 def test_build_hook_injects_root_readme() -> None:
-    from meta.hatch_build import CustomMetadataHook  # noqa: PLC0415
+    from meta.hatch_build import CustomMetadataHook  # ruff:ignore[import-outside-top-level]
 
     hook = CustomMetadataHook("test", {})
     metadata: dict[str, object] = {"version": "1.0.0", "dependencies": []}

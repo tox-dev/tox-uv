@@ -1032,12 +1032,12 @@ def test_uv_version_os_error(tox_project: ToxProjectCreator, mocker: MockerFixtu
 
 
 def test_uv_bundled_import_error(tox_project: ToxProjectCreator, mocker: MockerFixture) -> None:
-    import builtins  # noqa: PLC0415
-    from typing import Any  # noqa: PLC0415
+    import builtins  # ruff:ignore[import-outside-top-level]
+    from typing import Any  # ruff:ignore[import-outside-top-level]
 
     original_import = builtins.__import__
 
-    def mock_import(name: str, *args: Any, **kwargs: Any) -> Any:  # noqa: ANN401
+    def mock_import(name: str, *args: Any, **kwargs: Any) -> Any:  # ruff:ignore[any-type]
         if name == "uv":
             msg = "mocked import error"
             raise ImportError(msg)
