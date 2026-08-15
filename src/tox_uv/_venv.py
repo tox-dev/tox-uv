@@ -81,7 +81,7 @@ class UvVenv(Python, ABC):
                 return value.lower()
             return "system"
 
-        self.conf.add_config(  # ty: ignore[no-matching-overload]
+        self.conf.add_config(
             keys=["uv_python_preference"],
             of_type=cast("type[PythonPreference | None]", PythonPreference | None),
             # use os.environ here instead of self.environment_variables as this value is needed to create the virtual
