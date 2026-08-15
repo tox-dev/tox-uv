@@ -26,7 +26,7 @@ from ._package_types import UvEditablePackage, UvPackage
 
 if TYPE_CHECKING:
     from tox.config.main import Config
-    from tox.tox_env.package import PathPackage
+    from tox.tox_env.package import Package
 
     from ._venv import UvVenv
 
@@ -145,9 +145,7 @@ class UvInstaller(Pip):
 
     def _install_list_of_deps(  # ruff:ignore[complex-structure, too-many-branches]
         self,
-        arguments: Sequence[
-            Requirement | WheelPackage | SdistPackage | EditableLegacyPackage | EditablePackage | PathPackage
-        ],
+        arguments: Sequence[Requirement | Package],
         section: str,
         of_type: str,
     ) -> None:
