@@ -148,10 +148,10 @@ ini_options.verbosity_assertions = 2
 
 [tool.coverage]
 run.parallel = true
-run.patch = [ "subprocess" ]
 run.plugins = [
   "covdefaults",
 ]
+run.patch = [ "subprocess" ]
 paths.other = [
   ".",
   "*/tox_uv",
