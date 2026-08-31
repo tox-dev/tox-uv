@@ -56,6 +56,12 @@ commands = [
   ],
 ]
 
+[env."meta-3.15"]
+base = [ "meta" ]
+
+[env."meta-3.14"]
+base = [ "meta" ]
+
 [env.fix]
 description = "format the code base to adhere to our styles, and complain about what we cannot do automatically"
 skip_install = true
@@ -134,10 +140,4 @@ base = [ "meta" ]
 base = [ "meta" ]
 
 [env."meta-3.13"]
-base = [ "meta" ]
-
-[env."meta-3.14"]
-base = [ "meta" ]
-
-[env."meta-3.15"]
 base = [ "meta" ]
