@@ -114,13 +114,14 @@ lint.per-file-ignores."meta/tests/**/*.py" = [
   "S101",    # asserts allowed in tests...
 ]
 lint.per-file-ignores."tests/**/*.py" = [
-  "D",       # don't care about documentation in tests
-  "FBT",     # don't care about booleans as positional arguments in tests
-  "INP001",  # no implicit namespace
-  "PLC2701", # private import is fine
-  "PLR2004", # Magic value used in comparison, consider replacing with a constant variable
-  "S",       # no safety concerns
-  "S101",    # asserts allowed in tests...
+  "D",                      # don't care about documentation in tests
+  "FBT",                    # don't care about booleans as positional arguments in tests
+  "INP001",                 # no implicit namespace
+  "PLC2701",                # private import is fine
+  "PLR2004",                # Magic value used in comparison, consider replacing with a constant variable
+  "pytest-fixture-autouse", # shared setup fixtures are meant to apply to every test
+  "S",                      # no safety concerns
+  "S101",                   # asserts allowed in tests...
 ]
 lint.isort = { known-first-party = [
   "tox_uv",
