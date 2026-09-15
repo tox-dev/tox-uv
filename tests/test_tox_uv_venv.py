@@ -345,7 +345,9 @@ def test_uv_venv_platform_check(tox_project: ToxProjectCreator) -> None:
 
 
 def test_uv_env_bin_dir(tox_project: ToxProjectCreator) -> None:
-    project = tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python -c 'print(\"{env_bin_dir}\")'"})
+    project = tox_project({
+        "tox.ini": "[testenv]\npackage=skip\ncommands=python -c 'import sys; print(sys.argv[1])' \"{env_bin_dir}\""
+    })
     result = project.run("-vv")
     result.assert_success()
 
@@ -366,7 +368,9 @@ def test_uv_env_has_access_to_plugin_uv(tox_project: ToxProjectCreator) -> None:
 
 
 def test_uv_env_python(tox_project: ToxProjectCreator) -> None:
-    project = tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python -c 'print(\"{env_python}\")'"})
+    project = tox_project({
+        "tox.ini": "[testenv]\npackage=skip\ncommands=python -c 'import sys; print(sys.argv[1])' \"{env_python}\""
+    })
     result = project.run("-vv")
     result.assert_success()
 
@@ -389,7 +393,7 @@ def test_uv_env_python_preference(
             "[testenv]\n"
             "package=skip\n"
             f"uv_python_preference={preference}\n"
-            "commands=python -c 'print(\"{env_python}\")'"
+            "commands=python -c 'import sys; print(sys.argv[1])' \"{env_python}\""
         )
     })
     result = project.run("-vv")
@@ -418,7 +422,7 @@ def test_uv_env_python_preference_complex(
             "package=skip\n"
             "uv_python_preference=\n"
             "    onlymanaged: only-managed\n"
-            "commands=python -c 'print(\"{env_python}\")'"
+            "commands=python -c 'import sys; print(sys.argv[1])' \"{env_python}\""
         )
     })
     result = project.run("-vv", "-e", env)
@@ -430,7 +434,11 @@ def test_uv_env_python_preference_complex(
 
 
 def test_uv_env_site_package_dir_run(tox_project: ToxProjectCreator) -> None:
-    project = tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python -c 'print(\"{envsitepackagesdir}\")'"})
+    project = tox_project({
+        "tox.ini": (
+            "[testenv]\npackage=skip\ncommands=python -c 'import sys; print(sys.argv[1])' \"{envsitepackagesdir}\""
+        )
+    })
     result = project.run("-vv")
     result.assert_success()
 
@@ -482,7 +490,9 @@ def test_uv_env_python_not_in_path(tox_project: ToxProjectCreator) -> None:
     assert tox_lines == [tox_spec.origin]
 
     # Now use that Python interpreter to run Tox
-    project = tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python -c 'print(\"{env_python}\")'"})
+    project = tox_project({
+        "tox.ini": "[testenv]\npackage=skip\ncommands=python -c 'import sys; print(sys.argv[1])' \"{env_python}\""
+    })
     tox_ini = project.path / "tox.ini"
     assert tox_ini.is_file()
     subprocess.check_call([sys.executable, "-m", "tox", "-c", tox_ini], env=env)
