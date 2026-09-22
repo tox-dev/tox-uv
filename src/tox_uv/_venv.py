@@ -276,6 +276,7 @@ class UvVenv(Python, ABC):
     def _default_pass_env(self) -> list[str]:
         env = super()._default_pass_env()
         env.append("UV_*")  # accept uv env vars
+        env.append("VIRTUALENV_SYSTEM_SITE_PACKAGES")  # read by the system_site_packages default
         if sys.platform == "darwin":  # pragma: darwin cover
             env.append("MACOSX_DEPLOYMENT_TARGET")  # needed for macOS binary builds
         env.append("PKG_CONFIG_PATH")  # needed for binary builds
