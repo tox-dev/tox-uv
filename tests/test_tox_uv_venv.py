@@ -230,6 +230,20 @@ def test_uv_venv_system_site_packages(tox_project: ToxProjectCreator) -> None:
     result.assert_success()
 
 
+def test_uv_venv_system_site_packages_env_var(tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch) -> None:
+    project = tox_project({"tox.ini": "[testenv]\npackage=skip"})
+    monkeypatch.setenv("VIRTUALENV_SYSTEM_SITE_PACKAGES", "1")
+
+    result = project.run("c", "-k", "system_site_packages")
+    result.assert_success()
+
+    parser = ConfigParser()
+    parser.read_string(result.out)
+    got = parser["testenv:py"]["system_site_packages"]
+
+    assert got == "True"
+
+
 @pytest.fixture
 def other_interpreter_exe() -> pathlib.Path:  # pragma: no cover
     """Returns an interpreter executable path that is not the exact same as `sys.executable`.
