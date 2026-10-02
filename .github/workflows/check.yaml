@@ -14,7 +14,7 @@ permissions:
   contents: read
 jobs:
   test:
-    runs-on: ${{ matrix.os || 'ubuntu-latest' }}
+    runs-on: ${{ matrix.os || 'ubuntu-26.04' }}
     name: ${{ matrix.env }}${{ matrix.suffix || ''}}
     strategy:
       fail-fast: false
