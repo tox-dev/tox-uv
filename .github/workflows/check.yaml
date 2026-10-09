@@ -26,7 +26,6 @@ jobs:
           - "3.13"
           - "3.12"
           - "3.11"
-          - "3.10"
           - type
           - dev
           - pkg_meta
@@ -49,7 +48,6 @@ jobs:
           - env: meta-3.13
           - env: meta-3.12
           - env: meta-3.11
-          - env: meta-3.10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -61,9 +59,9 @@ jobs:
           enable-cache: false
           cache-dependency-glob: "pyproject.toml"
       - name: Install tox
-        run: uv tool install --python-preference only-managed --python 3.14 tox --with .
+        run: uv tool install --python-preference only-managed --python 3.15 tox --with .
       - name: Install Python
-        if: (startsWith(matrix.env, '3.') && matrix.env != '3.14') || startsWith(matrix.env, 'meta-')
+        if: (startsWith(matrix.env, '3.') && matrix.env != '3.15') || startsWith(matrix.env, 'meta-')
         run: |
           VERSION="${{ matrix.env }}"
           VERSION="${VERSION#meta-}"

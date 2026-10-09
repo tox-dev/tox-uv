@@ -3,17 +3,13 @@
 from __future__ import annotations
 
 import logging
-import sys
+import tomllib
 from collections import defaultdict
 from collections.abc import Sequence
 from functools import cached_property
 from itertools import chain
 from typing import TYPE_CHECKING, Any, Final
 
-if sys.version_info >= (3, 11):  # pragma: no cover (py311+)
-    import tomllib
-else:  # pragma: no cover (py311+)
-    import tomli as tomllib
 from packaging.requirements import Requirement
 from packaging.utils import parse_sdist_filename, parse_wheel_filename
 from tox.config.types import Command

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import sys
+import tomllib
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, cast
 
@@ -13,11 +13,6 @@ from tox.tox_env.python.runner import add_extras_to_env, add_skip_missing_interp
 from tox.tox_env.runner import RunToxEnv
 
 from ._venv import UvVenv
-
-if sys.version_info >= (3, 11):  # pragma: no cover (py311+)
-    import tomllib
-else:  # pragma: no cover (py311+)
-    import tomli as tomllib
 
 if TYPE_CHECKING:
     from tox.tox_env.package import Package
