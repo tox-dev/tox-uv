@@ -62,6 +62,7 @@ jobs:
         run: uv tool install --python-preference only-managed --python 3.15 tox --with .
       - name: Install Python
         if: (startsWith(matrix.env, '3.') && matrix.env != '3.15') || startsWith(matrix.env, 'meta-')
+        shell: bash
         run: |
           VERSION="${{ matrix.env }}"
           VERSION="${VERSION#meta-}"
