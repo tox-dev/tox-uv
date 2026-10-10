@@ -17,15 +17,16 @@ jobs:
       - name: Install the latest version of uv
         uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
+          python-version: "3.15"
           enable-cache: false
           cache-dependency-glob: "pyproject.toml"
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - parallel:
           - name: Build tox-uv-bare package
-            run: uv build --python 3.14 --python-preference only-managed --sdist --wheel . --out-dir dist
+            run: uv build --python 3.15 --python-preference only-managed --sdist --wheel . --out-dir dist
           - name: Build tox-uv meta package
             run: |
-              uv build --python 3.14 --python-preference only-managed --wheel meta \
+              uv build --python 3.15 --python-preference only-managed --wheel meta \
                 --out-dir "$RUNNER_TEMP/tox-uv-meta-dist"
       - name: Collect distribution packages
         run: mv "$RUNNER_TEMP/tox-uv-meta-dist/"*.whl dist/

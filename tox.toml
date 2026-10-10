@@ -1,22 +1,10 @@
 requires = [ "tox>=4.64.7", "tox-uv>=1.36.1" ]
-env_list = [
-  "3.15",
-  "meta-3.15",
-  "3.14",
-  "meta-3.14",
-  "3.13",
-  "3.12",
-  "3.11",
-  "3.10",
-  "3.15t",
-  "fix",
-  "pkg_meta",
-  "type"
-]
+env_list = [ "3.15", "meta-3.15", "3.14", "meta-3.14", "3.13", "3.12", "3.11", "3.15t", "fix", "pkg_meta", "type" ]
 skip_missing_interpreters = true
 
 [env_run_base]
 description = "run the unit tests with pytest under {env_name}"
+default_base_python = [ "3.15" ]
 package = "wheel"
 wheel_build_env = ".pkg"
 dependency_groups = [ "test" ]
@@ -55,6 +43,9 @@ commands = [
     "100",
   ],
 ]
+
+[env_pkg_base]
+default_base_python = [ "3.15" ]
 
 [env."meta-3.15"]
 base = [ "meta" ]
@@ -129,9 +120,6 @@ commands = [
     "100",
   ],
 ]
-
-[env."meta-3.10"]
-base = [ "meta" ]
 
 [env."meta-3.11"]
 base = [ "meta" ]
