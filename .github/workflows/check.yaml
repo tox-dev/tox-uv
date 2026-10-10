@@ -34,13 +34,13 @@ jobs:
         suffix:
           - "-linux-x86_64-gnu"
         include:
-          - env: "3.14"
+          - env: "3.15"
             os: windows-2025
             suffix: -windows-x86_64-msvc
-          - env: "3.14"
+          - env: "3.15"
             os: macos-15
             suffix: -macos-aarch64-none
-          - env: "3.14"
+          - env: "3.15"
             os: macos-15
             suffix: -macos-x86_64-none
           - env: meta-3.15
@@ -62,7 +62,7 @@ jobs:
       - name: Install tox
         run: uv tool install --python-preference only-managed --python 3.15 tox --with .
       - name: Install Python
-        if: (startsWith(matrix.env, '3.') && matrix.env != '3.15') || startsWith(matrix.env, 'meta-')
+        if: startsWith(matrix.env, '3.') || startsWith(matrix.env, 'meta-')
         shell: bash
         run: |
           VERSION="${{ matrix.env }}"
