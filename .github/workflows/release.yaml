@@ -74,13 +74,25 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
         run: |
-          awk -v tag="$TAG" 'index($0, "## " tag " (") == 1 { found = 1; next } found && /^## / { exit } found { print }' CHANGELOG.md > "$RUNNER_TEMP/release-notes.md"
+          set -euo pipefail
+          awk -v tag="$TAG" '
+            index($0, "## " tag " (") == 1 { found = 1; next }
+            found && /^## / { exit }
+            found && $0 !~ /^\*\*Full Changelog\*\*:/ { print }
+          ' CHANGELOG.md > "$RUNNER_TEMP/release-notes.md"
           test -s "$RUNNER_TEMP/release-notes.md"
           printf '\n[PyPI: tox-uv](https://pypi.org/project/tox-uv/%s/)\n[PyPI: tox-uv-bare](https://pypi.org/project/tox-uv-bare/%s/)\n' "$TAG" "$TAG" >> "$RUNNER_TEMP/release-notes.md"
+          previous=$(git tag --list '[0-9]*' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | awk -v tag="$TAG" '$0 == tag { print previous; exit } { previous = $0 }')
+          if [[ -n "$previous" ]]; then
+            printf '\n**Full Changelog**: https://github.com/%s/compare/%s...%s\n' "$GITHUB_REPOSITORY" "$previous" "$TAG" >> "$RUNNER_TEMP/release-notes.md"
+          else
+            printf '\n**Full Changelog**: https://github.com/%s/commits/%s\n' "$GITHUB_REPOSITORY" "$TAG" >> "$RUNNER_TEMP/release-notes.md"
+          fi
           gh release create "$TAG" --verify-tag --title "$TAG" --notes-file "$RUNNER_TEMP/release-notes.md"
