@@ -5,6 +5,7 @@ on:
     branches: ["main"]
     tags-ignore: ["**"]
   pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   schedule:
     - cron: "0 8 * * *"
 concurrency:
@@ -92,3 +93,32 @@ jobs:
           PYTEST_ADDOPTS: "-vv --durations=20"
           DIFF_AGAINST: HEAD
           UV_PYTHON_PREFERENCE: "only-managed"
+  changelog:
+    if: github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'skip news')
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: "3.15"
+          enable-cache: false
+      - run: uvx towncrier check --compare-with "origin/${GITHUB_BASE_REF}"
+  gate:
+    name: Required checks pass
+    if: always()
+    needs: [test, changelog]
+    runs-on: ubuntu-26.04
+    steps:
+      - env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          jq -e '
+            all(
+              to_entries[];
+              .value.result == "success" or
+              (.key == "changelog" and .value.result == "skipped")
+            )
+          ' <<< "$NEEDS_JSON"

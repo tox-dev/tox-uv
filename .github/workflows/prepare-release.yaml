@@ -1,0 +1,63 @@
+name: Prepare release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release, without a v prefix
+        required: true
+permissions: {}
+concurrency:
+  group: prepare-release
+  cancel-in-progress: false
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-26.04
+    environment: release-auth
+    permissions:
+      contents: read
+    steps:
+      - id: token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          token: ${{ steps.token.outputs.token }}
+          persist-credentials: true # zizmor: ignore[artipacked] the release job pushes main and its tag
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: "3.15"
+          enable-cache: false
+      - name: Build changelog and push release
+        env:
+          VERSION: ${{ inputs.version }}
+          APP_USER_ID: ${{ vars.RELEASE_APP_USER_ID }}
+          APP_SLUG: ${{ steps.token.outputs.app-slug }}
+        run: |
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::expected a major.minor.patch version"
+            exit 1
+          fi
+          latest=$(git tag --list '[0-9]*' | sort -V | tail -n 1)
+          if [[ "$(printf '%s\n' "$latest" "$VERSION" | sort -V | tail -n 1)" != "$VERSION" || "$latest" == "$VERSION" ]]; then
+            echo "::error::$VERSION must be newer than $latest"
+            exit 1
+          fi
+          if ! compgen -G 'changelog.d/*.md' > /dev/null; then
+            echo "::error::no changelog fragments to release"
+            exit 1
+          fi
+          uvx towncrier build --yes --version "$VERSION"
+          git config user.name "${APP_SLUG}[bot]"
+          git config user.email "$APP_USER_ID+${APP_SLUG}[bot]@users.noreply.github.com"
+          git add CHANGELOG.md changelog.d
+          git commit -m "chore: prepare $VERSION"
+          git tag "$VERSION"
+          git push origin HEAD:main
+          git push origin "$VERSION"
