@@ -42,7 +42,7 @@ dependencies = [
   "packaging>=26.3",
   "tox<5,>=4.64.7",
 ]
-urls.Changelog = "https://github.com/tox-dev/tox-uv/releases"
+urls.Changelog = "https://github.com/tox-dev/tox-uv/blob/main/CHANGELOG.md"
 urls.Documentation = "https://github.com/tox-dev/tox-uv#tox-uv"
 urls.Homepage = "https://github.com/tox-dev/tox-uv"
 urls.Source = "https://github.com/tox-dev/tox-uv"
@@ -168,3 +168,14 @@ report.omit = [
 ]
 html.show_contexts = true
 html.skip_covered = false
+
+[tool.towncrier]
+name = "tox-uv"
+directory = "changelog.d"
+filename = "CHANGELOG.md"
+title_format = "## {version} ({project_date})"
+type = [
+  { directory = "feature", name = "Features", showcontent = true },
+  { directory = "bugfix", name = "Bug fixes", showcontent = true },
+  { directory = "doc", name = "Documentation", showcontent = true },
+]

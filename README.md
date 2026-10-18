@@ -8,6 +8,8 @@
 **tox-uv** is a `tox` plugin, which replaces `virtualenv` and pip with `uv` in your `tox` environments. Note that you
 will get both the benefits (performance) or downsides (bugs) of `uv`.
 
+[Changelog](CHANGELOG.md)
+
 <!--ts-->
 
 - [How to use](#how-to-use)
