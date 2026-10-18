@@ -37,7 +37,7 @@ jobs:
       - name: Build changelog and push release
         env:
           VERSION: ${{ inputs.version }}
-          APP_USER_ID: ${{ vars.RELEASE_APP_USER_ID }}
+          GH_TOKEN: ${{ steps.token.outputs.token }}
           APP_SLUG: ${{ steps.token.outputs.app-slug }}
         run: |
           if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -55,7 +55,8 @@ jobs:
           fi
           uvx towncrier build --yes --version "$VERSION"
           git config user.name "${APP_SLUG}[bot]"
-          git config user.email "$APP_USER_ID+${APP_SLUG}[bot]@users.noreply.github.com"
+          app_user_id=$(gh api "/users/${APP_SLUG}[bot]" --jq .id)
+          git config user.email "${app_user_id}+${APP_SLUG}[bot]@users.noreply.github.com"
           git add CHANGELOG.md changelog.d
           git commit -m "chore: prepare $VERSION"
           git tag "$VERSION"
