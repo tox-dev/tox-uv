@@ -8,12 +8,12 @@ requires = [
 
 [project]
 name = "tox-uv-bare"
+import-names = [ "tox_uv" ]
 description = "Integration of uv with tox (bare package, bring your own uv)."
 keywords = [
-  "environments",
-  "isolated",
-  "testing",
-  "virtual",
+  "integration",
+  "tox",
+  "uv",
 ]
 license = "MIT"
 maintainers = [
@@ -31,7 +31,6 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
   "Programming Language :: Python :: 3.15",
-  "Topic :: Internet",
   "Topic :: Software Development :: Libraries",
   "Topic :: System",
 ]

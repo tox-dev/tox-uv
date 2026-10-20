@@ -7,14 +7,15 @@ requires = [
 
 [project]
 name = "tox-uv"
+import-names = [ "tox_uv_meta" ]
 description = "Integration of uv with tox (meta package with bundled uv)."
 keywords = [
-  "environments",
-  "isolated",
-  "testing",
-  "virtual",
+  "integration",
+  "tox",
+  "uv",
 ]
 license = "MIT"
+license-files = [ "LICENSE" ]
 maintainers = [
   { name = "Bernát Gábor", email = "gaborjbernat@gmail.com" },
 ]
@@ -30,9 +31,7 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
   "Programming Language :: Python :: 3.15",
-  "Topic :: Internet",
   "Topic :: Software Development :: Libraries",
-  "Topic :: System",
 ]
 dynamic = [
   "readme",
@@ -42,7 +41,7 @@ dependencies = [
   "tox-uv-bare",
   "uv<1,>=0.9.27",
 ]
-urls.Changelog = "https://github.com/tox-dev/tox-uv/releases"
+urls.Changelog = "https://github.com/tox-dev/tox-uv/blob/main/CHANGELOG.md"
 urls.Documentation = "https://github.com/tox-dev/tox-uv#tox-uv"
 urls.Homepage = "https://github.com/tox-dev/tox-uv"
 urls.Source = "https://github.com/tox-dev/tox-uv"
