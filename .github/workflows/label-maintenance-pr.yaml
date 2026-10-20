@@ -1,0 +1,15 @@
+name: Label maintenance PRs
+on:
+  pull_request_target: # zizmor: ignore[dangerous-triggers] Reads PR metadata without checkout or PR code.
+    types: [opened, reopened, synchronize]
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+jobs:
+  label:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: tox-dev/github-workflows/label-bot-news@84255555371c47578577079d168a4654fc749166
+        with:
+          fragments: changelog.d
