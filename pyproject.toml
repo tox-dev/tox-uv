@@ -67,6 +67,12 @@ test = [
 type = [ "ty>=0.0.84", { include-group = "pkg-meta" }, { include-group = "test" } ]
 lint = [ "pre-commit-uv>=4.3" ]
 pkg-meta = [ "check-wheel-contents>=0.6.3", "twine>=7", "uv>=0.12.22" ]
+release = [
+  "prek>=0.5",
+  "release-creator @ git+https://github.com/tox-dev/release-creator@5ab33234939cf2969d25a11ba477c31eb264067c",
+  "towncrier>=26.9",
+  { include-group = "pkg-meta" },
+]
 
 [tool.hatch]
 version.source = "vcs"
@@ -75,7 +81,7 @@ metadata.hooks.fancy-pypi-readme.fragments = [ { path = "README.md" } ]
 metadata.hooks.fancy-pypi-readme.substitutions = [
   { pattern = '''(?x)
     (?<!!)\[(?P<label>[^\]]+)\]\( # Link text, excluding images
-    (?P<path>CHANGELOG\.md) # Repository files linked from the README
+    (?P<path>CHANGELOG\.md|CONTRIBUTING\.md) # Repository files linked from the README
     \)
     ''', replacement = '[\g<label>](https://github.com/tox-dev/tox-uv/blob/main/\g<path>)' },
 ]
@@ -85,6 +91,10 @@ build.targets.sdist.include = [
   "/src",
   "/tests",
 ]
+
+[tool.uv]
+dependency-groups.release = { requires-python = ">=3.15" }
+workspace.members = [ "meta" ]
 
 [tool.ruff]
 line-length = 120
@@ -182,9 +192,17 @@ html.skip_covered = false
 name = "tox-uv"
 directory = "changelog.d"
 filename = "CHANGELOG.md"
-title_format = "## {version} ({project_date})"
+template = "release_creator.fragments:template.jinja2"
+title_format = false
 type = [
-  { directory = "feature", name = "Features", showcontent = true },
-  { directory = "bugfix", name = "Bug fixes", showcontent = true },
+  { directory = "feature", name = "Added", showcontent = true },
+  { directory = "change", name = "Changes", showcontent = true },
+  { directory = "bugfix", name = "Fixed", showcontent = true },
   { directory = "doc", name = "Documentation", showcontent = true },
+  { directory = "breaking", name = "Breaking changes", showcontent = true },
+  { directory = "security", name = "Security", showcontent = true },
+  { directory = "performance", name = "Performance", showcontent = true },
+  { directory = "deprecation", name = "Deprecated", showcontent = true },
+  { directory = "removal", name = "Removed", showcontent = true },
+  { directory = "packaging", name = "Packaging", showcontent = true },
 ]
