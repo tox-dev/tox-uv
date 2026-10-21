@@ -74,13 +74,13 @@ jobs:
           VERSION="${VERSION#meta-}"
 
           case "$VERSION" in
-            *-arm64-*|*-arm64|*-x86_64-*|*-x86_64) UV_VERSION="cpython-$VERSION" ;;
-            *)
-              UV_VERSION="cpython-$VERSION${MATRIX_SUFFIX}"
-              if [[ "$UV_VERSION" == *-msvc ]]; then
-                UV_VERSION="${UV_VERSION%-msvc}-none"
-              fi
-              ;;
+          *-arm64-* | *-arm64 | *-x86_64-* | *-x86_64) UV_VERSION="cpython-$VERSION" ;;
+          *)
+            UV_VERSION="cpython-$VERSION${MATRIX_SUFFIX}"
+            if [[ "$UV_VERSION" == *-msvc ]]; then
+              UV_VERSION="${UV_VERSION%-msvc}-none"
+            fi
+            ;;
           esac
 
           uv python install --python-preference only-managed "$UV_VERSION"
