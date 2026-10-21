@@ -14,6 +14,6 @@ jobs:
       issues: write # Labels are issue metadata.
       pull-requests: read # Inspect the PR author and changed paths.
     steps:
-      - uses: tox-dev/github-workflows/label-bot-news@e8d429040f73cd95af722543a0a09717bf3bb0aa
+      - uses: tox-dev/github-workflows/label-bot-news@8db87d4730353b61630d66cbc592d6bed0c85d2b
         with:
           fragments: changelog.d
