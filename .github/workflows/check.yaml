@@ -65,33 +65,40 @@ jobs:
       - name: Install Python
         if: startsWith(matrix.env, '3.') || startsWith(matrix.env, 'meta-')
         shell: bash
+        env:
+          MATRIX_ENV: ${{ matrix.env }}
+          MATRIX_SUFFIX: ${{ matrix.suffix }}
         run: |
-          VERSION="${{ matrix.env }}"
+          VERSION="$MATRIX_ENV"
           VERSION="${VERSION#meta-}"
 
-          if [[ "$VERSION" =~ -arm64(-|$) || "$VERSION" =~ -x86_64(-|$) ]]; then
-            UV_VERSION="cpython-$VERSION"
-          else
-            UV_VERSION="cpython-$VERSION${{ matrix.suffix }}"
-            if [[ "$UV_VERSION" == *-msvc ]]; then
-              UV_VERSION="${UV_VERSION%-msvc}-none"
-            fi
-          fi
+          case "$VERSION" in
+            *-arm64-*|*-arm64|*-x86_64-*|*-x86_64) UV_VERSION="cpython-$VERSION" ;;
+            *)
+              UV_VERSION="cpython-$VERSION${MATRIX_SUFFIX}"
+              if [[ "$UV_VERSION" == *-msvc ]]; then
+                UV_VERSION="${UV_VERSION%-msvc}-none"
+              fi
+              ;;
+          esac
 
           uv python install --python-preference only-managed "$UV_VERSION"
       - name: Setup test suite
-        run: tox run -vv --notest --skip-missing-interpreters false -e ${{ matrix.env }}
         env:
+          MATRIX_ENV: ${{ matrix.env }}
           FORCE_COLOR: "1"
           UV_PYTHON_PREFERENCE: "only-managed"
+        run: tox run -vv --notest --skip-missing-interpreters false -e "$MATRIX_ENV"
       - name: Run test suite
-        run: tox run --skip-pkg-install -e ${{ matrix.env }}
         env:
+          MATRIX_ENV: ${{ matrix.env }}
           FORCE_COLOR: "1"
           PYTEST_ADDOPTS: "-vv --durations=20"
           DIFF_AGAINST: HEAD
           UV_PYTHON_PREFERENCE: "only-managed"
+        run: tox run --skip-pkg-install -e "$MATRIX_ENV"
   changelog:
+    name: News fragment
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-26.04
     steps:
@@ -109,7 +116,7 @@ jobs:
           uv venv --python 3.15 "$RUNNER_TEMP/release-tools"
           uv pip sync --preview-features pylock --python "$RUNNER_TEMP/release-tools/bin/python" --group release pylock.toml
           echo "$RUNNER_TEMP/release-tools/bin" >>"$GITHUB_PATH"
-      - uses: tox-dev/github-workflows/validate-news@5e11f2254a4dcb7102747d312ad7db48a2e9b0cb
+      - uses: tox-dev/github-workflows/validate-news@296388849cced16665b3e8b4397a22265418d3dc
   gate:
     name: Required checks pass
     if: always()

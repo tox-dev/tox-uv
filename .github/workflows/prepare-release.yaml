@@ -15,10 +15,10 @@ on:
 permissions: {}
 jobs:
   prepare:
-    uses: tox-dev/github-workflows/.github/workflows/prepare-towncrier-release.yaml@5e11f2254a4dcb7102747d312ad7db48a2e9b0cb
+    uses: tox-dev/github-workflows/.github/workflows/prepare-towncrier-release.yaml@296388849cced16665b3e8b4397a22265418d3dc
     permissions:
       contents: read
-      pull-requests: read
+      pull-requests: read # Resolve squash PR authors for the changelog.
     with:
       bump: ${{ inputs.bump }}
       changelog: CHANGELOG.md

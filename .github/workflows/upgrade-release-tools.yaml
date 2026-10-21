@@ -9,11 +9,11 @@ concurrency:
   cancel-in-progress: false
 jobs:
   upgrade:
-    uses: tox-dev/github-workflows/.github/workflows/upgrade-release-tools.yaml@5e11f2254a4dcb7102747d312ad7db48a2e9b0cb
+    uses: tox-dev/github-workflows/.github/workflows/upgrade-release-tools.yaml@296388849cced16665b3e8b4397a22265418d3dc
     permissions:
-      actions: write
-      contents: write
-      pull-requests: write
+      actions: write # Dispatch the lock PR's check workflow.
+      contents: write # Push the refreshed lock branch.
+      pull-requests: write # Open or update the lock PR.
     with:
       python-version: "3.15"
       check-workflow: check.yaml
