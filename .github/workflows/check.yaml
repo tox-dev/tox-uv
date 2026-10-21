@@ -54,9 +54,10 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Install the latest version of uv
+      - name: Set up uv
         uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
+          version: latest-known
           python-version: "3.15"
           enable-cache: false
           cache-dependency-glob: "pyproject.toml"
@@ -108,6 +109,7 @@ jobs:
           persist-credentials: false
       - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
+          version: latest-known
           python-version: "3.15"
           enable-cache: false
       - name: Install locked release tools
@@ -116,7 +118,7 @@ jobs:
           uv venv --python 3.15 "$RUNNER_TEMP/release-tools"
           uv pip sync --preview-features pylock --python "$RUNNER_TEMP/release-tools/bin/python" --group release pylock.toml
           echo "$RUNNER_TEMP/release-tools/bin" >>"$GITHUB_PATH"
-      - uses: tox-dev/github-workflows/validate-news@296388849cced16665b3e8b4397a22265418d3dc
+      - uses: tox-dev/github-workflows/validate-news@e8d429040f73cd95af722543a0a09717bf3bb0aa
   gate:
     name: Required checks pass
     if: always()
