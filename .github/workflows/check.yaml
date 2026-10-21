@@ -31,18 +31,18 @@ jobs:
           - dev
           - pkg_meta
         os:
-          - ubuntu-24.04
+          - ubuntu-26.04
         suffix:
           - "-linux-x86_64-gnu"
         include:
           - env: "3.15"
-            os: windows-2025
+            os: windows-2025-vs2026
             suffix: -windows-x86_64-msvc
           - env: "3.15"
-            os: macos-15
+            os: macos-26
             suffix: -macos-aarch64-none
           - env: "3.15"
-            os: macos-15
+            os: macos-26
             suffix: -macos-x86_64-none
           - env: meta-3.15
           - env: meta-3.14
@@ -70,10 +70,8 @@ jobs:
           VERSION="${VERSION#meta-}"
 
           if [[ "$VERSION" =~ -arm64(-|$) || "$VERSION" =~ -x86_64(-|$) ]]; then
-            # For explicit per-arch macOS meta env names, use the same value directly.
             UV_VERSION="cpython-$VERSION"
           else
-            # For non-arch-specific values, keep existing behavior.
             UV_VERSION="cpython-$VERSION${{ matrix.suffix }}"
             if [[ "$UV_VERSION" == *-msvc ]]; then
               UV_VERSION="${UV_VERSION%-msvc}-none"
@@ -105,8 +103,13 @@ jobs:
         with:
           python-version: "3.15"
           enable-cache: false
-      - run: uv tool install towncrier
-      - uses: tox-dev/github-workflows/validate-news@144f8e68b7d4c7c44e32258b1305e4402bc4e392
+      - name: Install locked release tools
+        run: |
+          set -euo pipefail
+          uv venv --python 3.15 "$RUNNER_TEMP/release-tools"
+          uv pip sync --preview-features pylock --python "$RUNNER_TEMP/release-tools/bin/python" --group release pylock.toml
+          echo "$RUNNER_TEMP/release-tools/bin" >>"$GITHUB_PATH"
+      - uses: tox-dev/github-workflows/validate-news@5e11f2254a4dcb7102747d312ad7db48a2e9b0cb
   gate:
     name: Required checks pass
     if: always()
@@ -115,11 +118,12 @@ jobs:
     steps:
       - env:
           NEEDS_JSON: ${{ toJSON(needs) }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
-          jq -e '
+          jq -e --arg event "$EVENT_NAME" '
             all(
               to_entries[];
               .value.result == "success" or
-              (.key == "changelog" and .value.result == "skipped")
+              (.key == "changelog" and .value.result == "skipped" and $event != "pull_request")
             )
-          ' <<< "$NEEDS_JSON"
+          ' <<<"$NEEDS_JSON"
