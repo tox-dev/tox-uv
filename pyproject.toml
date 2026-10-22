@@ -69,7 +69,7 @@ lint = [ "pre-commit-uv>=4.3" ]
 pkg-meta = [ "check-wheel-contents>=0.6.3", "twine>=7", "uv>=0.12.22" ]
 release = [
   "prek>=0.5",
-  "release-creator @ git+https://github.com/tox-dev/release-creator@a5873f5d66c5b1ff07da6294aa2719764fa9f864",
+  "release-creator>=0.5",
   "towncrier>=26.9",
   { include-group = "pkg-meta" },
 ]
