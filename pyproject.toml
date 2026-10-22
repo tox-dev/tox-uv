@@ -73,6 +73,25 @@ release = [
   "towncrier>=26.9",
   { include-group = "pkg-meta" },
 ]
+release-check = [
+  "prek>=0.5",
+]
+release-news = [
+  "release-creator>=0.5.1",
+  "towncrier>=26.9",
+]
+release-notes = [
+  "release-creator>=0.5.1",
+]
+release-prepare = [
+  "prek>=0.5",
+  "release-creator>=0.5.1",
+  "towncrier>=26.9",
+]
+release-validate = [
+  "prek>=0.5",
+  "release-creator>=0.5.1",
+]
 
 [tool.hatch]
 version.source = "vcs"
@@ -94,6 +113,11 @@ build.targets.sdist.include = [
 
 [tool.uv]
 dependency-groups.release = { requires-python = ">=3.15" }
+dependency-groups.release-check = { requires-python = ">=3.15" }
+dependency-groups.release-news = { requires-python = ">=3.15" }
+dependency-groups.release-notes = { requires-python = ">=3.15" }
+dependency-groups.release-prepare = { requires-python = ">=3.15" }
+dependency-groups.release-validate = { requires-python = ">=3.15" }
 workspace.members = [ "meta" ]
 
 [tool.ruff]

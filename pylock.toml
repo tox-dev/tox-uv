@@ -10,6 +10,11 @@ dependency-groups = [
     "lint",
     "pkg-meta",
     "release",
+    "release-check",
+    "release-notes",
+    "release-news",
+    "release-prepare",
+    "release-validate",
     "build",
 ]
 default-groups = []
@@ -2725,7 +2730,7 @@ sha256 = "5ae39c8c434b972f0740d04610759168590713175aab584b012b1b84f6771874"
 name = "click"
 version = "8.5.0"
 index = "https://pypi.org/simple"
-marker = "\"dev\" in dependency_groups or \"pkg-meta\" in dependency_groups or \"type\" in dependency_groups or (\"release\" in dependency_groups and (python_full_version >= '3.15'))"
+marker = "\"dev\" in dependency_groups or \"pkg-meta\" in dependency_groups or \"type\" in dependency_groups or (\"release\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-news\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-prepare\" in dependency_groups and (python_full_version >= '3.15'))"
 
 [packages.sdist]
 url = "https://files.pythonhosted.org/packages/c7/0e/7fa0ef50764b67090eca4114772a2abf8b6148198475e54c660b97caeee6/click-8.5.0.tar.gz"
@@ -4810,7 +4815,7 @@ sha256 = "97e5714520c16fc0a45695e5365a2e11b81ea79bba796e26f9f1d178cb182683"
 name = "jinja2"
 version = "3.1.6"
 index = "https://pypi.org/simple"
-marker = "\"dev\" in dependency_groups or \"test\" in dependency_groups or \"type\" in dependency_groups or (\"release\" in dependency_groups and (python_full_version >= '3.15'))"
+marker = "\"dev\" in dependency_groups or \"test\" in dependency_groups or \"type\" in dependency_groups or (\"release\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-news\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-prepare\" in dependency_groups and (python_full_version >= '3.15'))"
 
 [packages.sdist]
 url = "https://files.pythonhosted.org/packages/df/bf/f7da0350254c0ed7c72f3e33cef02e048281fec7ecec5f032d4aac52226b/jinja2-3.1.6.tar.gz"
@@ -4898,7 +4903,7 @@ sha256 = "7e235ce58bf1e25d1fc9b2d299015e4e2cd37305eccafec1e6bac3fc04b878cd"
 name = "markdown-it-py"
 version = "4.2.0"
 index = "https://pypi.org/simple"
-marker = "\"dev\" in dependency_groups or \"pkg-meta\" in dependency_groups or \"type\" in dependency_groups or (\"release\" in dependency_groups and (python_full_version >= '3.15'))"
+marker = "\"dev\" in dependency_groups or \"pkg-meta\" in dependency_groups or \"type\" in dependency_groups or (\"release\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-news\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-notes\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-prepare\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-validate\" in dependency_groups and (python_full_version >= '3.15'))"
 
 [packages.sdist]
 url = "https://files.pythonhosted.org/packages/06/ff/7841249c247aa650a76b9ee4bbaeae59370dc8bfd2f6c01f3630c35eb134/markdown_it_py-4.2.0.tar.gz"
@@ -4920,7 +4925,7 @@ sha256 = "9f7ebbcd14fe59494226453aed97c1070d83f8d24b6fc3a3bcf9a38092641c4a"
 name = "markupsafe"
 version = "3.0.4"
 index = "https://pypi.org/simple"
-marker = "\"dev\" in dependency_groups or \"test\" in dependency_groups or \"type\" in dependency_groups or (\"release\" in dependency_groups and (python_full_version >= '3.15'))"
+marker = "\"dev\" in dependency_groups or \"test\" in dependency_groups or \"type\" in dependency_groups or (\"release\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-news\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-prepare\" in dependency_groups and (python_full_version >= '3.15'))"
 
 [packages.sdist]
 url = "https://files.pythonhosted.org/packages/38/9b/e422a865e1d5d57d0e509b4e0bf1c1a70a7f6382c29a5aa428df994c8bc8/markupsafe-3.0.4.tar.gz"
@@ -5894,7 +5899,7 @@ sha256 = "39dbacefc411633db5b4378b066a9aca70a3d7e2922c9e578d825f844026eeba"
 name = "mdformat"
 version = "1.0.0"
 index = "https://pypi.org/simple"
-marker = "(\"release\" in dependency_groups and (python_full_version >= '3.15'))"
+marker = "(\"release\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-news\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-notes\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-prepare\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-validate\" in dependency_groups and (python_full_version >= '3.15'))"
 
 [packages.sdist]
 url = "https://files.pythonhosted.org/packages/3f/05/32b5e14b192b0a8a309f32232c580aefedd9d06017cb8fe8fce34bec654c/mdformat-1.0.0.tar.gz"
@@ -5916,7 +5921,7 @@ sha256 = "bca015d65a1d063a02e885a91daee303057bc7829c2cd37b2075a50dbb65944b"
 name = "mdformat-gfm"
 version = "1.0.0"
 index = "https://pypi.org/simple"
-marker = "(\"release\" in dependency_groups and (python_full_version >= '3.15'))"
+marker = "(\"release\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-news\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-notes\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-prepare\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-validate\" in dependency_groups and (python_full_version >= '3.15'))"
 
 [packages.sdist]
 url = "https://files.pythonhosted.org/packages/56/6f/a626ebb142a290474401b67e2d61e73ce096bf7798ee22dfe6270f924b3f/mdformat_gfm-1.0.0.tar.gz"
@@ -5938,7 +5943,7 @@ sha256 = "7305a50efd2a140d7c83505b58e3ac5df2b09e293f9bbe72f6c7bee8c678b005"
 name = "mdit-py-plugins"
 version = "0.6.1"
 index = "https://pypi.org/simple"
-marker = "(\"release\" in dependency_groups and (python_full_version >= '3.15'))"
+marker = "(\"release\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-news\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-notes\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-prepare\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-validate\" in dependency_groups and (python_full_version >= '3.15'))"
 
 [packages.sdist]
 url = "https://files.pythonhosted.org/packages/59/fc/f8d0863f8862f25602c0404d75568e89fb6b4109804645e5cdfb1be5cf56/mdit_py_plugins-0.6.1.tar.gz"
@@ -5960,7 +5965,7 @@ sha256 = "214c82fb2ac524472ab6a5bcab1de80f73b50443e187f401bfd77efbc7c6481d"
 name = "mdurl"
 version = "0.1.2"
 index = "https://pypi.org/simple"
-marker = "\"dev\" in dependency_groups or \"pkg-meta\" in dependency_groups or \"type\" in dependency_groups or (\"release\" in dependency_groups and (python_full_version >= '3.15'))"
+marker = "\"dev\" in dependency_groups or \"pkg-meta\" in dependency_groups or \"type\" in dependency_groups or (\"release\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-news\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-notes\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-prepare\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-validate\" in dependency_groups and (python_full_version >= '3.15'))"
 
 [packages.sdist]
 url = "https://files.pythonhosted.org/packages/d6/54/cfe61301667036ec958cb99bd3efefba235e65cdeb9c84d24a8293ba1d90/mdurl-0.1.2.tar.gz"
@@ -6248,7 +6253,7 @@ sha256 = "edaa16e6c14d7cf395d75d4bbd5a26390f4dc06501a33b4e76282b02cc688a25"
 name = "packaging"
 version = "26.3"
 index = "https://pypi.org/simple"
-marker = "\"build\" in dependency_groups or \"dev\" in dependency_groups or \"lint\" in dependency_groups or \"pkg-meta\" in dependency_groups or \"project-runtime\" in dependency_groups or \"test\" in dependency_groups or \"type\" in dependency_groups or (\"release\" in dependency_groups and (python_full_version >= '3.15'))"
+marker = "\"build\" in dependency_groups or \"dev\" in dependency_groups or \"lint\" in dependency_groups or \"pkg-meta\" in dependency_groups or \"project-runtime\" in dependency_groups or \"test\" in dependency_groups or \"type\" in dependency_groups or (\"release\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-news\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-notes\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-prepare\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-validate\" in dependency_groups and (python_full_version >= '3.15'))"
 
 [packages.sdist]
 url = "https://files.pythonhosted.org/packages/7d/fa/3944b40b07da9ce895c0e6303a5ab7d53da063554f534556b134a54d6093/packaging-26.3.tar.gz"
@@ -6512,7 +6517,7 @@ sha256 = "9012b09950a50efdcfb03b95355e1f65c14f9a5cb425d12c6bf2c6d6807617d7"
 name = "prek"
 version = "0.5.5"
 index = "https://pypi.org/simple"
-marker = "(\"release\" in dependency_groups and (python_full_version >= '3.15'))"
+marker = "(\"release\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-check\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-prepare\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-validate\" in dependency_groups and (python_full_version >= '3.15'))"
 
 [packages.sdist]
 url = "https://files.pythonhosted.org/packages/9b/7b/11538b8e6cd7e269261feae62a2d08818fdcf8f43c3b1a253cec01a5488d/prek-0.5.5.tar.gz"
@@ -7874,7 +7879,7 @@ sha256 = "8a1513379d709975552d202d942d9837758905c8d01eb82b8bcc30918929e7b8"
 name = "pyyaml"
 version = "6.0.3"
 index = "https://pypi.org/simple"
-marker = "\"dev\" in dependency_groups or \"lint\" in dependency_groups or (\"release\" in dependency_groups and (python_full_version >= '3.15'))"
+marker = "\"dev\" in dependency_groups or \"lint\" in dependency_groups or (\"release\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-news\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-notes\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-prepare\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-validate\" in dependency_groups and (python_full_version >= '3.15'))"
 
 [packages.sdist]
 url = "https://files.pythonhosted.org/packages/05/8e/961c0007c59b8dd7729d542c61a4d537767a59645b82a0b521206e1e25c2/pyyaml-6.0.3.tar.gz"
@@ -8286,7 +8291,7 @@ sha256 = "d0dae1f74bb273b534770cb4cccb6bb78735540afdb03c2146f4e19dcd412560"
 name = "release-creator"
 version = "0.5.1"
 index = "https://pypi.org/simple"
-marker = "(\"release\" in dependency_groups and (python_full_version >= '3.15'))"
+marker = "(\"release\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-news\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-notes\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-prepare\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-validate\" in dependency_groups and (python_full_version >= '3.15'))"
 
 [packages.sdist]
 url = "https://files.pythonhosted.org/packages/65/d3/83211b4ebfbaf87383392aed6ef3aa98d65e0ade613a2aa0ea0f222cb6b1/release_creator-0.5.1.tar.gz"
@@ -9096,7 +9101,7 @@ sha256 = "32a7b79ac57a2e83670ce329ccf675798bc5a2094783a63676866b70503f2e2b"
 name = "tomli-w"
 version = "1.2.0"
 index = "https://pypi.org/simple"
-marker = "\"project-runtime\" in dependency_groups or (\"release\" in dependency_groups and (python_full_version >= '3.15'))"
+marker = "\"project-runtime\" in dependency_groups or (\"release\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-news\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-notes\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-prepare\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-validate\" in dependency_groups and (python_full_version >= '3.15'))"
 
 [packages.sdist]
 url = "https://files.pythonhosted.org/packages/19/75/241269d1da26b624c0d5e110e8149093c759b7a286138f4efd61a60e75fe/tomli_w-1.2.0.tar.gz"
@@ -9139,7 +9144,7 @@ sha256 = "177a05aece5a8ca5266fd3c448abb47b8d352f09d477d3ca8332db4d89b24304"
 name = "towncrier"
 version = "26.9.0"
 index = "https://pypi.org/simple"
-marker = "(\"release\" in dependency_groups and (python_full_version >= '3.15'))"
+marker = "(\"release\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-news\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-prepare\" in dependency_groups and (python_full_version >= '3.15'))"
 
 [packages.sdist]
 url = "https://files.pythonhosted.org/packages/92/d4/e85ce614bf45b1a7fe13b82cc687819c2eaac5a1dd94b84834322095fd98/towncrier-26.9.0.tar.gz"
@@ -9709,7 +9714,7 @@ sha256 = "c56d67fd6e87c2ee598b76abdd4e96cfad1f24cacdea5078d382b1f9d7b5ed2e"
 name = "wcwidth"
 version = "0.9.2"
 index = "https://pypi.org/simple"
-marker = "(\"release\" in dependency_groups and (python_full_version >= '3.15'))"
+marker = "(\"release\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-news\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-notes\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-prepare\" in dependency_groups and (python_full_version >= '3.15')) or (\"release-validate\" in dependency_groups and (python_full_version >= '3.15'))"
 
 [packages.sdist]
 url = "https://files.pythonhosted.org/packages/f0/b4/7830542634bb2d3e62aa3b586a72d5b3b6c91c3168929e7000ef3fed041d/wcwidth-0.9.2.tar.gz"
