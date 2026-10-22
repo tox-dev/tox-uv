@@ -9,27 +9,21 @@ concurrency:
   cancel-in-progress: false
 jobs:
   build-bare:
-    uses: tox-dev/github-workflows/.github/workflows/validate-python-release.yaml@9a4e76e2f4901856f2784f6c0efc89278c518b1f
+    uses: tox-dev/github-workflows/.github/workflows/validate-python-release.yaml@a32ce094895292b19eea422fc6500f1ef1ae8d5f
     permissions:
       contents: read
-      pull-requests: read
     with:
       changelog: CHANGELOG.md
-      fragments: changelog.d
-      format: markdown
       source: .
       artifact-prefix: bare-
       artifact-base-url: https://pypi.org/project/tox-uv-bare/
       artifact-label: "PyPI: tox-uv-bare"
   build-meta:
-    uses: tox-dev/github-workflows/.github/workflows/validate-python-release.yaml@9a4e76e2f4901856f2784f6c0efc89278c518b1f
+    uses: tox-dev/github-workflows/.github/workflows/validate-python-release.yaml@a32ce094895292b19eea422fc6500f1ef1ae8d5f
     permissions:
       contents: read
-      pull-requests: read
     with:
       changelog: CHANGELOG.md
-      fragments: changelog.d
-      format: markdown
       source: meta
       artifact-prefix: meta-
       artifact-base-url: https://pypi.org/project/tox-uv/
@@ -179,7 +173,7 @@ jobs:
         with:
           name: contributor-metadata
           path: ${{ runner.temp }}/contributor-metadata
-      - uses: tox-dev/github-workflows/render-release-notes@9a4e76e2f4901856f2784f6c0efc89278c518b1f
+      - uses: tox-dev/github-workflows/render-release-notes@a32ce094895292b19eea422fc6500f1ef1ae8d5f
         with:
           tag: ${{ github.ref_name }}
           changelog: CHANGELOG.md
@@ -221,7 +215,7 @@ jobs:
         with:
           name: github-release-notes
           path: ${{ runner.temp }}/github-release-notes
-      - uses: tox-dev/github-workflows/publish-github-release@9a4e76e2f4901856f2784f6c0efc89278c518b1f
+      - uses: tox-dev/github-workflows/publish-github-release@a32ce094895292b19eea422fc6500f1ef1ae8d5f
         env:
           GH_TOKEN: ${{ github.token }}
         with:
@@ -258,7 +252,7 @@ jobs:
           version: latest-known
           python-version: "3.15"
           enable-cache: false
-      - uses: tox-dev/github-workflows/reconcile-pypi-artifacts@9a4e76e2f4901856f2784f6c0efc89278c518b1f
+      - uses: tox-dev/github-workflows/reconcile-pypi-artifacts@a32ce094895292b19eea422fc6500f1ef1ae8d5f
         id: bare
         with:
           project: tox-uv-bare
@@ -271,7 +265,7 @@ jobs:
           name: bare-pypi-missing-manifest
           path: ${{ steps.bare.outputs.manifest }}
           if-no-files-found: error
-      - uses: tox-dev/github-workflows/reconcile-pypi-artifacts@9a4e76e2f4901856f2784f6c0efc89278c518b1f
+      - uses: tox-dev/github-workflows/reconcile-pypi-artifacts@a32ce094895292b19eea422fc6500f1ef1ae8d5f
         id: meta
         with:
           project: tox-uv
@@ -308,13 +302,13 @@ jobs:
         with:
           name: meta-pypi-missing-manifest
           path: ${{ runner.temp }}/meta-manifest
-      - uses: tox-dev/github-workflows/select-pypi-artifacts@9a4e76e2f4901856f2784f6c0efc89278c518b1f
+      - uses: tox-dev/github-workflows/select-pypi-artifacts@a32ce094895292b19eea422fc6500f1ef1ae8d5f
         with:
           dist: dist
           manifest: ${{ runner.temp }}/bare-manifest/pypi-missing-names.txt
           output-dir: missing-bare
           expected-count: ${{ needs.stage.outputs.bare-missing-count }}
-      - uses: tox-dev/github-workflows/select-pypi-artifacts@9a4e76e2f4901856f2784f6c0efc89278c518b1f
+      - uses: tox-dev/github-workflows/select-pypi-artifacts@a32ce094895292b19eea422fc6500f1ef1ae8d5f
         with:
           dist: dist
           manifest: ${{ runner.temp }}/meta-manifest/pypi-missing-names.txt
@@ -354,13 +348,13 @@ jobs:
           version: latest-known
           python-version: "3.15"
           enable-cache: false
-      - uses: tox-dev/github-workflows/reconcile-pypi-artifacts@9a4e76e2f4901856f2784f6c0efc89278c518b1f
+      - uses: tox-dev/github-workflows/reconcile-pypi-artifacts@a32ce094895292b19eea422fc6500f1ef1ae8d5f
         with:
           project: tox-uv-bare
           version: ${{ github.ref_name }}
           dist: bare
           mode: verify
-      - uses: tox-dev/github-workflows/reconcile-pypi-artifacts@9a4e76e2f4901856f2784f6c0efc89278c518b1f
+      - uses: tox-dev/github-workflows/reconcile-pypi-artifacts@a32ce094895292b19eea422fc6500f1ef1ae8d5f
         with:
           project: tox-uv
           version: ${{ github.ref_name }}
@@ -378,7 +372,7 @@ jobs:
         with:
           name: github-release-notes
           path: ${{ runner.temp }}/github-release-notes
-      - uses: tox-dev/github-workflows/publish-github-release@9a4e76e2f4901856f2784f6c0efc89278c518b1f
+      - uses: tox-dev/github-workflows/publish-github-release@a32ce094895292b19eea422fc6500f1ef1ae8d5f
         env:
           GH_TOKEN: ${{ github.token }}
         with:
