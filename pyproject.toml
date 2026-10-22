@@ -69,7 +69,7 @@ lint = [ "pre-commit-uv>=4.3" ]
 pkg-meta = [ "check-wheel-contents>=0.6.3", "twine>=7", "uv>=0.12.22" ]
 release = [
   "prek>=0.5",
-  "release-creator>=0.5",
+  "release-creator>=0.5.1",
   "towncrier>=26.9",
   { include-group = "pkg-meta" },
 ]
