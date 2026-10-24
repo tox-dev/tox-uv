@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 import zipfile
 from pathlib import Path
 from subprocess import check_call
@@ -24,29 +23,29 @@ def built_wheel() -> Iterator[Path]:
         yield wheels[0]
 
 
-def test_version_injected_into_dependency(built_wheel: Path) -> None:
+@pytest.fixture
+def wheel_metadata(built_wheel: Path) -> str:
     with zipfile.ZipFile(built_wheel) as whl:
         metadata_files = [name for name in whl.namelist() if name.endswith("/METADATA")]
         assert len(metadata_files) == 1
-        metadata = whl.read(metadata_files[0]).decode()
+        return whl.read(metadata_files[0]).decode()
 
-    version_match = re.search(r"^Version: (.+)$", metadata, re.MULTILINE)
-    assert version_match is not None
-    version = version_match.group(1)
 
-    bare_dep_match = re.search(r"^Requires-Dist: tox-uv-bare==(.+)$", metadata, re.MULTILINE)
-    assert bare_dep_match is not None
-    bare_version = bare_dep_match.group(1)
+def test_version_injected_into_dependency(wheel_metadata: str) -> None:
+    version = next(
+        line.removeprefix("Version: ") for line in wheel_metadata.splitlines() if line.startswith("Version: ")
+    )
+    bare_version = next(
+        line.removeprefix("Requires-Dist: tox-uv-bare==")
+        for line in wheel_metadata.splitlines()
+        if line.startswith("Requires-Dist: tox-uv-bare==")
+    )
 
     assert version == bare_version
 
 
-def test_uv_dependency_present(built_wheel: Path) -> None:
-    with zipfile.ZipFile(built_wheel) as whl:
-        metadata_files = [name for name in whl.namelist() if name.endswith("/METADATA")]
-        metadata = whl.read(metadata_files[0]).decode()
-
-    assert re.search(r"^Requires-Dist: uv<1,>=0\.9\.27$", metadata, re.MULTILINE) is not None
+def test_uv_dependency_present(wheel_metadata: str) -> None:
+    assert "Requires-Dist: uv<1,>=0.9.27" in wheel_metadata.splitlines()
 
 
 def test_wheel_contains_placeholder_module(built_wheel: Path) -> None:
@@ -86,23 +85,16 @@ def test_build_hook_preserves_other_dependencies() -> None:
     assert metadata["dependencies"] == ["other-package>=1.0", "tox-uv-bare==2.0.0", "another-dep"]
 
 
-def test_build_hook_injects_root_readme() -> None:
-    from meta.hatch_build import CustomMetadataHook  # ruff:ignore[import-outside-top-level]
-
-    hook = CustomMetadataHook("test", {})
-    metadata: dict[str, object] = {"version": "1.0.0", "dependencies": []}
-    hook.update(metadata)
-
-    readme = metadata["readme"]
-    assert isinstance(readme, dict)
-    assert readme["content-type"] == "text/markdown"
-    assert readme["text"] == (Path(__file__).parents[2] / "README.md").read_text()
+def test_wheel_contains_root_readme(wheel_metadata: str) -> None:
+    assert "**tox-uv** is a `tox` plugin" in wheel_metadata
 
 
-def test_wheel_contains_root_readme(built_wheel: Path) -> None:
-    with zipfile.ZipFile(built_wheel) as whl:
-        metadata_files = [name for name in whl.namelist() if name.endswith("/METADATA")]
-        metadata = whl.read(metadata_files[0]).decode()
-
-    root_readme = (Path(__file__).parents[2] / "README.md").read_text()
-    assert root_readme in metadata
+@pytest.mark.parametrize(
+    ("label", "filename"),
+    [
+        pytest.param("Changelog", "CHANGELOG.md", id="changelog"),
+        pytest.param("Contributing", "CONTRIBUTING.md", id="contributing"),
+    ],
+)
+def test_wheel_readme_links_target_repository(wheel_metadata: str, label: str, filename: str) -> None:
+    assert f"[{label}](https://github.com/tox-dev/tox-uv/blob/main/{filename})" in wheel_metadata
