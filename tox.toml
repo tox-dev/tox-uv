@@ -60,11 +60,12 @@ deps = [ "pre-commit-uv>=4.3" ]
 commands = [ [ "pre-commit", "run", "--all-files", "--show-diff-on-failure" ] ]
 
 [env.pkg_meta]
-description = "check that the long description is valid"
+description = "check both distributions' metadata and wheel contents"
 skip_install = true
 dependency_groups = [ "pkg-meta" ]
 commands = [
   [ "uv", "build", "--sdist", "--wheel", "--out-dir", "{env_tmp_dir}", "." ],
+  [ "uv", "build", "--sdist", "--wheel", "--out-dir", "{env_tmp_dir}", "meta" ],
   [ "twine", "check", "{env_tmp_dir}{/}*" ],
   [ "check-wheel-contents", "--no-config", "{env_tmp_dir}" ],
 ]

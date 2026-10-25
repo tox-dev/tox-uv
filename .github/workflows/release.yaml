@@ -1,98 +1,186 @@
-name: Release to PyPI
+name: 🚀 Release to PyPI
 on:
   push:
     tags: ["*"]
 permissions:
   contents: read
-env:
-  dists-artifact-name: python-package-distributions
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 jobs:
-  build:
+  build-bare:
+    name: 🏗️ Build tox-uv-bare
+    uses: tox-dev/github-workflows/.github/workflows/validate-python-release.yaml@259a3d3fb578d00517ffb73341fdd463259b0b2f # 6.0.1
+    permissions:
+      contents: read
+    with:
+      source: .
+      artifact-prefix: bare-
+  build-meta:
+    name: 🏗️ Build tox-uv
+    uses: tox-dev/github-workflows/.github/workflows/validate-python-release.yaml@259a3d3fb578d00517ffb73341fdd463259b0b2f # 6.0.1
+    permissions:
+      contents: read
+    with:
+      source: meta
+      artifact-prefix: meta-
+  collect:
+    name: 🔍 Collect validated distributions
+    needs: [build-bare, build-meta]
     runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+    outputs:
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: 📥 Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: 📩 Download tox-uv-bare distributions
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ needs.build-bare.outputs.distributions-artifact-id }}
+          path: bare
+      - name: 📩 Download tox-uv distributions
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ needs.build-meta.outputs.distributions-artifact-id }}
+          path: meta
+      - name: ⚙️ Collect the published files
+        run: |
+          mkdir dist
+          cp bare/* dist/
+          cp meta/*.whl dist/
+      - name: 📤 Upload distributions
+        id: upload
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: python-package-distributions
+          path: dist/*
+          if-no-files-found: error
+  github-notes:
+    name: 📝 Render GitHub release notes
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+    outputs:
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
+    steps:
+      - name: 📥 Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Require a changelog section for the tag
+      - name: 🐍 Install uv
+        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: latest-known
+          python-version: "3.15"
+          enable-cache: false
+      - name: 📦 Install locked release tools
+        uses: tox-dev/github-workflows/install-locked-tools@259a3d3fb578d00517ffb73341fdd463259b0b2f # 6.0.1
+        with:
+          groups: release-notes
+          venv: ${{ runner.temp }}/release-tools
+      - name: 🏷️ Select previous tag
+        id: previous
+        uses: tox-dev/github-workflows/select-previous-tag@259a3d3fb578d00517ffb73341fdd463259b0b2f # 6.0.1
+        with:
+          tag: ${{ github.ref_name }}
+      - name: 📝 Render release notes
+        uses: tox-dev/github-workflows/render-release-notes@259a3d3fb578d00517ffb73341fdd463259b0b2f # 6.0.1
+        with:
+          tag: ${{ github.ref_name }}
+          previous: ${{ steps.previous.outputs.previous }}
+          changelog: CHANGELOG.md
+          artifact-url: https://pypi.org/project/tox-uv/${{ github.ref_name }}/
+          artifact-label: "PyPI: tox-uv"
+      - name: 📝 Add the bare distribution link
         env:
           TAG: ${{ github.ref_name }}
         run: |
-          if [[ ! "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::unexpected release tag $TAG"
-            exit 1
-          fi
-          if ! grep -qF "## $TAG (" CHANGELOG.md; then
-            echo "::error::CHANGELOG.md has no section for $TAG"
-            exit 1
-          fi
-      - name: Install the latest version of uv
-        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
-        with:
-          python-version: "3.15"
-          enable-cache: false
-          cache-dependency-glob: "pyproject.toml"
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-      - parallel:
-          - name: Build tox-uv-bare package
-            run: uv build --python 3.15 --python-preference only-managed --sdist --wheel . --out-dir dist
-          - name: Build tox-uv meta package
-            run: |
-              uv build --python 3.15 --python-preference only-managed --wheel meta \
-                --out-dir "$RUNNER_TEMP/tox-uv-meta-dist"
-      - name: Collect distribution packages
-        run: mv "$RUNNER_TEMP/tox-uv-meta-dist/"*.whl dist/
-      - name: Store the distribution packages
+          awk -v tag="$TAG" '
+            index($0, "[Full Changelog](") == 1 { print "[PyPI: tox-uv-bare](https://pypi.org/project/tox-uv-bare/" tag "/)\n" }
+            { print }
+          ' "$RUNNER_TEMP/release-notes.md" >"$RUNNER_TEMP/release-notes-with-bare.md"
+          mv "$RUNNER_TEMP/release-notes-with-bare.md" "$RUNNER_TEMP/release-notes.md"
+      - name: 📤 Upload release notes
+        id: upload
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: ${{ env.dists-artifact-name }}
-          path: dist/*
+          name: github-release-notes
+          path: ${{ runner.temp }}/release-notes.md
+          if-no-files-found: error
   release:
+    name: 🚀 Publish to PyPI
     needs:
-      - build
+      - collect
+      - github-notes
     runs-on: ubuntu-26.04
     environment:
       name: release
       url: https://pypi.org/project/tox-uv/${{ github.ref_name }}
     permissions:
-      id-token: write
+      id-token: write # Publish through PyPI's trusted publisher.
     steps:
-      - name: Download all the dists
+      - name: 📩 Download distributions
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: ${{ env.dists-artifact-name }}
+          artifact-ids: ${{ needs.collect.outputs.artifact-id }}
           path: dist/
-      - name: Publish to PyPI
+      - name: 🚀 Publish to PyPI
         uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
         with:
-          attestations: true
+          packages-dir: dist
   github-release:
-    needs: release
+    name: 🚀 Publish GitHub release
+    needs: [collect, release, github-notes]
     runs-on: ubuntu-26.04
+    environment: release
     permissions:
-      contents: write
+      contents: write # Create or repair the GitHub Release after PyPI succeeds.
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: 📩 Download distributions
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Publish GitHub Release
+          artifact-ids: ${{ needs.collect.outputs.artifact-id }}
+          path: dist/
+      - name: ⚙️ Separate the PyPI project files
+        run: |
+          mkdir bare meta
+          cp dist/tox_uv_bare-*.whl dist/tox_uv_bare-*.tar.gz bare/
+          cp dist/tox_uv-*.whl meta/
+      - name: 🐍 Install uv
+        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: latest-known
+          python-version: "3.15"
+          enable-cache: false
+          ignore-empty-workdir: true
+      - name: 🔍 Verify tox-uv-bare PyPI artifacts
+        uses: tox-dev/github-workflows/reconcile-pypi-artifacts@259a3d3fb578d00517ffb73341fdd463259b0b2f # 6.0.1
+        with:
+          project: tox-uv-bare
+          version: ${{ github.ref_name }}
+          dist: bare
+      - name: 🔍 Verify tox-uv PyPI artifacts
+        uses: tox-dev/github-workflows/reconcile-pypi-artifacts@259a3d3fb578d00517ffb73341fdd463259b0b2f # 6.0.1
+        with:
+          project: tox-uv
+          version: ${{ github.ref_name }}
+          dist: meta
+      - name: 📩 Download release notes
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ needs.github-notes.outputs.artifact-id }}
+          path: ${{ runner.temp }}/github-release-notes
+      - name: 🚀 Publish GitHub release
+        uses: tox-dev/github-workflows/publish-github-release@259a3d3fb578d00517ffb73341fdd463259b0b2f # 6.0.1
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
-        run: |
-          set -euo pipefail
-          awk -v tag="$TAG" '
-            index($0, "## " tag " (") == 1 { found = 1; next }
-            found && /^## / { exit }
-            found && $0 !~ /^\*\*Full Changelog\*\*:/ { print }
-          ' CHANGELOG.md > "$RUNNER_TEMP/release-notes.md"
-          test -s "$RUNNER_TEMP/release-notes.md"
-          printf '\n[PyPI: tox-uv](https://pypi.org/project/tox-uv/%s/)\n[PyPI: tox-uv-bare](https://pypi.org/project/tox-uv-bare/%s/)\n' "$TAG" "$TAG" >> "$RUNNER_TEMP/release-notes.md"
-          previous=$(git tag --list '[0-9]*' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | awk -v tag="$TAG" '$0 == tag { print previous; exit } { previous = $0 }')
-          if [[ -n "$previous" ]]; then
-            printf '\n**Full Changelog**: https://github.com/%s/compare/%s...%s\n' "$GITHUB_REPOSITORY" "$previous" "$TAG" >> "$RUNNER_TEMP/release-notes.md"
-          else
-            printf '\n**Full Changelog**: https://github.com/%s/commits/%s\n' "$GITHUB_REPOSITORY" "$TAG" >> "$RUNNER_TEMP/release-notes.md"
-          fi
-          gh release create "$TAG" --verify-tag --title "$TAG" --notes-file "$RUNNER_TEMP/release-notes.md"
+        with:
+          tag: ${{ github.ref_name }}
+          commit: ${{ github.sha }}
+          title: ${{ github.ref_name }}
+          notes-file: ${{ runner.temp }}/github-release-notes/release-notes.md
