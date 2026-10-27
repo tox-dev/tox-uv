@@ -40,7 +40,7 @@ dynamic = [
 ]
 dependencies = [
   "tox-uv-bare",
-  "uv<1,>=0.9.27",
+  "uv<1,>=0.13.4",
 ]
 urls.Changelog = "https://github.com/tox-dev/tox-uv/blob/main/CHANGELOG.md"
 urls.Documentation = "https://github.com/tox-dev/tox-uv#tox-uv"
