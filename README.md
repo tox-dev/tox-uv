@@ -13,6 +13,7 @@ will get both the benefits (performance) or downsides (bugs) of `uv`.
 <!--ts-->
 
 - [How to use](#how-to-use)
+  - [Require it from the project](#require-it-from-the-project)
   - [Installation options](#installation-options)
   - [uv discovery](#uv-discovery)
 - [tox environment types provided](#tox-environment-types-provided)
@@ -44,6 +45,30 @@ tox --version # validate you are using the installed tox
 tox r -e py312 # will use uv
 tox --runner virtualenv r -e py312 # will use virtualenv+pip
 ```
+
+### Require it from the project
+
+To make every contributor's tox use `uv` without asking them to install the plugin, list it in the
+[`requires`](https://tox.wiki/en/latest/reference/config.html#requires) setting of your tox configuration:
+
+```toml
+# tox.toml
+requires = ["tox>=4", "tox-uv>=1"]
+```
+
+```ini
+# tox.ini
+[tox]
+requires =
+    tox>=4
+    tox-uv>=1
+```
+
+When the tox that runs lacks `tox-uv`, tox builds a
+[provisioned environment](https://tox.wiki/en/latest/reference/config.html#provision_tox_env) with the listed packages
+and reruns itself from there. That first step still uses `virtualenv` and `pip`, because the plugin is not loaded yet;
+installing `tox-uv` next to tox, as shown above, skips it. If `uv` is already on the `PATH`, require `tox-uv-bare`
+instead to avoid installing a second copy of `uv` into the provisioned environment.
 
 ### Installation options
 
