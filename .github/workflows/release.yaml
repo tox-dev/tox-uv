@@ -10,7 +10,7 @@ concurrency:
 jobs:
   build-bare:
     name: 🏗️ Build tox-uv-bare
-    uses: tox-dev/github-workflows/.github/workflows/validate-python-release.yaml@29d4d5e6900db30502d7249043b59c18284a9777 # 6.2.0
+    uses: tox-dev/github-workflows/.github/workflows/validate-python-release.yaml@57a765127aae73adf7d0e24a7fe0f067f2d3ea3e # 6.2.1
     permissions:
       contents: read
     with:
@@ -18,7 +18,7 @@ jobs:
       artifact-prefix: bare-
   build-meta:
     name: 🏗️ Build tox-uv
-    uses: tox-dev/github-workflows/.github/workflows/validate-python-release.yaml@29d4d5e6900db30502d7249043b59c18284a9777 # 6.2.0
+    uses: tox-dev/github-workflows/.github/workflows/validate-python-release.yaml@57a765127aae73adf7d0e24a7fe0f067f2d3ea3e # 6.2.1
     permissions:
       contents: read
     with:
@@ -79,17 +79,17 @@ jobs:
           python-version: "3.15"
           enable-cache: false
       - name: 📦 Install locked release tools
-        uses: tox-dev/github-workflows/install-locked-tools@29d4d5e6900db30502d7249043b59c18284a9777 # 6.2.0
+        uses: tox-dev/github-workflows/install-locked-tools@57a765127aae73adf7d0e24a7fe0f067f2d3ea3e # 6.2.1
         with:
           groups: release-notes
           venv: ${{ runner.temp }}/release-tools
       - name: 🏷️ Select previous tag
         id: previous
-        uses: tox-dev/github-workflows/select-previous-tag@29d4d5e6900db30502d7249043b59c18284a9777 # 6.2.0
+        uses: tox-dev/github-workflows/select-previous-tag@57a765127aae73adf7d0e24a7fe0f067f2d3ea3e # 6.2.1
         with:
           tag: ${{ github.ref_name }}
       - name: 📝 Render release notes
-        uses: tox-dev/github-workflows/render-release-notes@29d4d5e6900db30502d7249043b59c18284a9777 # 6.2.0
+        uses: tox-dev/github-workflows/render-release-notes@57a765127aae73adf7d0e24a7fe0f067f2d3ea3e # 6.2.1
         with:
           tag: ${{ github.ref_name }}
           previous: ${{ steps.previous.outputs.previous }}
@@ -159,13 +159,13 @@ jobs:
           enable-cache: false
           ignore-empty-workdir: true
       - name: 🔍 Verify tox-uv-bare PyPI artifacts
-        uses: tox-dev/github-workflows/reconcile-pypi-artifacts@29d4d5e6900db30502d7249043b59c18284a9777 # 6.2.0
+        uses: tox-dev/github-workflows/reconcile-pypi-artifacts@57a765127aae73adf7d0e24a7fe0f067f2d3ea3e # 6.2.1
         with:
           project: tox-uv-bare
           version: ${{ github.ref_name }}
           dist: bare
       - name: 🔍 Verify tox-uv PyPI artifacts
-        uses: tox-dev/github-workflows/reconcile-pypi-artifacts@29d4d5e6900db30502d7249043b59c18284a9777 # 6.2.0
+        uses: tox-dev/github-workflows/reconcile-pypi-artifacts@57a765127aae73adf7d0e24a7fe0f067f2d3ea3e # 6.2.1
         with:
           project: tox-uv
           version: ${{ github.ref_name }}
@@ -176,7 +176,7 @@ jobs:
           artifact-ids: ${{ needs.github-notes.outputs.artifact-id }}
           path: ${{ runner.temp }}/github-release-notes
       - name: 🚀 Publish GitHub release
-        uses: tox-dev/github-workflows/publish-github-release@29d4d5e6900db30502d7249043b59c18284a9777 # 6.2.0
+        uses: tox-dev/github-workflows/publish-github-release@57a765127aae73adf7d0e24a7fe0f067f2d3ea3e # 6.2.1
         env:
           GH_TOKEN: ${{ github.token }}
         with:
