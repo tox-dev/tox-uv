@@ -45,7 +45,7 @@ def test_version_injected_into_dependency(wheel_metadata: str) -> None:
 
 
 def test_uv_dependency_present(wheel_metadata: str) -> None:
-    assert "Requires-Dist: uv<1,>=0.9.27" in wheel_metadata.splitlines()
+    assert "Requires-Dist: uv<1,>=0.13.4" in wheel_metadata.splitlines()
 
 
 def test_wheel_contains_placeholder_module(built_wheel: Path) -> None:
