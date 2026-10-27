@@ -2,6 +2,17 @@
 
 <!-- towncrier release notes start -->
 
+<a name="release-1-37-1"></a>
+
+## 1.37.1 (2026-10-27)
+
+<a name="release-1-37-1-fixed"></a>
+
+### Fixed
+
+- Fix repository links in the PyPI project description ([#391](https://github.com/tox-dev/tox-uv/pull/391)) by
+  [@gaborbernat](https://github.com/gaborbernat).
+
 <a name="release-1-37-0"></a>
 
 ## 1.37.0 (2026-10-10)
