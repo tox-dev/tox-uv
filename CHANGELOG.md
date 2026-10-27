@@ -2,6 +2,25 @@
 
 <!-- towncrier release notes start -->
 
+<a name="release-1-37-2"></a>
+
+## 1.37.2 (2026-10-27)
+
+<a name="release-1-37-2-documentation"></a>
+
+### Documentation
+
+- Document listing `tox-uv` in the tox `requires` setting ([#400](https://github.com/tox-dev/tox-uv/pull/400)) by
+  [@gaborbernat](https://github.com/gaborbernat).
+
+<a name="release-1-37-2-security"></a>
+
+### Security
+
+- Require `uv` 0.13.4 or later in the `tox-uv` meta package, which ships updated root certificates for
+  [GHSA-hq85-5cpj-mr62](https://github.com/astral-sh/uv/security/advisories/GHSA-hq85-5cpj-mr62)
+  ([#399](https://github.com/tox-dev/tox-uv/pull/399)) by [@gaborbernat](https://github.com/gaborbernat).
+
 <a name="release-1-37-1"></a>
 
 ## 1.37.1 (2026-10-27)
