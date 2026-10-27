@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-from pathlib import Path
+from typing import cast
 
 from hatchling.metadata.plugin.interface import MetadataHookInterface
 
 
 class CustomMetadataHook(MetadataHookInterface):
-    def update(self, metadata: dict[str, object]) -> None:  # ruff:ignore[no-self-use]
-        version = metadata["version"]
-        dependencies: list[str] = metadata.get("dependencies", [])  # type: ignore[assignment]
+    def update(self, metadata: dict[str, object]) -> None:  # ruff:ignore[no-self-use] Hatchling requires an instance hook.
+        dependencies = cast("list[str]", metadata.get("dependencies", []))
         metadata["dependencies"] = [
-            f"tox-uv-bare=={version}" if dep.startswith("tox-uv-bare") else dep for dep in dependencies
+            f"tox-uv-bare=={metadata['version']}" if dep.startswith("tox-uv-bare") else dep for dep in dependencies
         ]
-        metadata["readme"] = {
-            "content-type": "text/markdown",
-            "text": (Path(__file__).parent.parent / "README.md").read_text(),
-        }
+
+
+__all__ = [
+    "CustomMetadataHook",
+]

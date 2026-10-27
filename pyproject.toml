@@ -1,19 +1,19 @@
 [build-system]
 build-backend = "hatchling.build"
 requires = [
+  "hatch-fancy-pypi-readme>=25.1",
   "hatch-vcs>=0.5",
   "hatchling>=1.32.4",
 ]
 
 [project]
 name = "tox-uv-bare"
+import-names = [ "tox_uv" ]
 description = "Integration of uv with tox (bare package, bring your own uv)."
-readme = "README.md"
 keywords = [
-  "environments",
-  "isolated",
-  "testing",
-  "virtual",
+  "integration",
+  "tox",
+  "uv",
 ]
 license = "MIT"
 maintainers = [
@@ -31,11 +31,11 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
   "Programming Language :: Python :: 3.15",
-  "Topic :: Internet",
   "Topic :: Software Development :: Libraries",
   "Topic :: System",
 ]
 dynamic = [
+  "readme",
   "version",
 ]
 dependencies = [
@@ -65,17 +65,51 @@ test = [
   "pytest-mock>=3.16",
 ]
 type = [ "ty>=0.0.84", { include-group = "pkg-meta" }, { include-group = "test" } ]
+build = [
+  "cython>=3",
+  "hatch-fancy-pypi-readme>=25.1",
+  "hatch-vcs>=0.5",
+  "hatchling>=1.32.4",
+  "setuptools>=80",
+]
 lint = [ "pre-commit-uv>=4.3" ]
 pkg-meta = [ "check-wheel-contents>=0.6.3", "twine>=7", "uv>=0.12.22" ]
+release-news = [
+  "release-creator>=4.1",
+  "towncrier>=26.9",
+]
+release-notes = [
+  "release-creator>=4.1",
+]
+release-prepare = [
+  "prek>=0.5",
+  "release-creator>=4.1",
+  "towncrier>=26.9",
+]
 
 [tool.hatch]
 version.source = "vcs"
+metadata.hooks.fancy-pypi-readme.content-type = "text/markdown"
+metadata.hooks.fancy-pypi-readme.fragments = [ { path = "README.md" } ]
+metadata.hooks.fancy-pypi-readme.substitutions = [
+  { pattern = '''(?x)
+    (?<!!)\[(?P<label>[^\]]+)\]\( # Link text, excluding images
+    (?P<path>CHANGELOG\.md|CONTRIBUTING\.md) # Repository files linked from the README
+    \)
+    ''', replacement = '[\g<label>](https://github.com/tox-dev/tox-uv/blob/main/\g<path>)' },
+]
 build.hooks.vcs.version-file = "src/tox_uv/version.py"
 build.targets.wheel.packages = [ "src/tox_uv" ]
 build.targets.sdist.include = [
   "/src",
   "/tests",
 ]
+
+[tool.uv]
+dependency-groups.release-news = { requires-python = ">=3.15" }
+dependency-groups.release-notes = { requires-python = ">=3.15" }
+dependency-groups.release-prepare = { requires-python = ">=3.15" }
+workspace.members = [ "meta" ]
 
 [tool.ruff]
 line-length = 120
@@ -173,9 +207,27 @@ html.skip_covered = false
 name = "tox-uv"
 directory = "changelog.d"
 filename = "CHANGELOG.md"
-title_format = "## {version} ({project_date})"
+template = "release_creator.fragments:template.jinja2"
+title_format = false
 type = [
-  { directory = "feature", name = "Features", showcontent = true },
-  { directory = "bugfix", name = "Bug fixes", showcontent = true },
+  { directory = "feature", name = "Added", showcontent = true },
+  { directory = "change", name = "Changes", showcontent = true },
+  { directory = "bugfix", name = "Fixed", showcontent = true },
   { directory = "doc", name = "Documentation", showcontent = true },
+  { directory = "breaking", name = "Breaking changes", showcontent = true },
+  { directory = "security", name = "Security", showcontent = true },
+  { directory = "performance", name = "Performance", showcontent = true },
+  { directory = "deprecation", name = "Deprecated", showcontent = true },
+  { directory = "removal", name = "Removed", showcontent = true },
+  { directory = "packaging", name = "Packaging", showcontent = true },
 ]
+
+[tool.nab]
+mode = "universal"
+base-group = "project-runtime"
+uploaded-prior-to = "P7D"
+decision-order = "stable"
+matrix.python = ">=3.15,<3.16"
+matrix.platforms = [ "linux_x86_64" ]
+# temporary, delete after 2026-11-02
+packages.release-creator.uploaded-prior-to = 2026-10-26T18:24:46Z
