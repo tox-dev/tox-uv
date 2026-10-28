@@ -39,6 +39,8 @@ advisory. Classify by who supplies the dangerous input, not by how bad the outco
 - tox-uv dropping `--locked` from `uv sync` while `uv_sync_locked` is on, so uv installs versions the lock does not
   allow.
 - tox-uv forwarding a variable to uv beyond the resolution settings it documents and `pass_env`.
+- A data value from the configuration (a dependency, extra, group or flag list entry) crossing an argument boundary to
+  add a uv option the configuration did not ask for.
 
 **Out of scope**
 

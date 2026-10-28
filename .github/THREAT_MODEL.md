@@ -8,8 +8,9 @@ SECURITY.md wins and we fix this file.
 
 tox-uv plugs into tox's environment and installer hooks. It locates `uv` from `TOX_UV_PATH`, the bundled `uv` package
 (`tox-uv`), or `PATH` (`tox-uv-bare`), creates each environment with `uv venv`, and installs dependencies with
-`uv pip install` or, for `uv-venv-lock-runner`, `uv sync` against `uv.lock`. It forwards the `UV_*` resolution variables
-it lists (index URLs, constraints, `UV_EXCLUDE_NEWER` and so on) so uv resolves the same way inside tox.
+`uv pip install`; `uv-venv-lock-runner` runs `uv sync` against `uv.lock`, and `uv-venv-pep-723` installs a script's
+inline dependencies. It forwards the `UV_*` resolution variables it lists (index URLs, constraints, `UV_EXCLUDE_NEWER`
+and so on) so uv resolves the same way inside tox.
 
 ```mermaid
 flowchart LR
@@ -63,8 +64,8 @@ An attacker who controls any of these already has what tox-uv could give them:
 ## Release chain
 
 Releases run on the shared [tox-dev/github-workflows](https://github.com/tox-dev/github-workflows) pipeline. A release
-App, not a person, pushes the release commit and tag; the build installs its tools hash-checked from `pylock.toml` with
-a seven-day upload cooldown; PyPI receives the files through
+App, not a person, pushes the release commit and tag; the build installs its tools from a hash-checked `pylock.toml`
+resolved with a seven-day upload cooldown by default; PyPI receives the files through
 [trusted publishing](https://docs.pypi.org/trusted-publishers/) with attestations, and the GitHub Release is immutable.
 Every workflow pins third-party actions to a commit SHA.
 
@@ -75,6 +76,13 @@ Every workflow pins third-party actions to a commit SHA.
 | tox-uv runs `uv` from `PATH` while `TOX_UV_PATH` names another | Vulnerability       | Selection order is a guarantee.                    |
 | A malicious package on the configured index installs           | Not a vulnerability | Index content is trusted; use locks and cooldowns. |
 | uv mis-resolves a marker                                       | Not ours            | Report it to uv.                                   |
+
+## Severity
+
+- **High:** tox-uv runs a `uv` other than the selected one, or installs versions the lock does not allow while
+  `--locked` should apply.
+- **Medium:** a configured value adds a uv option, or a variable outside the documented set and `pass_env` reaches uv.
+- **Low:** a crash or confusing error on malformed configuration.
 
 ## Accepted risks
 
