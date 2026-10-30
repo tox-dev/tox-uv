@@ -611,6 +611,28 @@ def test_get_python_abs_path_with_impl(env_name: str) -> None:
     assert python_info.implementation.lower() == expected_impl.lower()
 
 
+@pytest.mark.parametrize(
+    ("base_python", "expected"),
+    [
+        pytest.param("python3.13", "cpython3.13", id="no-micro"),
+        pytest.param("python3.13.0", "cpython3.13.0", id="zero-micro"),
+        pytest.param("python3.13.1", "cpython3.13.1", id="micro"),
+        pytest.param("python3.13.1t", "cpython3.13.1+freethreaded", id="micro-free-threaded"),
+        pytest.param("python3.13.1-64", "cpython-3.13.1-windows-x86_64-none", id="micro-architecture"),
+        pytest.param(
+            "python3.13.1t-64", "cpython-3.13.1+freethreaded-windows-x86_64-none", id="micro-free-threaded-architecture"
+        ),
+    ],
+)
+def test_env_version_spec_preserves_requested_micro(base_python: str, expected: str) -> None:
+    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+    with mock.patch("sys.platform", "win32"):
+        python_info = uv_venv.get_python_info(base_python)
+    assert python_info is not None
+    uv_venv.set_base_python(python_info)
+    assert uv_venv.env_version_spec() == expected
+
+
 def test_env_version_spec_no_architecture() -> None:
     uv_venv = _TestUvVenv(create_args=mock.MagicMock())
     python_info = PythonInfo(
