@@ -349,12 +349,12 @@ class UvVenv(Python, ABC):
         imp = self.base_python.impl_lower
         architecture = self.base_python.extra.get("architecture")
         free_threaded = self.base_python.free_threaded
-        version = f"{base.major}.{base.minor}"
-        if (micro := self.base_python.extra.get("requested_micro")) is not None:
-            version = f"{version}.{micro}"
 
         uv_imp = imp or ""
         free_threaded_tag = "+freethreaded" if free_threaded else ""
+        version = f"{base.major}.{base.minor}"
+        if (micro := self.base_python.extra.get("requested_micro")) is not None:
+            version = f"{version}.{micro}"
         if not base.major:  # pragma: win32 no cover
             version_spec = f"{uv_imp}"
         elif not base.minor:
