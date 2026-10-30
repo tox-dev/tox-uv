@@ -611,6 +611,25 @@ def test_get_python_abs_path_with_impl(env_name: str) -> None:
     assert python_info.implementation.lower() == expected_impl.lower()
 
 
+@pytest.mark.parametrize("micro", [None, 0, 1, 999])
+@pytest.mark.parametrize("architecture", [None, 64])
+@pytest.mark.parametrize("free_threaded", [False, True])
+def test_env_version_spec_preserves_requested_micro(
+    micro: int | None, architecture: int | None, free_threaded: bool
+) -> None:
+    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+    version = "3.13" if micro is None else f"3.13.{micro}"
+    requested = f"python{version}{'t' if free_threaded else ''}{'-64' if architecture else ''}"
+    with mock.patch("sys.platform", "win32"):
+        python_info = uv_venv.get_python_info(requested)
+    assert python_info is not None
+    uv_venv.set_base_python(python_info)
+    variant = "+freethreaded" if free_threaded else ""
+    expected = f"cpython-{version}{variant}-windows-x86_64-none" if architecture else f"cpython{version}{variant}"
+
+    assert uv_venv.env_version_spec() == expected
+
+
 def test_env_version_spec_no_architecture() -> None:
     uv_venv = _TestUvVenv(create_args=mock.MagicMock())
     python_info = PythonInfo(
