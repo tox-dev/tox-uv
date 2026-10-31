@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 from packaging.requirements import Requirement
 from tox.tox_env.python.dependency_groups import resolve as resolve_dependency_groups
@@ -11,9 +11,6 @@ from tox.tox_env.python.runner import PythonRun
 
 from ._package_types import UvEditablePackage, UvPackage
 from ._venv import UvVenv
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -48,9 +45,9 @@ class UvVenvRunner(UvVenv, PythonRun):
 
         if uv_resolution and groups:
             try:
-                root: Path = self.core["package_root"]
+                root = self.core.get("package_root", Path)
             except KeyError:
-                root = self.core["tox_root"]
+                root = self.core.get("tox_root", Path)
             group_reqs = list(resolve_dependency_groups(root, groups))
             deps_file = self.conf["deps"]
             deps_reqs = [Requirement(line) for line in deps_file.lines()]
