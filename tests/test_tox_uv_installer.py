@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import sys
 from textwrap import dedent
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeVar
 
 import pytest
+from tox.config.sets import CoreConfigSet
 
 if TYPE_CHECKING:
+    from pytest_mock import MockerFixture
     from tox.execute.request import ExecuteRequest
     from tox.pytest import ToxProjectCreator
 
@@ -158,6 +160,35 @@ test = ["pytest>=8.0.0"]
     assert "lowest-direct" in cmd
     assert "packaging>=20.0" in cmd
     assert "pytest>=8.0.0" in cmd
+
+
+def test_uv_install_dependency_groups_without_package_root(
+    tox_project: ToxProjectCreator, mocker: MockerFixture
+) -> None:
+    project = tox_project({
+        "tox.ini": "[testenv]\npackage=skip\nuv_resolution=lowest-direct\ndependency_groups=test",
+        "pyproject.toml": '[dependency-groups]\ntest = ["pytest>=8"]',
+    })
+    original_get = CoreConfigSet.get
+    config_value = TypeVar("config_value")
+
+    def get_without_package_root(core: CoreConfigSet, item: str, of_type: type[config_value]) -> config_value:
+        if item == "package_root":
+            raise KeyError(item)
+        return original_get(core, item, of_type)
+
+    mocker.patch.object(CoreConfigSet, "get", autospec=True, side_effect=get_without_package_root)
+    execute_calls = project.patch_execute(lambda request: 0 if "install" in request.run_id else None)
+
+    project.run("-vv").assert_success()
+
+    assert next(call[0][3].cmd for call in execute_calls.call_args_list if "install" in call[0][3].run_id)[2:] == [
+        "install",
+        "--resolution",
+        "lowest-direct",
+        "pytest>=8",
+        "-v",
+    ]
 
 
 def test_uv_install_lowest_direct_with_dependency_groups_and_package(tox_project: ToxProjectCreator) -> None:
