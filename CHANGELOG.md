@@ -2,6 +2,18 @@
 
 <!-- towncrier release notes start -->
 
+<a name="release-1-37-3"></a>
+
+## 1.37.3 (2026-10-31)
+
+<a name="release-1-37-3-fixed"></a>
+
+### Fixed
+
+- Preserve explicitly requested Python patch versions in `base_python` when creating uv environments
+  ([#404](https://github.com/tox-dev/tox-uv/pull/404)) by [@zombieli](https://github.com/zombieli) and
+  [@gaborbernat](https://github.com/gaborbernat).
+
 <a name="release-1-37-2"></a>
 
 ## 1.37.2 (2026-10-27)
