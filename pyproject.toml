@@ -75,15 +75,15 @@ build = [
 lint = [ "pre-commit-uv>=4.3" ]
 pkg-meta = [ "check-wheel-contents>=0.6.3", "twine>=7", "uv>=0.12.22" ]
 release-news = [
-  "release-creator>=4.1",
+  "release-creator>=4.4",
   "towncrier>=26.9",
 ]
 release-notes = [
-  "release-creator>=4.1",
+  "release-creator>=4.4",
 ]
 release-prepare = [
   "prek>=0.5",
-  "release-creator>=4.1",
+  "release-creator>=4.4",
   "towncrier>=26.9",
 ]
 
@@ -229,5 +229,5 @@ uploaded-prior-to = "P7D"
 decision-order = "stable"
 matrix.python = ">=3.15,<3.16"
 matrix.platforms = [ "linux_x86_64" ]
-# temporary, delete after 2026-11-02
-packages.release-creator.uploaded-prior-to = 2026-10-26T18:24:46Z
+# release-creator 4.4.0 needs a seven-day cutoff exception through 2026-11-09.
+packages.release-creator.uploaded-prior-to = 2026-11-02T21:45:00Z
