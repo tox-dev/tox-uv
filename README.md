@@ -4,6 +4,8 @@
 [![PyPI Supported Python Versions](https://img.shields.io/pypi/pyversions/tox-uv.svg)](https://pypi.python.org/pypi/tox-uv/)
 [![check](https://github.com/tox-dev/tox-uv/actions/workflows/check.yaml/badge.svg)](https://github.com/tox-dev/tox-uv/actions/workflows/check.yaml)
 [![Downloads](https://static.pepy.tech/badge/tox-uv/month)](https://pepy.tech/project/tox-uv)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/tox-dev/tox-uv/badge)](https://scorecard.dev/viewer/?uri=github.com/tox-dev/tox-uv)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/16256/badge)](https://www.bestpractices.dev/projects/16256)
 
 **tox-uv** is a `tox` plugin, which replaces `virtualenv` and pip with `uv` in your `tox` environments. Note that you
 will get both the benefits (performance) or downsides (bugs) of `uv`.
