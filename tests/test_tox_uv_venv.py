@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import os
 import os.path
 import pathlib
@@ -279,6 +280,41 @@ def test_uv_venv_spec_abs_path(
     project = tox_project({"tox.ini": f"[testenv]\npackage=skip\nbase_python={other_interpreter_exe}"})
     result = project.run("-vv")
     result.assert_success()
+
+
+@pytest.mark.parametrize("runner", ["uv-venv-runner", "uv-venv-lock-runner"])
+@pytest.mark.parametrize(
+    "env_template", ["py{major}{minor}", "cpython{major}{minor}", "{major}.{minor}", "py{major}{minor}-unit"]
+)
+@pytest.mark.parametrize("configuration", ["ini", "toml", "override"])
+def test_uv_venv_explicit_path_in_python_env(
+    tox_project: ToxProjectCreator,
+    other_interpreter_exe: pathlib.Path,
+    runner: str,
+    env_template: str,
+    configuration: str,
+) -> None:
+    env_name = env_template.format(major=sys.version_info.major, minor=sys.version_info.minor)
+    arguments = ["c", "-e", env_name, "-k", "base_python"]
+    if configuration == "toml":
+        project = tox_project({
+            "tox.toml": (
+                f"[env_run_base]\npackage = 'skip'\nrunner = '{runner}'\n"
+                f"base_python = [{json.dumps(str(other_interpreter_exe))}]\n[env.{env_name!r}]\n"
+            )
+        })
+    else:
+        base_python = "" if configuration == "override" else f"base_python={other_interpreter_exe}\n"
+        project = tox_project({
+            "tox.ini": f"[testenv]\npackage=skip\nrunner={runner}\n{base_python}[testenv:{env_name}]\n"
+        })
+        if configuration == "override":
+            arguments.extend(["-x", f"testenv:{env_name}.base_python={other_interpreter_exe}"])
+    result = project.run(*arguments)
+    result.assert_success()
+    environment = result.state.envs[env_name]
+    assert isinstance(environment, UvVenv)
+    assert environment.env_version_spec() == str(other_interpreter_exe)
 
 
 @pytest.mark.xfail(
@@ -570,6 +606,8 @@ class _TestUvVenv(UvVenv):
         self._base_python = python_info
 
     def get_python_info(self, base_python: str) -> PythonInfo | None:
+        # These direct probes model an implicit fallback, not configured base_python.
+        self._base_python_explicitly_set = False
         return self._get_python([base_python])
 
 
