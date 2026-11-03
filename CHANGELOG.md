@@ -2,6 +2,18 @@
 
 <!-- towncrier release notes start -->
 
+<a name="release-1-37-4"></a>
+
+## 1.37.4 (2026-11-03)
+
+<a name="release-1-37-4-fixed"></a>
+
+### Fixed
+
+- Honor an explicitly configured absolute `base_python` path in Python-versioned environments instead of selecting
+  another matching interpreter ([#411](https://github.com/tox-dev/tox-uv/pull/411)) by
+  [@mayankdhingra02](https://github.com/mayankdhingra02) and [@gaborbernat](https://github.com/gaborbernat).
+
 <a name="release-1-37-3"></a>
 
 ## 1.37.3 (2026-10-31)
