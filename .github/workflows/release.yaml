@@ -10,7 +10,7 @@ concurrency:
 jobs:
   build-bare:
     name: 🏗️ Build tox-uv-bare
-    uses: tox-dev/github-workflows/.github/workflows/validate-python-release.yaml@57a765127aae73adf7d0e24a7fe0f067f2d3ea3e # 6.2.1
+    uses: tox-dev/github-workflows/.github/workflows/validate-python-release.yaml@bceb5c005e19823dc8835f536f53f172ae223927 # 6.5.0
     permissions:
       contents: read
     with:
@@ -18,7 +18,7 @@ jobs:
       artifact-prefix: bare-
   build-meta:
     name: 🏗️ Build tox-uv
-    uses: tox-dev/github-workflows/.github/workflows/validate-python-release.yaml@57a765127aae73adf7d0e24a7fe0f067f2d3ea3e # 6.2.1
+    uses: tox-dev/github-workflows/.github/workflows/validate-python-release.yaml@bceb5c005e19823dc8835f536f53f172ae223927 # 6.5.0
     permissions:
       contents: read
     with:
@@ -73,23 +73,23 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: 🐍 Install uv
-        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           version: latest-known
           python-version: "3.15"
           enable-cache: false
       - name: 📦 Install locked release tools
-        uses: tox-dev/github-workflows/install-locked-tools@57a765127aae73adf7d0e24a7fe0f067f2d3ea3e # 6.2.1
+        uses: tox-dev/github-workflows/install-locked-tools@bceb5c005e19823dc8835f536f53f172ae223927 # 6.5.0
         with:
           groups: release-notes
           venv: ${{ runner.temp }}/release-tools
       - name: 🏷️ Select previous tag
         id: previous
-        uses: tox-dev/github-workflows/select-previous-tag@57a765127aae73adf7d0e24a7fe0f067f2d3ea3e # 6.2.1
+        uses: tox-dev/github-workflows/select-previous-tag@bceb5c005e19823dc8835f536f53f172ae223927 # 6.5.0
         with:
           tag: ${{ github.ref_name }}
       - name: 📝 Render release notes
-        uses: tox-dev/github-workflows/render-release-notes@57a765127aae73adf7d0e24a7fe0f067f2d3ea3e # 6.2.1
+        uses: tox-dev/github-workflows/render-release-notes@bceb5c005e19823dc8835f536f53f172ae223927 # 6.5.0
         with:
           tag: ${{ github.ref_name }}
           previous: ${{ steps.previous.outputs.previous }}
@@ -152,20 +152,20 @@ jobs:
           cp dist/tox_uv_bare-*.whl dist/tox_uv_bare-*.tar.gz bare/
           cp dist/tox_uv-*.whl meta/
       - name: 🐍 Install uv
-        uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           version: latest-known
           python-version: "3.15"
           enable-cache: false
           ignore-empty-workdir: true
       - name: 🔍 Verify tox-uv-bare PyPI artifacts
-        uses: tox-dev/github-workflows/reconcile-pypi-artifacts@57a765127aae73adf7d0e24a7fe0f067f2d3ea3e # 6.2.1
+        uses: tox-dev/github-workflows/reconcile-pypi-artifacts@bceb5c005e19823dc8835f536f53f172ae223927 # 6.5.0
         with:
           project: tox-uv-bare
           version: ${{ github.ref_name }}
           dist: bare
       - name: 🔍 Verify tox-uv PyPI artifacts
-        uses: tox-dev/github-workflows/reconcile-pypi-artifacts@57a765127aae73adf7d0e24a7fe0f067f2d3ea3e # 6.2.1
+        uses: tox-dev/github-workflows/reconcile-pypi-artifacts@bceb5c005e19823dc8835f536f53f172ae223927 # 6.5.0
         with:
           project: tox-uv
           version: ${{ github.ref_name }}
@@ -176,7 +176,7 @@ jobs:
           artifact-ids: ${{ needs.github-notes.outputs.artifact-id }}
           path: ${{ runner.temp }}/github-release-notes
       - name: 🚀 Publish GitHub release
-        uses: tox-dev/github-workflows/publish-github-release@57a765127aae73adf7d0e24a7fe0f067f2d3ea3e # 6.2.1
+        uses: tox-dev/github-workflows/publish-github-release@bceb5c005e19823dc8835f536f53f172ae223927 # 6.5.0
         env:
           GH_TOKEN: ${{ github.token }}
         with:
