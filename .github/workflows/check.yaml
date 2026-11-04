@@ -15,97 +15,40 @@ permissions:
   contents: read
 jobs:
   test:
-    runs-on: ${{ matrix.os || 'ubuntu-26.04' }}
-    name: 🧪 ${{ matrix.env }}${{ matrix.suffix || ''}}
-    strategy:
-      fail-fast: false
-      matrix:
-        env:
-          - "3.15"
-          - "3.15t"
-          - "3.14"
-          - "3.13"
-          - "3.12"
-          - "3.11"
-          - type
-          - dev
-          - pkg_meta
-        os:
-          - ubuntu-26.04
-        suffix:
-          - "-linux-x86_64-gnu"
-        include:
-          - env: "3.15"
-            os: windows-2025-vs2026
-            suffix: -windows-x86_64-msvc
-          - env: "3.15"
-            os: macos-26
-            suffix: -macos-aarch64-none
-          - env: "3.15"
-            os: macos-26
-            suffix: -macos-x86_64-none
-          - env: meta-3.15
-          - env: meta-3.14
-          - env: meta-3.13
-          - env: meta-3.12
-          - env: meta-3.11
-    steps:
-      - name: 📥 Check out code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: 🐍 Install uv
-        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
-        with:
-          version: latest-known
-          python-version: "3.15"
-          enable-cache: false
-          cache-dependency-glob: "pyproject.toml"
-      - name: 📦 Install tox
-        run: uv tool install --python-preference only-managed --python 3.15 tox --with .
-      - name: 🐍 Install Python
-        if: startsWith(matrix.env, '3.') || startsWith(matrix.env, 'meta-')
-        shell: bash
-        env:
-          MATRIX_ENV: ${{ matrix.env }}
-          MATRIX_SUFFIX: ${{ matrix.suffix }}
-        run: |
-          VERSION="$MATRIX_ENV"
-          VERSION="${VERSION#meta-}"
-
-          case "$VERSION" in
-          *-arm64-* | *-arm64 | *-x86_64-* | *-x86_64) UV_VERSION="cpython-$VERSION" ;;
-          *)
-            UV_VERSION="cpython-$VERSION${MATRIX_SUFFIX}"
-            if [[ "$UV_VERSION" == *-msvc ]]; then
-              UV_VERSION="${UV_VERSION%-msvc}-none"
-            fi
-            ;;
-          esac
-
-          uv python install --python-preference only-managed "$UV_VERSION"
-      - name: 📦 Set up test suite
-        env:
-          MATRIX_ENV: ${{ matrix.env }}
-          FORCE_COLOR: "1"
-          UV_PYTHON_PREFERENCE: "only-managed"
-        run: tox run -vv --notest --skip-missing-interpreters false -e "$MATRIX_ENV"
-      - name: 🧪 Run test suite
-        env:
-          MATRIX_ENV: ${{ matrix.env }}
-          FORCE_COLOR: "1"
-          PYTEST_ADDOPTS: "-vv --durations=20"
-          DIFF_AGAINST: HEAD
-          UV_PYTHON_PREFERENCE: "only-managed"
-        run: tox run --skip-pkg-install -e "$MATRIX_ENV"
+    name: 🧪 Test
+    uses: tox-dev/github-workflows/.github/workflows/check.yaml@bceb5c005e19823dc8835f536f53f172ae223927 # 6.5.0
+    permissions:
+      contents: read
+    with:
+      tox-install: tox --with .
+      include: |
+        [
+          {"env": "3.15", "python": "3.15"},
+          {"env": "3.15t", "python": "3.15t"},
+          {"env": "3.14", "python": "3.14"},
+          {"env": "3.13", "python": "3.13"},
+          {"env": "3.12", "python": "3.12"},
+          {"env": "3.11", "python": "3.11"},
+          {"env": "type"},
+          {"env": "dev"},
+          {"env": "pkg_meta"},
+          {"env": "3.15", "os": "windows-2025-vs2026", "python": "cpython-3.15-windows-x86_64-none"},
+          {"env": "3.15", "os": "macos-26", "python": "cpython-3.15-macos-aarch64-none"},
+          {"env": "3.15", "os": "macos-26", "python": "cpython-3.15-macos-x86_64-none"},
+          {"env": "meta-3.15", "python": "3.15"},
+          {"env": "meta-3.14", "python": "3.14"},
+          {"env": "meta-3.13", "python": "3.13"},
+          {"env": "meta-3.12", "python": "3.12"},
+          {"env": "meta-3.11", "python": "3.11"}
+        ]
   gate:
     name: 🚦 ${{ github.event_name == 'pull_request' && 'Required checks pass' || 'Non-PR checks pass' }}
     if: ${{ !cancelled() }} # codespell:ignore cancelled
     needs: [test]
     runs-on: ubuntu-26.04
+    permissions: {}
     steps:
       - name: 🚦 Require all needed jobs to pass
-        env:
-          NEEDS_JSON: ${{ toJSON(needs) }}
-        run: jq -e 'all(to_entries[]; .value.result == "success")' <<<"$NEEDS_JSON"
+        uses: tox-dev/github-workflows/required-checks@bceb5c005e19823dc8835f536f53f172ae223927 # 6.5.0
+        with:
+          needs: ${{ toJSON(needs) }}
