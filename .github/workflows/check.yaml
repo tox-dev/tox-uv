@@ -7,16 +7,16 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
   schedule:
-    - cron: "0 8 * * *"
+    - cron: "47 3 * * *"
 concurrency:
   group: check-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 permissions:
   contents: read
 jobs:
   test:
     name: 🧪 Test
-    uses: tox-dev/github-workflows/.github/workflows/check.yaml@bceb5c005e19823dc8835f536f53f172ae223927 # 6.5.0
+    uses: tox-dev/github-workflows/.github/workflows/check.yaml@13381289334b15375958be7f7438f3c3d860e575 # 6.5.5
     permissions:
       contents: read
     with:
@@ -34,7 +34,6 @@ jobs:
           {"env": "pkg_meta"},
           {"env": "3.15", "os": "windows-2025-vs2026", "python": "cpython-3.15-windows-x86_64-none"},
           {"env": "3.15", "os": "macos-26", "python": "cpython-3.15-macos-aarch64-none"},
-          {"env": "3.15", "os": "macos-26", "python": "cpython-3.15-macos-x86_64-none"},
           {"env": "meta-3.15", "python": "3.15"},
           {"env": "meta-3.14", "python": "3.14"},
           {"env": "meta-3.13", "python": "3.13"},
@@ -49,6 +48,6 @@ jobs:
     permissions: {}
     steps:
       - name: 🚦 Require all needed jobs to pass
-        uses: tox-dev/github-workflows/required-checks@bceb5c005e19823dc8835f536f53f172ae223927 # 6.5.0
+        uses: tox-dev/github-workflows/required-checks@13381289334b15375958be7f7438f3c3d860e575 # 6.5.5
         with:
           needs: ${{ toJSON(needs) }}
