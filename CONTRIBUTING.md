@@ -27,3 +27,7 @@ Install sourced packages from uv workspaces.
 Apply the `skip news` label to a PR that changes only maintenance work and has no user-facing effect. The news check
 runs again if the label changes. Maintenance bot PRs receive the label automatically unless they provide a fragment. Bot
 accounts are not listed as authors of release notes.
+
+## Tests
+
+Add a test for every new feature and bug fix. A change without a test needs a reason in the pull request description.
