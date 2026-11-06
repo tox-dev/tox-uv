@@ -138,9 +138,9 @@ class UvInstaller(Pip):
 
         sources = pyproject.get("tool", {}).get("uv", {}).get("sources", {})
         return {
-            canonicalize_name(key)
-            for key, val in sources.items()
-            if isinstance(val, dict) and val.get("workspace", False)
+            canonicalize_name(name)
+            for name, source in sources.items()
+            if isinstance(source, dict) and source.get("workspace", False)
         }
 
     def _install_list_of_deps(  # ruff:ignore[complex-structure, too-many-branches]

@@ -423,10 +423,9 @@ def test_uv_install_workspace_source_any_spelling(
             sources."{source}" = {{ workspace = true }}
         """),
     })
-    execute_calls = project.patch_execute(lambda r: 0 if "install" in r.run_id else None)
+    execute_calls = project.patch_execute(lambda request: 0 if "install" in request.run_id else None)
 
-    result = project.run("r", "--installpkg", str(wheel))
-    result.assert_success()
+    project.run("r", "--installpkg", str(wheel)).assert_success()
 
     install_calls = [call[0][3].cmd[2:] for call in execute_calls.call_args_list if "install" in call[0][3].run_id]
     assert install_calls[0] == ["install", "--reinstall", "-e", "."]
