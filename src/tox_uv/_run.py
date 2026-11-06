@@ -53,7 +53,6 @@ class UvVenvRunner(UvVenv, PythonRun):
             combined_reqs = PythonDeps(
                 [*deps_file.lines(), *(str(req) for req in resolve_dependency_groups(root, groups))],
                 deps_file.path.parent,
-                environment_provider=lambda: self.environment_variables,
             )
 
             _LOGGER.info(
