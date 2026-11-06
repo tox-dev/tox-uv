@@ -9,6 +9,7 @@ import platform
 import shutil
 import subprocess
 import sys
+import sysconfig
 from configparser import ConfigParser
 from typing import TYPE_CHECKING, get_args
 from unittest import mock
@@ -549,14 +550,18 @@ def test_uv_env_site_package_dir_run(tox_project: ToxProjectCreator) -> None:
     result = project.run("-vv")
     result.assert_success()
 
-    env_dir = project.path / ".tox" / "py"
-    ver = sys.version_info
-    if sys.platform == "win32":  # pragma: win32 cover
-        path = str(env_dir / "Lib" / "site-packages")
-    else:  # pragma: win32 no cover
-        impl = "pypy" if sys.implementation.name.lower() == "pypy" else "python"
-        path = str(env_dir / "lib" / f"{impl}{ver.major}.{ver.minor}" / "site-packages")
-    assert path in result.out
+    assert str(_expected_site_package_dir(project.path / ".tox" / "py")) in result.out
+
+
+def _expected_site_package_dir(env_dir: pathlib.Path) -> pathlib.Path:
+    if sys.platform != "win32":  # pragma: win32 no cover
+        implementation = "pypy" if sys.implementation.name.lower() == "pypy" else "python"
+        version_info = sys.version_info
+        abi_thread = "t" if sysconfig.get_config_var("Py_GIL_DISABLED") else ""
+        return (
+            env_dir / "lib" / f"{implementation}{version_info.major}.{version_info.minor}{abi_thread}" / "site-packages"
+        )
+    return env_dir / "Lib" / "site-packages"  # pragma: win32 cover
 
 
 def test_uv_env_site_package_dir_conf(tox_project: ToxProjectCreator) -> None:
@@ -564,14 +569,7 @@ def test_uv_env_site_package_dir_conf(tox_project: ToxProjectCreator) -> None:
     result = project.run("c", "-e", "py", "-k", "commands")
     result.assert_success()
 
-    env_dir = project.path / ".tox" / "py"
-    ver = sys.version_info
-    if sys.platform == "win32":  # pragma: win32 cover
-        path = str(env_dir / "Lib" / "site-packages")
-    else:  # pragma: win32 no cover
-        impl = "pypy" if sys.implementation.name.lower() == "pypy" else "python"
-        path = str(env_dir / "lib" / f"{impl}{ver.major}.{ver.minor}" / "site-packages")
-    assert path in result.out
+    assert str(_expected_site_package_dir(project.path / ".tox" / "py")) in result.out
 
 
 def test_uv_env_python_not_in_path(tox_project: ToxProjectCreator) -> None:

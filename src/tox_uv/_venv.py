@@ -327,9 +327,14 @@ class UvVenv(Python, ABC):
     def env_site_package_dir(self) -> Path:  # pragma: win32 no cover
         if sys.platform == "win32":  # pragma: win32 cover
             return self.venv_dir / "Lib" / "site-packages"
-        py = self._py_info
-        impl = "pypy" if py.implementation == "pypy" else "python"
-        return self.venv_dir / "lib" / f"{impl}{py.version_dot}" / "site-packages"
+        python_info = self._py_info
+        implementation = "pypy" if python_info.implementation == "pypy" else "python"
+        return (
+            self.venv_dir
+            / "lib"
+            / f"{implementation}{python_info.version_dot}{'t' if python_info.free_threaded else ''}"
+            / "site-packages"
+        )
 
     _OS_MAP: typing.ClassVar[typing.Mapping[str, str]] = {
         "darwin": "macos",
@@ -416,6 +421,7 @@ class UvVenv(Python, ABC):
             is_64=res["is_64"],
             platform=sys.platform,
             extra=extras,
+            free_threaded=res["free_threaded"],
         )
 
 
