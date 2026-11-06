@@ -40,10 +40,18 @@ jobs:
           {"env": "meta-3.12", "python": "3.12"},
           {"env": "meta-3.11", "python": "3.11"}
         ]
+  release:
+    name: 🏷️ Release dry run
+    uses: $/.github/workflows/prepare-release.yaml
+    permissions:
+      contents: read
+      pull-requests: read
+    with:
+      dry-run: true
   gate:
     name: 🚦 ${{ github.event_name == 'pull_request' && 'Required checks pass' || 'Non-PR checks pass' }}
     if: ${{ !cancelled() }} # codespell:ignore cancelled
-    needs: [test]
+    needs: [test, release]
     runs-on: ubuntu-26.04
     permissions: {}
     steps:
