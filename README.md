@@ -293,6 +293,9 @@ and `uv pip install` will be used afterward to install the provided package.
 
 We use `uv venv` to create virtual environments. This process can be configured with the following options:
 
+Use `py313d` to request a debug CPython build or `py313td` to request a free-threaded debug build. A matching
+interpreter must be available to [uv](https://docs.astral.sh/uv/concepts/python-versions/#requesting-a-version).
+
 ### `uv_seed`
 
 This flag, set on a tox environment level, controls if the created virtual environment injects `pip`, `setuptools` and
