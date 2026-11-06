@@ -534,12 +534,14 @@ def test_uv_env_site_package_dir_run(tox_project: ToxProjectCreator) -> None:
 
 
 def _expected_site_package_dir(env_dir: pathlib.Path) -> pathlib.Path:
-    if sys.platform == "win32":  # pragma: win32 cover
-        return env_dir / "Lib" / "site-packages"
-    implementation = "pypy" if sys.implementation.name.lower() == "pypy" else "python"
-    version_info = sys.version_info
-    abi_thread = "t" if sysconfig.get_config_var("Py_GIL_DISABLED") else ""
-    return env_dir / "lib" / f"{implementation}{version_info.major}.{version_info.minor}{abi_thread}" / "site-packages"
+    if sys.platform != "win32":  # pragma: win32 no cover
+        implementation = "pypy" if sys.implementation.name.lower() == "pypy" else "python"
+        version_info = sys.version_info
+        abi_thread = "t" if sysconfig.get_config_var("Py_GIL_DISABLED") else ""
+        return (
+            env_dir / "lib" / f"{implementation}{version_info.major}.{version_info.minor}{abi_thread}" / "site-packages"
+        )
+    return env_dir / "Lib" / "site-packages"  # pragma: win32 cover
 
 
 def test_uv_env_site_package_dir_conf(tox_project: ToxProjectCreator) -> None:
