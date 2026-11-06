@@ -9,6 +9,7 @@ import platform
 import shutil
 import subprocess
 import sys
+import sysconfig
 from configparser import ConfigParser
 from typing import TYPE_CHECKING, get_args
 from unittest import mock
@@ -1166,3 +1167,28 @@ def test_uv_bundled_import_error(tox_project: ToxProjectCreator, mocker: MockerF
     project = tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python --version"})
     result = project.run()
     result.assert_success()
+
+
+def test_venv_query_reports_free_threaded() -> None:
+    script = pathlib.Path(__file__).parents[1] / "src" / "tox_uv" / "_venv_query.py"
+    out = subprocess.check_output([sys.executable, str(script)], text=True)
+    assert json.loads(out)["free_threaded"] is bool(sysconfig.get_config_var("Py_GIL_DISABLED"))
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Windows uses Lib/site-packages for every build")
+@pytest.mark.parametrize(("free_threaded", "lib_dir"), [(False, "python3.13"), (True, "python3.13t")])
+def test_env_site_package_dir_free_threaded(
+    tmp_path: pathlib.Path, free_threaded: bool, lib_dir: str
+) -> None:  # pragma: win32 no cover
+    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+    uv_venv.__dict__["_py_info"] = PythonInfo(
+        implementation="cpython",
+        version_info=VersionInfo(major=3, minor=13, micro=3, releaselevel="final", serial=0),
+        version="",
+        is_64=True,
+        platform=sys.platform,
+        extra={},
+        free_threaded=free_threaded,
+    )
+    with mock.patch.object(_TestUvVenv, "venv_dir", tmp_path):
+        assert uv_venv.env_site_package_dir() == tmp_path / "lib" / lib_dir / "site-packages"

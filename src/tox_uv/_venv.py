@@ -327,7 +327,8 @@ class UvVenv(Python, ABC):
             return self.venv_dir / "Lib" / "site-packages"
         py = self._py_info
         impl = "pypy" if py.implementation == "pypy" else "python"
-        return self.venv_dir / "lib" / f"{impl}{py.version_dot}" / "site-packages"
+        abi_thread = "t" if py.free_threaded else ""  # free-threaded builds use lib/python3.13t
+        return self.venv_dir / "lib" / f"{impl}{py.version_dot}{abi_thread}" / "site-packages"
 
     _OS_MAP: typing.ClassVar[typing.Mapping[str, str]] = {
         "darwin": "macos",
@@ -414,6 +415,7 @@ class UvVenv(Python, ABC):
             is_64=res["is_64"],
             platform=sys.platform,
             extra=extras,
+            free_threaded=res["free_threaded"],
         )
 
 
