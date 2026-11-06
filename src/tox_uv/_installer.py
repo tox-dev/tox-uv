@@ -11,7 +11,7 @@ from itertools import chain
 from typing import TYPE_CHECKING, Any, Final
 
 from packaging.requirements import Requirement
-from packaging.utils import parse_sdist_filename, parse_wheel_filename
+from packaging.utils import canonicalize_name, parse_sdist_filename, parse_wheel_filename
 from tox.config.types import Command
 from tox.tox_env.errors import Fail, Recreate
 from tox.tox_env.python.package import EditableLegacyPackage, EditablePackage, SdistPackage, WheelPackage
@@ -137,7 +137,11 @@ class UvInstaller(Pip):
             pyproject = tomllib.load(file_handler)
 
         sources = pyproject.get("tool", {}).get("uv", {}).get("sources", {})
-        return {key for key, val in sources.items() if isinstance(val, dict) and val.get("workspace", False)}
+        return {
+            canonicalize_name(name)
+            for name, source in sources.items()
+            if isinstance(source, dict) and source.get("workspace", False)
+        }
 
     def _install_list_of_deps(  # ruff:ignore[complex-structure, too-many-branches]
         self,
@@ -153,7 +157,7 @@ class UvInstaller(Pip):
                 for pkg in arg.deps:
                     if (
                         isinstance(pkg, Requirement)
-                        and pkg.name in self._sourced_pkg_names
+                        and canonicalize_name(pkg.name) in self._sourced_pkg_names
                         and "." not in groups["uv_editable"]
                     ):
                         groups["uv_editable"].append(".")

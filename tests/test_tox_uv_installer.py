@@ -3,11 +3,14 @@ from __future__ import annotations
 import sys
 from textwrap import dedent
 from typing import TYPE_CHECKING, TypeVar
+from zipfile import ZipFile
 
 import pytest
 from tox.config.sets import CoreConfigSet
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from pytest_mock import MockerFixture
     from tox.execute.request import ExecuteRequest
     from tox.pytest import ToxProjectCreator
@@ -392,3 +395,38 @@ def test_uv_install_with_constraints_for_deps(tox_project: ToxProjectCreator) ->
     assert cmd[0] == "install"
     assert "pytest>=8.0.0" in cmd
     assert "-c" in cmd
+
+
+@pytest.mark.parametrize(
+    ("source", "dependency"),
+    [
+        pytest.param("demo-foo", "Demo_Foo", id="dependency-spelling"),
+        pytest.param("Demo.Foo", "demo-foo", id="source-spelling"),
+    ],
+)
+def test_uv_install_workspace_source_any_spelling(
+    tox_project: ToxProjectCreator, tmp_path: Path, source: str, dependency: str
+) -> None:
+    wheel = tmp_path / "demo_root-0.1.0-py3-none-any.whl"
+    with ZipFile(wheel, "w") as zip_file:
+        metadata = f"Metadata-Version: 2.1\nName: demo-root\nVersion: 0.1.0\nRequires-Dist: {dependency}\n"
+        zip_file.writestr("demo_root-0.1.0.dist-info/METADATA", metadata)
+    project = tox_project({
+        "tox.ini": "[testenv]\n",
+        "pyproject.toml": dedent(f"""
+            [project]
+            name = "demo-root"
+            version = "0.1.0"
+            dependencies = ["{dependency}"]
+
+            [tool.uv]
+            sources."{source}" = {{ workspace = true }}
+        """),
+    })
+    execute_calls = project.patch_execute(lambda request: 0 if "install" in request.run_id else None)
+
+    project.run("r", "--installpkg", str(wheel)).assert_success()
+
+    install_calls = [call[0][3].cmd[2:] for call in execute_calls.call_args_list if "install" in call[0][3].run_id]
+    assert install_calls[0] == ["install", "--reinstall", "-e", "."]
+    assert not any(dependency in cmd for cmd in install_calls)
