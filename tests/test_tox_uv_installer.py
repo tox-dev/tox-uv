@@ -228,6 +228,45 @@ test = ["pytest>=8.0.0"]
     assert "pytest>=8.0.0" in cmd
 
 
+def test_uv_install_resolution_dependency_groups_with_requirements_file(tox_project: ToxProjectCreator) -> None:
+    project = tox_project({
+        "tox.ini": """
+[testenv]
+deps =
+    # pinned for the lowest run
+    -r requirements.txt
+package = skip
+uv_resolution = lowest-direct
+dependency_groups = test
+""",
+        "requirements.txt": "packaging>=20.0\n",
+        "pyproject.toml": """
+[project]
+name = "test-pkg"
+version = "0.1.0"
+
+[dependency-groups]
+test = ["pytest>=8.0.0"]
+""",
+    })
+    execute_calls = project.patch_execute(lambda r: 0 if "install" in r.run_id else None)
+
+    result = project.run("-vv")
+    result.assert_success()
+
+    install_calls = [call[0][3].cmd for call in execute_calls.call_args_list if "install" in call[0][3].run_id]
+    assert len(install_calls) == 1
+    assert install_calls[0][2:] == [
+        "install",
+        "--resolution",
+        "lowest-direct",
+        "pytest>=8.0.0",
+        "-r",
+        "requirements.txt",
+        "-v",
+    ]
+
+
 def test_uv_install_with_skip_env_install(tox_project: ToxProjectCreator) -> None:
     project = tox_project({
         "tox.ini": """

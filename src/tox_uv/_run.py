@@ -5,8 +5,8 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from packaging.requirements import Requirement
 from tox.tox_env.python.dependency_groups import resolve as resolve_dependency_groups
+from tox.tox_env.python.pip.req_file import PythonDeps
 from tox.tox_env.python.runner import PythonRun
 
 from ._package_types import UvEditablePackage, UvPackage
@@ -48,10 +48,13 @@ class UvVenvRunner(UvVenv, PythonRun):
                 root = self.core.get("package_root", Path)
             except KeyError:
                 root = self.core.get("tox_root", Path)
-            group_reqs = list(resolve_dependency_groups(root, groups))
-            deps_file = self.conf["deps"]
-            deps_reqs = [Requirement(line) for line in deps_file.lines()]
-            combined_reqs = deps_reqs + group_reqs
+            deps_file: PythonDeps = self.conf["deps"]
+            # keep the deps lines as written, so -r/-c files, options and comments still work
+            combined_reqs = PythonDeps(
+                [*deps_file.lines(), *(str(req) for req in resolve_dependency_groups(root, groups))],
+                deps_file.path.parent,
+                environment_provider=lambda: self.environment_variables,
+            )
 
             _LOGGER.info(
                 "combining deps and dependency groups for uv_resolution=%s to ensure correct resolution",
