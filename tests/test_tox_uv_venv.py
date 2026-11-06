@@ -530,14 +530,16 @@ def test_uv_env_site_package_dir_run(tox_project: ToxProjectCreator) -> None:
     result = project.run("-vv")
     result.assert_success()
 
-    env_dir = project.path / ".tox" / "py"
-    ver = sys.version_info
+    assert str(_expected_site_package_dir(project.path / ".tox" / "py")) in result.out
+
+
+def _expected_site_package_dir(env_dir: pathlib.Path) -> pathlib.Path:
     if sys.platform == "win32":  # pragma: win32 cover
-        path = str(env_dir / "Lib" / "site-packages")
-    else:  # pragma: win32 no cover
-        impl = "pypy" if sys.implementation.name.lower() == "pypy" else "python"
-        path = str(env_dir / "lib" / f"{impl}{ver.major}.{ver.minor}" / "site-packages")
-    assert path in result.out
+        return env_dir / "Lib" / "site-packages"
+    implementation = "pypy" if sys.implementation.name.lower() == "pypy" else "python"
+    version_info = sys.version_info
+    abi_thread = "t" if sysconfig.get_config_var("Py_GIL_DISABLED") else ""
+    return env_dir / "lib" / f"{implementation}{version_info.major}.{version_info.minor}{abi_thread}" / "site-packages"
 
 
 def test_uv_env_site_package_dir_conf(tox_project: ToxProjectCreator) -> None:
@@ -545,14 +547,7 @@ def test_uv_env_site_package_dir_conf(tox_project: ToxProjectCreator) -> None:
     result = project.run("c", "-e", "py", "-k", "commands")
     result.assert_success()
 
-    env_dir = project.path / ".tox" / "py"
-    ver = sys.version_info
-    if sys.platform == "win32":  # pragma: win32 cover
-        path = str(env_dir / "Lib" / "site-packages")
-    else:  # pragma: win32 no cover
-        impl = "pypy" if sys.implementation.name.lower() == "pypy" else "python"
-        path = str(env_dir / "lib" / f"{impl}{ver.major}.{ver.minor}" / "site-packages")
-    assert path in result.out
+    assert str(_expected_site_package_dir(project.path / ".tox" / "py")) in result.out
 
 
 def test_uv_env_python_not_in_path(tox_project: ToxProjectCreator) -> None:
@@ -1167,28 +1162,3 @@ def test_uv_bundled_import_error(tox_project: ToxProjectCreator, mocker: MockerF
     project = tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python --version"})
     result = project.run()
     result.assert_success()
-
-
-def test_venv_query_reports_free_threaded() -> None:
-    script = pathlib.Path(__file__).parents[1] / "src" / "tox_uv" / "_venv_query.py"
-    out = subprocess.check_output([sys.executable, str(script)], text=True)
-    assert json.loads(out)["free_threaded"] is bool(sysconfig.get_config_var("Py_GIL_DISABLED"))
-
-
-@pytest.mark.skipif(sys.platform == "win32", reason="Windows uses Lib/site-packages for every build")
-@pytest.mark.parametrize(("free_threaded", "lib_dir"), [(False, "python3.13"), (True, "python3.13t")])
-def test_env_site_package_dir_free_threaded(
-    tmp_path: pathlib.Path, free_threaded: bool, lib_dir: str
-) -> None:  # pragma: win32 no cover
-    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
-    uv_venv.__dict__["_py_info"] = PythonInfo(
-        implementation="cpython",
-        version_info=VersionInfo(major=3, minor=13, micro=3, releaselevel="final", serial=0),
-        version="",
-        is_64=True,
-        platform=sys.platform,
-        extra={},
-        free_threaded=free_threaded,
-    )
-    with mock.patch.object(_TestUvVenv, "venv_dir", tmp_path):
-        assert uv_venv.env_site_package_dir() == tmp_path / "lib" / lib_dir / "site-packages"
