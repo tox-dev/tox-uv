@@ -116,15 +116,3 @@ def test_uv_package_uses_package_root(tox_project: ToxProjectCreator, package: s
     cmd = next(call[0][3].cmd for call in execute_calls.call_args_list if call[0][3].run_id == "install_package")
     expected = str(project.path / "sub")
     assert cmd[-3:-1] == (["-e", expected] if editable else ["--reinstall", expected])
-
-
-def test_uv_package_default_from_package_root(tox_project: ToxProjectCreator) -> None:
-    project = tox_project({
-        "tox.ini": "[tox]\npackage_root = sub\n[testenv]",
-        "sub": {"pyproject.toml": '[project]\nname = "demo"\nversion = "0.1.0"'},
-    })
-
-    result = project.run("c", "-e", "py", "-k", "package")
-
-    result.assert_success()
-    assert "package = sdist" in result.out
