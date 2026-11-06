@@ -310,9 +310,9 @@ necessary. However, It is possible to adjust `uv`'s Python version selection pre
 
 ### `system_site_packages` (`sitepackages`)
 
-Create virtual environments that also have access to globally installed packages. Note the default value may be
-overwritten by the VIRTUALENV_SYSTEM_SITE_PACKAGES environment variable. This flag works the same way as the one from
-[tox native virtualenv implementation](https://tox.wiki/en/latest/config.html#system_site_packages).
+Create virtual environments with access to globally installed packages. `VIRTUALENV_SYSTEM_SITE_PACKAGES` sets the
+default. Changing the setting recreates the environment. See
+[tox's `system_site_packages` option](https://tox.wiki/en/latest/config.html#system_site_packages).
 
 ## Package installation
 

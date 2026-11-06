@@ -231,19 +231,24 @@ def test_uv_venv_system_site_packages(tox_project: ToxProjectCreator) -> None:
     result.assert_success()
 
 
-@pytest.mark.parametrize(("first", "second"), [("false", "true"), ("true", "false")])
-def test_uv_venv_system_site_packages_change_recreates(tox_project: ToxProjectCreator, first: str, second: str) -> None:
-    project = tox_project({"tox.ini": f"[testenv]\npackage=skip\nsystem_site_packages={first}"})
+@pytest.mark.parametrize(
+    ("initial", "updated"),
+    [pytest.param("false", "true", id="enable"), pytest.param("true", "false", id="disable")],
+)
+def test_uv_venv_system_site_packages_change_recreates(
+    tox_project: ToxProjectCreator, initial: str, updated: str
+) -> None:
+    project = tox_project({"tox.ini": f"[testenv]\npackage=skip\nsystem_site_packages={initial}"})
 
     project.run("r").assert_success()
-    (project.path / "tox.ini").write_text(f"[testenv]\npackage=skip\nsystem_site_packages={second}\n")
+    (project.path / "tox.ini").write_text(f"[testenv]\npackage=skip\nsystem_site_packages={updated}\n")
     project.run("r").assert_success()
 
     config = ConfigParser()
     # pyvenv.cfg has no section header, so give it one
     config.read_string("[cfg]\n" + (project.path / ".tox" / "py" / "pyvenv.cfg").read_text())
 
-    assert config["cfg"]["include-system-site-packages"].strip() == second
+    assert config["cfg"]["include-system-site-packages"].strip() == updated
 
 
 def test_uv_venv_system_site_packages_env_var(tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch) -> None:

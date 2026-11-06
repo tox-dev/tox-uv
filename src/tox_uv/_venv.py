@@ -103,8 +103,7 @@ class UvVenv(Python, ABC):
     def python_cache(self) -> dict[str, Any]:
         result = super().python_cache()
         result["seed"] = self.conf["uv_seed"]
-        # `uv venv --system-site-packages` only takes effect while the environment is being created, so a change to it
-        # has to recreate the environment, the same as a change to the seed or the python preference
+        # uv only applies this setting when creating the environment.
         result["system_site_packages"] = self.conf["system_site_packages"]
         if self.conf["uv_python_preference"] != "none":
             result["python_preference"] = self.conf["uv_python_preference"]
