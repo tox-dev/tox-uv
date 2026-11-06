@@ -2,6 +2,29 @@
 
 <!-- towncrier release notes start -->
 
+<a name="release-1-37-6"></a>
+
+## 1.37.6 (2026-11-06)
+
+<a name="release-1-37-6-fixed"></a>
+
+### Fixed
+
+- A package dependency that names a uv workspace member is now matched against `tool.uv.sources` by its normalized name,
+  so `Demo_Foo` and `demo-foo` count as the same member instead of being sent to the index
+  ([#417](https://github.com/tox-dev/tox-uv/pull/417)) by [@qodelicious](https://github.com/qodelicious) and
+  [@gaborbernat](https://github.com/gaborbernat).
+- Point `{env_site_packages_dir}` at `lib/python3.13t/site-packages` for free-threaded environments, instead of a
+  `lib/python3.13/site-packages` directory that does not exist ([#416](https://github.com/tox-dev/tox-uv/pull/416)) by
+  [@qodelicious](https://github.com/qodelicious) and [@gaborbernat](https://github.com/gaborbernat).
+- Preserve debug and free-threaded flags when selecting Python for a tox environment. Changing either flag recreates the
+  environment, so `py313d` and `py313td` do not reuse an interpreter with different build options
+  ([#420](https://github.com/tox-dev/tox-uv/pull/420)) by [@gaborbernat](https://github.com/gaborbernat).
+- Recreate the environment when `system_site_packages` changes. `uv venv --system-site-packages` only applies while the
+  environment is being created, so flipping the setting left the old `pyvenv.cfg` in place and the change had no effect
+  ([#418](https://github.com/tox-dev/tox-uv/pull/418)) by [@abhishekcpp007](https://github.com/abhishekcpp007) and
+  [@gaborbernat](https://github.com/gaborbernat).
+
 <a name="release-1-37-5"></a>
 
 ## 1.37.5 (2026-11-04)
