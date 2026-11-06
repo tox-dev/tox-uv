@@ -103,6 +103,8 @@ class UvVenv(Python, ABC):
     def python_cache(self) -> dict[str, Any]:
         result = super().python_cache()
         result["seed"] = self.conf["uv_seed"]
+        result["debug"] = self.base_python.debug
+        result["free_threaded"] = self.base_python.free_threaded
         # uv only applies this setting when creating the environment.
         result["system_site_packages"] = self.conf["system_site_packages"]
         if self.conf["uv_python_preference"] != "none":
@@ -159,6 +161,7 @@ class UvVenv(Python, ABC):
                         platform=info.platform,
                         extra={"executable": str(base_path)},
                         free_threaded=bool(info.free_threaded),
+                        debug=bool(info.debug_build),
                         machine=info.machine,
                     )
             else:
@@ -177,6 +180,7 @@ class UvVenv(Python, ABC):
                 platform=sys.platform,
                 extra={"architecture": spec.architecture, "requested_micro": spec.micro},
                 free_threaded=bool(spec.free_threaded),
+                debug=bool(spec.debug),
                 machine=spec.machine,
             )
 
@@ -204,7 +208,8 @@ class UvVenv(Python, ABC):
         """
         info = cls._get_virtualenv_py_info(path)  # pragma: win32 no cover
         return PythonSpec.from_string_spec(  # pragma: win32 no cover
-            f"{info.implementation}{info.version_info.major}{info.version_info.minor}-{info.architecture}",
+            f"{info.implementation}{info.version_info.major}{info.version_info.minor}"
+            f"{'t' if info.free_threaded else ''}{'d' if info.debug_build else ''}-{info.architecture}",
         )
 
     @staticmethod
@@ -353,17 +358,18 @@ class UvVenv(Python, ABC):
         base = self.base_python.version_info
         imp = self.base_python.impl_lower
         architecture = self.base_python.extra.get("architecture")
-        free_threaded = self.base_python.free_threaded
 
         uv_imp = imp or ""
-        free_threaded_tag = "+freethreaded" if free_threaded else ""
+        variant = (
+            f"{'+freethreaded' if self.base_python.free_threaded else ''}{'+debug' if self.base_python.debug else ''}"
+        )
         version = f"{base.major}.{base.minor}"
         if (micro := self.base_python.extra.get("requested_micro")) is not None:
             version = f"{version}.{micro}"
         if not base.major:  # pragma: win32 no cover
             version_spec = f"{uv_imp}"
         elif not base.minor:
-            version_spec = f"{uv_imp}{base.major}{free_threaded_tag}"
+            version_spec = f"{uv_imp}{base.major}{variant}"
         elif architecture or self.base_python.machine:
 
             def normalise_os(raw_os: str) -> str:
@@ -389,11 +395,11 @@ class UvVenv(Python, ABC):
             base_python_machine = (self.base_python.machine or "").lower()
             uv_machine = machine_map.get(base_python_machine, machine_fallback)
             uv_libc = self._LIBC_MAP.get(uv_os, {}).get(self.base_python.extra.get("libc", "").lower(), "none")
-            version_spec = f"{uv_imp}-{version}{free_threaded_tag}" + (
+            version_spec = f"{uv_imp}-{version}{variant}" + (
                 f"-{uv_os}-{uv_machine}-{uv_libc}" if all([uv_machine, uv_os, uv_libc]) else ""
             )
         else:
-            version_spec = f"{uv_imp}{version}{free_threaded_tag}"
+            version_spec = f"{uv_imp}{version}{variant}"
         return version_spec
 
     @cached_property

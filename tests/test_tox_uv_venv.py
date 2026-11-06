@@ -17,6 +17,7 @@ from unittest import mock
 import pytest
 import tox.tox_env.errors
 from tox.tox_env.python.api import PythonInfo, VersionInfo
+from virtualenv.discovery.py_info import PythonInfo as VirtualenvPythonInfo
 
 from tox_uv._venv import PythonPreference, UvVenv
 
@@ -310,10 +311,10 @@ def test_uv_venv_spec_abs_path(
 @pytest.mark.parametrize(
     "env_template",
     [
-        pytest.param("py{major}{minor}", id="py"),
-        pytest.param("cpython{major}{minor}", id="cpython"),
-        pytest.param("{major}.{minor}", id="version"),
-        pytest.param("py{major}{minor}-unit", id="factor"),
+        pytest.param("py{major}{minor}{variant}", id="py"),
+        pytest.param("cpython{major}{minor}{variant}", id="cpython"),
+        pytest.param("{major}.{minor}{variant}", id="version"),
+        pytest.param("py{major}{minor}{variant}-unit", id="factor"),
     ],
 )
 @pytest.mark.parametrize(
@@ -358,7 +359,11 @@ def test_uv_venv_explicit_path_in_python_env(
     executable = pathlib.Path(sys.executable)
     # Tox special-cases the exact sys.executable string.
     base_python = executable.parent / ".." / executable.parent.name / executable.name
-    env_name = env_template.format(major=sys.version_info.major, minor=sys.version_info.minor)
+    threaded = "t" if sysconfig.get_config_var("Py_GIL_DISABLED") else ""
+    debug = "d" if sysconfig.get_config_var("Py_DEBUG") else ""
+    env_name = env_template.format(
+        major=sys.version_info.major, minor=sys.version_info.minor, variant=f"{threaded}{debug}"
+    )
     config_values = {
         "runner": runner,
         "base_python": str(base_python),
@@ -676,6 +681,34 @@ def test_get_python_abs_path_with_python_env_name() -> None:  # pragma: win32 no
     assert python_info.implementation == "CPython"
 
 
+def test_get_python_abs_path_variants(mocker: MockerFixture) -> None:
+    mocker.patch.object(
+        UvVenv,
+        "_get_virtualenv_py_info",
+        return_value=mocker.MagicMock(
+            spec=VirtualenvPythonInfo,
+            implementation="CPython",
+            version_info=VersionInfo(3, 13, 0, "final", 0),
+            version="3.13.0",
+            architecture=64,
+            platform=sys.platform,
+            free_threaded=True,
+            debug_build=True,
+            machine="x86_64",
+        ),
+    )
+    uv_venv = _TestUvVenv(create_args=mock.Mock())
+    with mock.patch.object(type(uv_venv), "name", new_callable=mock.PropertyMock, return_value="lint"):
+        python_info = uv_venv.get_python_info(sys.executable)
+
+    assert python_info is not None
+    python_spec = uv_venv.python_spec_for_path(pathlib.Path(sys.executable))
+    assert ((python_info.free_threaded, python_info.debug), (python_spec.free_threaded, python_spec.debug)) == (
+        (True, True),
+        (True, True),
+    )
+
+
 @pytest.mark.parametrize(
     ("base_python", "architecture"), [("python3.11", None), ("python3.11-32", 32), ("python3.11-64", 64)]
 )
@@ -686,12 +719,57 @@ def test_get_python_architecture(base_python: str, architecture: int | None) -> 
     assert python_info.extra["architecture"] == architecture
 
 
-@pytest.mark.parametrize(("base_python", "is_free_threaded"), [("py313", False), ("py313t", True)])
-def test_get_python_free_threaded(base_python: str, is_free_threaded: int | None) -> None:
+@pytest.mark.parametrize(
+    ("base_python", "expected"),
+    [
+        pytest.param("py313", (False, False), id="regular"),
+        pytest.param("py313t", (True, False), id="free-threaded"),
+        pytest.param("py313d", (False, True), id="debug"),
+        pytest.param("py313td", (True, True), id="free-threaded-debug"),
+    ],
+)
+def test_get_python_variants(base_python: str, expected: tuple[bool, bool]) -> None:
     uv_venv = _TestUvVenv(create_args=mock.Mock())
     python_info = uv_venv.get_python_info(base_python)
     assert python_info is not None
-    assert python_info.free_threaded == is_free_threaded
+    assert (python_info.free_threaded, python_info.debug) == expected
+
+
+@pytest.mark.parametrize(
+    ("env_name", "expected"),
+    [
+        pytest.param("py313d", "cpython3.13+debug", id="debug"),
+        pytest.param("py313td", "cpython3.13+freethreaded+debug", id="free-threaded-debug"),
+    ],
+)
+def test_uv_venv_debug_request(tox_project: ToxProjectCreator, env_name: str, expected: str) -> None:
+    project = tox_project({"tox.ini": "[tox]\nskip_missing_interpreters=true\n[testenv]\npackage=skip"})
+    execute_calls = project.patch_execute(lambda request: 2 if request.run_id == "venv" else None)
+
+    project.run("r", "-e", env_name).assert_failed(code=1)
+
+    venv_cmd = next(call.args[3].cmd for call in execute_calls.call_args_list if call.args[3].run_id == "venv")
+    assert venv_cmd[venv_cmd.index("-p") + 1] == expected
+
+
+@pytest.mark.parametrize(
+    ("env_name", "expected"),
+    [
+        pytest.param("py313", (False, False), id="regular"),
+        pytest.param("py313t", (True, False), id="free-threaded"),
+        pytest.param("py313d", (False, True), id="debug"),
+        pytest.param("py313td", (True, True), id="free-threaded-debug"),
+    ],
+)
+def test_uv_venv_variant_cache(tox_project: ToxProjectCreator, env_name: str, expected: tuple[bool, bool]) -> None:
+    project = tox_project({"tox.ini": "[testenv]\npackage=skip"})
+    result = project.run("c", "-e", env_name, "-k", "base_python")
+    result.assert_success()
+
+    environment = result.state.envs[env_name]
+    assert isinstance(environment, UvVenv)
+    cache = environment.python_cache()
+    assert (cache["free_threaded"], cache["debug"], environment.py_debug()) == (*expected, expected[1])
 
 
 @pytest.mark.parametrize("env_name", ["pypy", "cpython"])
@@ -711,9 +789,17 @@ def test_get_python_abs_path_with_impl(env_name: str) -> None:
         pytest.param("python3.13.0", "cpython3.13.0", id="zero-micro"),
         pytest.param("python3.13.1", "cpython3.13.1", id="micro"),
         pytest.param("python3.13.1t", "cpython3.13.1+freethreaded", id="micro-free-threaded"),
+        pytest.param("python3.13.1d", "cpython3.13.1+debug", id="micro-debug"),
+        pytest.param("python3.13.1td", "cpython3.13.1+freethreaded+debug", id="micro-free-threaded-debug"),
         pytest.param("python3.13.1-64", "cpython-3.13.1-windows-x86_64-none", id="micro-architecture"),
         pytest.param(
             "python3.13.1t-64", "cpython-3.13.1+freethreaded-windows-x86_64-none", id="micro-free-threaded-architecture"
+        ),
+        pytest.param("python3.13.1d-64", "cpython-3.13.1+debug-windows-x86_64-none", id="micro-debug-architecture"),
+        pytest.param(
+            "python3.13.1td-64",
+            "cpython-3.13.1+freethreaded+debug-windows-x86_64-none",
+            id="micro-free-threaded-debug-architecture",
         ),
     ],
 )
