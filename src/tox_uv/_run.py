@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Final
 
 from packaging.requirements import Requirement
 from tox.tox_env.python.dependency_groups import resolve as resolve_dependency_groups
@@ -12,7 +13,7 @@ from tox.tox_env.python.runner import PythonRun
 from ._package_types import UvEditablePackage, UvPackage
 from ._venv import UvVenv
 
-_LOGGER = logging.getLogger(__name__)
+_LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
 
 
 class UvVenvRunner(UvVenv, PythonRun):

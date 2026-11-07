@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 from unittest import mock
 
 import pytest
@@ -47,6 +47,6 @@ def clear_python_preference_env_var(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("UV_PYTHON_PREFERENCE", raising=False)
 
 
-pytest_plugins = [
+pytest_plugins: Final[list[str]] = [
     "tox.pytest",
 ]
