@@ -64,7 +64,14 @@ def test_uv_install_without_pre_custom_install_cmd(tox_project: ToxProjectCreato
     project.run("-vv").assert_success()
 
 
-@pytest.mark.parametrize("strategy", ["highest", "lowest", "lowest-direct"])
+@pytest.mark.parametrize(
+    "strategy",
+    [
+        pytest.param("highest", id="highest"),
+        pytest.param("lowest", id="lowest"),
+        pytest.param("lowest-direct", id="lowest-direct"),
+    ],
+)
 def test_uv_install_with_resolution_strategy(tox_project: ToxProjectCreator, strategy: str) -> None:
     project = tox_project({"tox.ini": f"[testenv]\ndeps = tomli>=2.0.1\npackage = skip\nuv_resolution = {strategy}"})
     execute_calls = project.patch_execute(lambda request: 0 if "install" in request.run_id else None)

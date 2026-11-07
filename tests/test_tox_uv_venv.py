@@ -31,7 +31,10 @@ def test_uv_venv_self(tox_project: ToxProjectCreator) -> None:
     tox_project({"tox.ini": "[testenv]\npackage=skip"}).run("-vv").assert_success()
 
 
-@pytest.mark.parametrize("env_name", ["doc8", "flake8", "check2"])
+@pytest.mark.parametrize(
+    "env_name",
+    [pytest.param("doc8", id="doc8"), pytest.param("flake8", id="flake8"), pytest.param("check2", id="check2")],
+)
 def test_uv_venv_non_python_env_name_with_trailing_digit(tox_project: ToxProjectCreator, env_name: str) -> None:
     project = tox_project({
         "tox.ini": f"[testenv:{env_name}]\nskip_install = true\ncommands = python --version",
@@ -82,7 +85,13 @@ def test_uv_venv_preference_empty_falls_back_to_system(tox_project: ToxProjectCr
 
 
 @pytest.mark.usefixtures("clear_python_preference_env_var")
-@pytest.mark.parametrize("env_var", ["UV_NO_MANAGED_PYTHON", "UV_MANAGED_PYTHON"])
+@pytest.mark.parametrize(
+    "env_var",
+    [
+        pytest.param("UV_NO_MANAGED_PYTHON", id="UV_NO_MANAGED_PYTHON"),
+        pytest.param("UV_MANAGED_PYTHON", id="UV_MANAGED_PYTHON"),
+    ],
+)
 def test_uv_venv_preference_not_set_if_uv_no_managed_python(
     tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch, env_var: str
 ) -> None:
@@ -146,10 +155,10 @@ def test_uv_venv_spec_major_only(tox_project: ToxProjectCreator) -> None:
 @pytest.mark.parametrize(
     ("pypy", "expected_uv_pypy"),
     [
-        ("pypy", "pypy"),
-        ("pypy9", "pypy9"),
-        ("pypy999", "pypy9.99"),
-        ("pypy9.99", "pypy9.99"),
+        pytest.param("pypy", "pypy", id="pypy-pypy"),
+        pytest.param("pypy9", "pypy9", id="pypy9-pypy9"),
+        pytest.param("pypy999", "pypy9.99", id="pypy999-pypy9.99"),
+        pytest.param("pypy9.99", "pypy9.99", id="pypy9.99-pypy9.99"),
     ],
 )
 def test_uv_venv_spec_pypy(
@@ -186,8 +195,8 @@ def test_uv_venv_spec_pypy(
 @pytest.mark.parametrize(
     ("implementation", "expected_implementation", "expected_name"),
     [
-        ("py", "cpython", "cpython"),
-        ("pypy", "pypy", "pypy"),
+        pytest.param("py", "cpython", "cpython", id="py-cpython-cpython"),
+        pytest.param("pypy", "pypy", "pypy", id="pypy-pypy-pypy"),
     ],
 )
 def test_uv_venv_spec_full_implementation(
@@ -394,7 +403,15 @@ def test_uv_venv_spec_abs_path_conflict_impl(
     assert f"failed with env name {env} conflicting with base python {other_interpreter_exe}" in result.out
 
 
-@pytest.mark.parametrize("env_name", ["control2", "build3", "lint", "myenv"])
+@pytest.mark.parametrize(
+    "env_name",
+    [
+        pytest.param("control2", id="control2"),
+        pytest.param("build3", id="build3"),
+        pytest.param("lint", id="lint"),
+        pytest.param("myenv", id="myenv"),
+    ],
+)
 def test_uv_venv_non_python_env_name(tox_project: ToxProjectCreator, env_name: str) -> None:
     project = tox_project({
         "tox.ini": f"[testenv:{env_name}]\npackage=skip\nskip_install=true\ncommands=python --version"
@@ -496,7 +513,7 @@ def test_uv_env_python_preference(
 
 @pytest.mark.parametrize(
     "env",
-    ["3.10", "3.10-onlymanaged"],
+    [pytest.param("3.10", id="3.10"), pytest.param("3.10-onlymanaged", id="3.10-onlymanaged")],
 )
 def test_uv_env_python_preference_complex(
     tox_project: ToxProjectCreator,
@@ -684,7 +701,12 @@ def test_get_python_abs_path_variants(mocker: MockerFixture) -> None:
 
 
 @pytest.mark.parametrize(
-    ("base_python", "architecture"), [("python3.11", None), ("python3.11-32", 32), ("python3.11-64", 64)]
+    ("base_python", "architecture"),
+    [
+        pytest.param("python3.11", None, id="python3.11-None"),
+        pytest.param("python3.11-32", 32, id="python3.11-32-32"),
+        pytest.param("python3.11-64", 64, id="python3.11-64-64"),
+    ],
 )
 def test_get_python_architecture(base_python: str, architecture: int | None, mocker: MockerFixture) -> None:
     python_info = _TestUvVenv(create_args=mocker.create_autospec(ToxEnvCreateArgs, instance=True)).get_python_info(
@@ -747,7 +769,7 @@ def test_uv_venv_variant_cache(tox_project: ToxProjectCreator, env_name: str, ex
     assert (cache["free_threaded"], cache["debug"], environment.py_debug()) == (*expected, expected[1])
 
 
-@pytest.mark.parametrize("env_name", ["pypy", "cpython"])
+@pytest.mark.parametrize("env_name", [pytest.param("pypy", id="pypy"), pytest.param("cpython", id="cpython")])
 def test_get_python_abs_path_with_impl(env_name: str, mocker: MockerFixture) -> None:
     uv_venv = _TestUvVenv(create_args=mocker.create_autospec(ToxEnvCreateArgs, instance=True))
     mocker.patch.object(type(uv_venv), "name", new_callable=mocker.PropertyMock, return_value=env_name)
@@ -808,7 +830,7 @@ def test_env_version_spec_no_architecture(mocker: MockerFixture) -> None:
     assert uv_venv.env_version_spec() == "cpython3.11"
 
 
-@pytest.mark.parametrize("architecture", [32, 64])
+@pytest.mark.parametrize("architecture", [pytest.param(32, id="32"), pytest.param(64, id="64")])
 def test_env_version_spec_architecture_configured(architecture: int, mocker: MockerFixture) -> None:
     uv_venv = _TestUvVenv(create_args=mocker.create_autospec(ToxEnvCreateArgs, instance=True))
     python_info = PythonInfo(
@@ -924,13 +946,13 @@ def test_env_version_spec_machine_none_with_architecture(mocker: MockerFixture) 
 @pytest.mark.parametrize(
     ("machine", "expected_uv_arch"),
     [
-        ("arm64", "aarch64"),
-        ("aarch64", "aarch64"),
-        ("amd64", "x86_64"),
-        ("x86_64", "x86_64"),
-        ("x86", "i686"),
-        ("i386", "i686"),
-        ("i686", "i686"),
+        pytest.param("arm64", "aarch64", id="arm64-aarch64"),
+        pytest.param("aarch64", "aarch64", id="aarch64-aarch64"),
+        pytest.param("amd64", "x86_64", id="amd64-x86_64"),
+        pytest.param("x86_64", "x86_64", id="x86_64-x86_64"),
+        pytest.param("x86", "i686", id="x86-i686"),
+        pytest.param("i386", "i686", id="i386-i686"),
+        pytest.param("i686", "i686", id="i686-i686"),
     ],
 )
 def test_env_version_spec_machine_architecture_mapping(

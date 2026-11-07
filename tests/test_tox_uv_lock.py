@@ -123,7 +123,15 @@ def test_uv_lock_list_dependencies_command(tox_project: ToxProjectCreator) -> No
 
 
 @pytest.mark.usefixtures("clear_python_preference_env_var")
-@pytest.mark.parametrize("verbose", ["", "-v", "-vv", "-vvv"])
+@pytest.mark.parametrize(
+    "verbose",
+    [
+        pytest.param("", id="empty"),
+        pytest.param("-v", id="-v"),
+        pytest.param("-vv", id="-vv"),
+        pytest.param("-vvv", id="-vvv"),
+    ],
+)
 def test_uv_lock_command(tox_project: ToxProjectCreator, verbose: str) -> None:
     project = tox_project({
         "tox.ini": """
@@ -225,8 +233,8 @@ def test_uv_lock_with_default_groups(tox_project: ToxProjectCreator) -> None:
 @pytest.mark.parametrize(
     "name",
     [
-        "tox_uv-1.12.2-py3-none-any.whl",
-        "tox_uv-1.12.2.tar.gz",
+        pytest.param("tox_uv-1.12.2-py3-none-any.whl", id="tox_uv-1.12.2-py3-none-any.whl"),
+        pytest.param("tox_uv-1.12.2.tar.gz", id="tox_uv-1.12.2.tar.gz"),
     ],
 )
 def test_uv_lock_with_install_pkg(tox_project: ToxProjectCreator, name: str) -> None:
@@ -286,7 +294,7 @@ def test_uv_lock_with_install_pkg(tox_project: ToxProjectCreator, name: str) -> 
 
 
 @pytest.mark.usefixtures("clear_python_preference_env_var")
-@pytest.mark.parametrize("uv_sync_locked", [True, False])
+@pytest.mark.parametrize("uv_sync_locked", [pytest.param(True, id="True"), pytest.param(False, id="False")])
 def test_uv_sync_extra_flags(tox_project: ToxProjectCreator, uv_sync_locked: bool) -> None:
     uv_sync_locked_str = str(uv_sync_locked).lower()
     project = tox_project({
@@ -587,7 +595,7 @@ def test_skip_uv_sync(tox_project: ToxProjectCreator, monkeypatch: pytest.Monkey
     assert calls == expected
 
 
-@pytest.mark.parametrize("package", ["wheel", "uv"])
+@pytest.mark.parametrize("package", [pytest.param("wheel", id="wheel"), pytest.param("uv", id="uv")])
 def test_uv_package_non_editable(tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch, package: str) -> None:
     monkeypatch.delenv("UV_PYTHON_PREFERENCE", raising=False)
     project = tox_project({
@@ -644,7 +652,7 @@ def test_uv_package_non_editable(tox_project: ToxProjectCreator, monkeypatch: py
     assert calls == expected
 
 
-@pytest.mark.parametrize("package", ["wheel", "uv"])
+@pytest.mark.parametrize("package", [pytest.param("wheel", id="wheel"), pytest.param("uv", id="uv")])
 def test_uv_package_non_editable_no_pyproject(
     tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch, package: str
 ) -> None:
