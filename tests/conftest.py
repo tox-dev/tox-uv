@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Final
-from unittest import mock
 
 import pytest
 
@@ -12,8 +11,9 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture(autouse=True)
-def mock_settings_env_vars() -> Generator[None, None, None]:
-    with mock.patch.dict(os.environ, {"TOX_USER_CONFIG_FILE": os.devnull}):
+def mock_settings_env_vars(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+    with monkeypatch.context() as patch:
+        patch.setenv("TOX_USER_CONFIG_FILE", os.devnull)
         yield
 
 

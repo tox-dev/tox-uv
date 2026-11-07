@@ -29,6 +29,6 @@ def test_plugin_version_info_without_uv_package() -> None:
 def test_plugin_version_info_with_uv_package(mocker: MockerFixture) -> None:
     from tox_uv.plugin import tox_append_version_info  # ruff:ignore[import-outside-top-level]
 
-    mocker.patch("tox_uv.plugin.version", return_value="0.10.5")
+    mocker.patch("tox_uv.plugin.version", autospec=True, return_value="0.10.5")
     result = tox_append_version_info()
     assert result == "with uv==0.10.5"

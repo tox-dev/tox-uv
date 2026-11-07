@@ -12,10 +12,10 @@ import sys
 import sysconfig
 from configparser import ConfigParser
 from typing import TYPE_CHECKING, get_args
-from unittest import mock
 
 import pytest
 import tox.tox_env.errors
+from tox.tox_env.api import ToxEnvCreateArgs
 from tox.tox_env.python.api import PythonInfo, VersionInfo
 from virtualenv.discovery.py_info import PythonInfo as VirtualenvPythonInfo
 
@@ -628,10 +628,10 @@ def test_uv_pip_constraints_no(tox_project: ToxProjectCreator) -> None:
     )
 
 
-def test_get_python_abs_path_with_python_env_name() -> None:  # pragma: win32 no cover
-    uv_venv = _TestUvVenv(create_args=mock.Mock())
-    with mock.patch.object(type(uv_venv), "name", new_callable=mock.PropertyMock, return_value="py999"):
-        python_info = uv_venv.get_python_info(sys.executable)
+def test_get_python_abs_path_with_python_env_name(mocker: MockerFixture) -> None:  # pragma: win32 no cover
+    uv_venv = _TestUvVenv(create_args=mocker.create_autospec(ToxEnvCreateArgs, instance=True))
+    mocker.patch.object(type(uv_venv), "name", new_callable=mocker.PropertyMock, return_value="py999")
+    python_info = uv_venv.get_python_info(sys.executable)
     assert python_info is not None
     assert (python_info.version_info.major, python_info.version_info.minor) == (9, 99)
     assert python_info.implementation == "CPython"
@@ -656,6 +656,7 @@ def test_get_python_abs_path_variants(mocker: MockerFixture) -> None:
     mocker.patch.object(
         UvVenv,
         "_get_virtualenv_py_info",
+        autospec=True,
         return_value=mocker.MagicMock(
             spec=VirtualenvPythonInfo,
             implementation="CPython",
@@ -668,10 +669,9 @@ def test_get_python_abs_path_variants(mocker: MockerFixture) -> None:
             machine="x86_64",
         ),
     )
-    uv_venv = _TestUvVenv(create_args=mock.Mock())
-    with mock.patch.object(type(uv_venv), "name", new_callable=mock.PropertyMock, return_value="lint"):
-        python_info = uv_venv.get_python_info(sys.executable)
-
+    uv_venv = _TestUvVenv(create_args=mocker.create_autospec(ToxEnvCreateArgs, instance=True))
+    mocker.patch.object(type(uv_venv), "name", new_callable=mocker.PropertyMock, return_value="lint")
+    python_info = uv_venv.get_python_info(sys.executable)
     assert python_info is not None
     python_spec = uv_venv.python_spec_for_path(pathlib.Path(sys.executable))
     assert ((python_info.free_threaded, python_info.debug), (python_spec.free_threaded, python_spec.debug)) == (
@@ -683,8 +683,10 @@ def test_get_python_abs_path_variants(mocker: MockerFixture) -> None:
 @pytest.mark.parametrize(
     ("base_python", "architecture"), [("python3.11", None), ("python3.11-32", 32), ("python3.11-64", 64)]
 )
-def test_get_python_architecture(base_python: str, architecture: int | None) -> None:
-    python_info = _TestUvVenv(create_args=mock.Mock()).get_python_info(base_python)
+def test_get_python_architecture(base_python: str, architecture: int | None, mocker: MockerFixture) -> None:
+    python_info = _TestUvVenv(create_args=mocker.create_autospec(ToxEnvCreateArgs, instance=True)).get_python_info(
+        base_python
+    )
     assert python_info is not None
     assert python_info.extra["architecture"] == architecture
 
@@ -698,8 +700,10 @@ def test_get_python_architecture(base_python: str, architecture: int | None) -> 
         pytest.param("py313td", (True, True), id="free-threaded-debug"),
     ],
 )
-def test_get_python_variants(base_python: str, expected: tuple[bool, bool]) -> None:
-    python_info = _TestUvVenv(create_args=mock.Mock()).get_python_info(base_python)
+def test_get_python_variants(base_python: str, expected: tuple[bool, bool], mocker: MockerFixture) -> None:
+    python_info = _TestUvVenv(create_args=mocker.create_autospec(ToxEnvCreateArgs, instance=True)).get_python_info(
+        base_python
+    )
     assert python_info is not None
     assert (python_info.free_threaded, python_info.debug) == expected
 
@@ -741,10 +745,10 @@ def test_uv_venv_variant_cache(tox_project: ToxProjectCreator, env_name: str, ex
 
 
 @pytest.mark.parametrize("env_name", ["pypy", "cpython"])
-def test_get_python_abs_path_with_impl(env_name: str) -> None:
-    uv_venv = _TestUvVenv(create_args=mock.Mock())
-    with mock.patch.object(type(uv_venv), "name", new_callable=mock.PropertyMock, return_value=env_name):
-        python_info = uv_venv.get_python_info(sys.executable)
+def test_get_python_abs_path_with_impl(env_name: str, mocker: MockerFixture) -> None:
+    uv_venv = _TestUvVenv(create_args=mocker.create_autospec(ToxEnvCreateArgs, instance=True))
+    mocker.patch.object(type(uv_venv), "name", new_callable=mocker.PropertyMock, return_value=env_name)
+    python_info = uv_venv.get_python_info(sys.executable)
     assert python_info is not None
     expected_impl = "CPython" if env_name == "cpython" else env_name
     assert python_info.implementation.lower() == expected_impl.lower()
@@ -771,17 +775,17 @@ def test_get_python_abs_path_with_impl(env_name: str) -> None:
         ),
     ],
 )
-def test_env_version_spec_preserves_requested_micro(base_python: str, expected: str) -> None:
-    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
-    with mock.patch("sys.platform", "win32"):
-        python_info = uv_venv.get_python_info(base_python)
+def test_env_version_spec_preserves_requested_micro(base_python: str, expected: str, mocker: MockerFixture) -> None:
+    uv_venv = _TestUvVenv(create_args=mocker.create_autospec(ToxEnvCreateArgs, instance=True))
+    mocker.patch("sys.platform", "win32")
+    python_info = uv_venv.get_python_info(base_python)
     assert python_info is not None
     uv_venv.set_base_python(python_info)
     assert uv_venv.env_version_spec() == expected
 
 
-def test_env_version_spec_no_architecture() -> None:
-    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+def test_env_version_spec_no_architecture(mocker: MockerFixture) -> None:
+    uv_venv = _TestUvVenv(create_args=mocker.create_autospec(ToxEnvCreateArgs, instance=True))
     python_info = PythonInfo(
         implementation="cpython",
         version_info=VersionInfo(
@@ -797,13 +801,13 @@ def test_env_version_spec_no_architecture() -> None:
         extra={"architecture": None},
     )
     uv_venv.set_base_python(python_info)
-    with mock.patch("sys.version_info", (0, 0, 0)):  # prevent picking sys.executable
-        assert uv_venv.env_version_spec() == "cpython3.11"
+    mocker.patch("sys.version_info", (0, 0, 0))  # prevent picking sys.executable
+    assert uv_venv.env_version_spec() == "cpython3.11"
 
 
 @pytest.mark.parametrize("architecture", [32, 64])
-def test_env_version_spec_architecture_configured(architecture: int) -> None:
-    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+def test_env_version_spec_architecture_configured(architecture: int, mocker: MockerFixture) -> None:
+    uv_venv = _TestUvVenv(create_args=mocker.create_autospec(ToxEnvCreateArgs, instance=True))
     python_info = PythonInfo(
         implementation="cpython",
         version_info=VersionInfo(
@@ -824,8 +828,10 @@ def test_env_version_spec_architecture_configured(architecture: int) -> None:
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="architecture configuration only on Windows")
-def test_env_version_spec_architecture_configured_overwrite_sys_exe() -> None:  # pragma: win32 cover
-    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+def test_env_version_spec_architecture_configured_overwrite_sys_exe(
+    mocker: MockerFixture,
+) -> None:  # pragma: win32 cover
+    uv_venv = _TestUvVenv(create_args=mocker.create_autospec(ToxEnvCreateArgs, instance=True))
     (major, minor) = sys.version_info[:2]
     python_info = PythonInfo(
         implementation="cpython",
@@ -845,8 +851,8 @@ def test_env_version_spec_architecture_configured_overwrite_sys_exe() -> None:  
     assert uv_venv.env_version_spec() == f"cpython-{major}.{minor}-windows-x86-none"
 
 
-def test_env_version_spec_free_threaded() -> None:
-    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+def test_env_version_spec_free_threaded(mocker: MockerFixture) -> None:
+    uv_venv = _TestUvVenv(create_args=mocker.create_autospec(ToxEnvCreateArgs, instance=True))
     python_info = PythonInfo(
         implementation="cpython",
         version_info=VersionInfo(
@@ -863,12 +869,12 @@ def test_env_version_spec_free_threaded() -> None:
         free_threaded=True,
     )
     uv_venv.set_base_python(python_info)
-    with mock.patch("sys.version_info", (0, 0, 0)):  # prevent picking sys.executable
-        assert uv_venv.env_version_spec() == "cpython3.13+freethreaded"
+    mocker.patch("sys.version_info", (0, 0, 0))  # prevent picking sys.executable
+    assert uv_venv.env_version_spec() == "cpython3.13+freethreaded"
 
 
-def test_env_version_spec_machine_none() -> None:
-    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+def test_env_version_spec_machine_none(mocker: MockerFixture) -> None:
+    uv_venv = _TestUvVenv(create_args=mocker.create_autospec(ToxEnvCreateArgs, instance=True))
     python_info = PythonInfo(
         implementation="cpython",
         version_info=VersionInfo(
@@ -885,12 +891,12 @@ def test_env_version_spec_machine_none() -> None:
         machine=None,
     )
     uv_venv.set_base_python(python_info)
-    with mock.patch("sys.version_info", (0, 0, 0)):  # prevent picking sys.executable
-        assert uv_venv.env_version_spec() == "cpython3.11"
+    mocker.patch("sys.version_info", (0, 0, 0))  # prevent picking sys.executable
+    assert uv_venv.env_version_spec() == "cpython3.11"
 
 
-def test_env_version_spec_machine_none_with_architecture() -> None:
-    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+def test_env_version_spec_machine_none_with_architecture(mocker: MockerFixture) -> None:
+    uv_venv = _TestUvVenv(create_args=mocker.create_autospec(ToxEnvCreateArgs, instance=True))
     python_info = PythonInfo(
         implementation="cpython",
         version_info=VersionInfo(
@@ -907,9 +913,9 @@ def test_env_version_spec_machine_none_with_architecture() -> None:
         machine=None,
     )
     uv_venv.set_base_python(python_info)
-    with mock.patch("sys.version_info", (0, 0, 0)):  # prevent picking sys.executable
-        # When machine is None, uv_arch becomes empty and no os/arch/libc suffix is appended
-        assert uv_venv.env_version_spec() == "cpython-3.11"
+    mocker.patch("sys.version_info", (0, 0, 0))  # prevent picking sys.executable
+    # When machine is None, uv_arch becomes empty and no os/arch/libc suffix is appended
+    assert uv_venv.env_version_spec() == "cpython-3.11"
 
 
 @pytest.mark.parametrize(
@@ -924,8 +930,10 @@ def test_env_version_spec_machine_none_with_architecture() -> None:
         ("i686", "i686"),
     ],
 )
-def test_env_version_spec_machine_architecture_mapping(machine: str, expected_uv_arch: str) -> None:
-    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+def test_env_version_spec_machine_architecture_mapping(
+    machine: str, expected_uv_arch: str, mocker: MockerFixture
+) -> None:
+    uv_venv = _TestUvVenv(create_args=mocker.create_autospec(ToxEnvCreateArgs, instance=True))
     python_info = PythonInfo(
         implementation="cpython",
         version_info=VersionInfo(
@@ -942,12 +950,12 @@ def test_env_version_spec_machine_architecture_mapping(machine: str, expected_uv
         machine=machine,
     )
     uv_venv.set_base_python(python_info)
-    with mock.patch("sys.version_info", (0, 0, 0)):  # prevent picking sys.executable
-        assert uv_venv.env_version_spec() == f"cpython-3.11-linux-{expected_uv_arch}-gnu"
+    mocker.patch("sys.version_info", (0, 0, 0))  # prevent picking sys.executable
+    assert uv_venv.env_version_spec() == f"cpython-3.11-linux-{expected_uv_arch}-gnu"
 
 
-def test_env_version_spec_machine_x86_64_macos_32bit() -> None:
-    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+def test_env_version_spec_machine_x86_64_macos_32bit(mocker: MockerFixture) -> None:
+    uv_venv = _TestUvVenv(create_args=mocker.create_autospec(ToxEnvCreateArgs, instance=True))
     python_info = PythonInfo(
         implementation="cpython",
         version_info=VersionInfo(
@@ -964,13 +972,13 @@ def test_env_version_spec_machine_x86_64_macos_32bit() -> None:
         machine="x86_64",
     )
     uv_venv.set_base_python(python_info)
-    with mock.patch("sys.version_info", (0, 0, 0)):  # prevent picking sys.executable
-        # On macOS with 32-bit architecture, x86_64 maps to i686
-        assert uv_venv.env_version_spec() == "cpython-3.11-macos-i686-none"
+    mocker.patch("sys.version_info", (0, 0, 0))  # prevent picking sys.executable
+    # On macOS with 32-bit architecture, x86_64 maps to i686
+    assert uv_venv.env_version_spec() == "cpython-3.11-macos-i686-none"
 
 
-def test_env_version_spec_machine_x86_64_macos_64bit() -> None:
-    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+def test_env_version_spec_machine_x86_64_macos_64bit(mocker: MockerFixture) -> None:
+    uv_venv = _TestUvVenv(create_args=mocker.create_autospec(ToxEnvCreateArgs, instance=True))
     python_info = PythonInfo(
         implementation="cpython",
         version_info=VersionInfo(
@@ -987,13 +995,13 @@ def test_env_version_spec_machine_x86_64_macos_64bit() -> None:
         machine="x86_64",
     )
     uv_venv.set_base_python(python_info)
-    with mock.patch("sys.version_info", (0, 0, 0)):  # prevent picking sys.executable
-        # On macOS with 64-bit architecture, x86_64 maps to x86_64
-        assert uv_venv.env_version_spec() == "cpython-3.11-macos-x86_64-none"
+    mocker.patch("sys.version_info", (0, 0, 0))  # prevent picking sys.executable
+    # On macOS with 64-bit architecture, x86_64 maps to x86_64
+    assert uv_venv.env_version_spec() == "cpython-3.11-macos-x86_64-none"
 
 
-def test_env_version_spec_machine_x86_64_macos_no_architecture() -> None:
-    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+def test_env_version_spec_machine_x86_64_macos_no_architecture(mocker: MockerFixture) -> None:
+    uv_venv = _TestUvVenv(create_args=mocker.create_autospec(ToxEnvCreateArgs, instance=True))
     python_info = PythonInfo(
         implementation="cpython",
         version_info=VersionInfo(
@@ -1010,13 +1018,13 @@ def test_env_version_spec_machine_x86_64_macos_no_architecture() -> None:
         machine="x86_64",
     )
     uv_venv.set_base_python(python_info)
-    with mock.patch("sys.version_info", (0, 0, 0)):  # prevent picking sys.executable
-        # On macOS with no architecture specified, x86_64 maps to x86_64
-        assert uv_venv.env_version_spec() == "cpython-3.11-macos-x86_64-none"
+    mocker.patch("sys.version_info", (0, 0, 0))  # prevent picking sys.executable
+    # On macOS with no architecture specified, x86_64 maps to x86_64
+    assert uv_venv.env_version_spec() == "cpython-3.11-macos-x86_64-none"
 
 
-def test_env_version_spec_machine_arm64_macos_32bit() -> None:
-    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+def test_env_version_spec_machine_arm64_macos_32bit(mocker: MockerFixture) -> None:
+    uv_venv = _TestUvVenv(create_args=mocker.create_autospec(ToxEnvCreateArgs, instance=True))
     python_info = PythonInfo(
         implementation="cpython",
         version_info=VersionInfo(
@@ -1033,13 +1041,13 @@ def test_env_version_spec_machine_arm64_macos_32bit() -> None:
         machine="arm64",
     )
     uv_venv.set_base_python(python_info)
-    with mock.patch("sys.version_info", (0, 0, 0)):  # prevent picking sys.executable
-        # On macOS, arm64 always maps to aarch64 regardless of architecture setting
-        assert uv_venv.env_version_spec() == "cpython-3.11-macos-aarch64-none"
+    mocker.patch("sys.version_info", (0, 0, 0))  # prevent picking sys.executable
+    # On macOS, arm64 always maps to aarch64 regardless of architecture setting
+    assert uv_venv.env_version_spec() == "cpython-3.11-macos-aarch64-none"
 
 
-def test_env_version_spec_machine_arm64_macos_64bit() -> None:
-    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+def test_env_version_spec_machine_arm64_macos_64bit(mocker: MockerFixture) -> None:
+    uv_venv = _TestUvVenv(create_args=mocker.create_autospec(ToxEnvCreateArgs, instance=True))
     python_info = PythonInfo(
         implementation="cpython",
         version_info=VersionInfo(
@@ -1056,13 +1064,13 @@ def test_env_version_spec_machine_arm64_macos_64bit() -> None:
         machine="arm64",
     )
     uv_venv.set_base_python(python_info)
-    with mock.patch("sys.version_info", (0, 0, 0)):  # prevent picking sys.executable
-        # On macOS, arm64 always maps to aarch64 regardless of architecture setting
-        assert uv_venv.env_version_spec() == "cpython-3.11-macos-aarch64-none"
+    mocker.patch("sys.version_info", (0, 0, 0))  # prevent picking sys.executable
+    # On macOS, arm64 always maps to aarch64 regardless of architecture setting
+    assert uv_venv.env_version_spec() == "cpython-3.11-macos-aarch64-none"
 
 
-def test_env_version_spec_machine_arm64_macos_no_architecture() -> None:
-    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+def test_env_version_spec_machine_arm64_macos_no_architecture(mocker: MockerFixture) -> None:
+    uv_venv = _TestUvVenv(create_args=mocker.create_autospec(ToxEnvCreateArgs, instance=True))
     python_info = PythonInfo(
         implementation="cpython",
         version_info=VersionInfo(
@@ -1079,13 +1087,13 @@ def test_env_version_spec_machine_arm64_macos_no_architecture() -> None:
         machine="arm64",
     )
     uv_venv.set_base_python(python_info)
-    with mock.patch("sys.version_info", (0, 0, 0)):  # prevent picking sys.executable
-        # On macOS, arm64 always maps to aarch64 regardless of architecture setting
-        assert uv_venv.env_version_spec() == "cpython-3.11-macos-aarch64-none"
+    mocker.patch("sys.version_info", (0, 0, 0))  # prevent picking sys.executable
+    # On macOS, arm64 always maps to aarch64 regardless of architecture setting
+    assert uv_venv.env_version_spec() == "cpython-3.11-macos-aarch64-none"
 
 
-def test_env_version_spec_libc_musl_linux() -> None:
-    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+def test_env_version_spec_libc_musl_linux(mocker: MockerFixture) -> None:
+    uv_venv = _TestUvVenv(create_args=mocker.create_autospec(ToxEnvCreateArgs, instance=True))
     python_info = PythonInfo(
         implementation="cpython",
         version_info=VersionInfo(
@@ -1102,12 +1110,12 @@ def test_env_version_spec_libc_musl_linux() -> None:
         machine="x86_64",
     )
     uv_venv.set_base_python(python_info)
-    with mock.patch("sys.version_info", (0, 0, 0)):
-        assert uv_venv.env_version_spec() == "cpython-3.11-linux-x86_64-musl"
+    mocker.patch("sys.version_info", (0, 0, 0))
+    assert uv_venv.env_version_spec() == "cpython-3.11-linux-x86_64-musl"
 
 
-def test_env_version_spec_libc_glibc_linux() -> None:
-    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+def test_env_version_spec_libc_glibc_linux(mocker: MockerFixture) -> None:
+    uv_venv = _TestUvVenv(create_args=mocker.create_autospec(ToxEnvCreateArgs, instance=True))
     python_info = PythonInfo(
         implementation="cpython",
         version_info=VersionInfo(
@@ -1124,12 +1132,12 @@ def test_env_version_spec_libc_glibc_linux() -> None:
         machine="x86_64",
     )
     uv_venv.set_base_python(python_info)
-    with mock.patch("sys.version_info", (0, 0, 0)):
-        assert uv_venv.env_version_spec() == "cpython-3.11-linux-x86_64-gnu"
+    mocker.patch("sys.version_info", (0, 0, 0))
+    assert uv_venv.env_version_spec() == "cpython-3.11-linux-x86_64-gnu"
 
 
-def test_env_version_spec_libc_windows() -> None:
-    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+def test_env_version_spec_libc_windows(mocker: MockerFixture) -> None:
+    uv_venv = _TestUvVenv(create_args=mocker.create_autospec(ToxEnvCreateArgs, instance=True))
     python_info = PythonInfo(
         implementation="cpython",
         version_info=VersionInfo(
@@ -1146,12 +1154,12 @@ def test_env_version_spec_libc_windows() -> None:
         machine="x86_64",
     )
     uv_venv.set_base_python(python_info)
-    with mock.patch("sys.version_info", (0, 0, 0)):
-        assert uv_venv.env_version_spec() == "cpython-3.11-windows-x86_64-none"
+    mocker.patch("sys.version_info", (0, 0, 0))
+    assert uv_venv.env_version_spec() == "cpython-3.11-windows-x86_64-none"
 
 
-def test_env_version_spec_machine_x86_windows() -> None:
-    uv_venv = _TestUvVenv(create_args=mock.MagicMock())
+def test_env_version_spec_machine_x86_windows(mocker: MockerFixture) -> None:
+    uv_venv = _TestUvVenv(create_args=mocker.create_autospec(ToxEnvCreateArgs, instance=True))
     python_info = PythonInfo(
         implementation="cpython",
         version_info=VersionInfo(
@@ -1168,8 +1176,8 @@ def test_env_version_spec_machine_x86_windows() -> None:
         machine="x86",
     )
     uv_venv.set_base_python(python_info)
-    with mock.patch("sys.version_info", (0, 0, 0)):
-        assert uv_venv.env_version_spec() == "cpython-3.11-windows-x86-none"
+    mocker.patch("sys.version_info", (0, 0, 0))
+    assert uv_venv.env_version_spec() == "cpython-3.11-windows-x86-none"
 
 
 def test_relative_workdir_with_changedir(tox_project: ToxProjectCreator) -> None:
@@ -1204,13 +1212,13 @@ def test_uv_path_env_var_valid(tox_project: ToxProjectCreator, monkeypatch: pyte
 
 
 def test_uv_version_timeout(tox_project: ToxProjectCreator, mocker: MockerFixture) -> None:
-    mock_run = mocker.patch("subprocess.run", side_effect=subprocess.TimeoutExpired("uv", 5))
+    mock_run = mocker.patch("subprocess.run", autospec=True, side_effect=subprocess.TimeoutExpired("uv", 5))
     tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python --version"}).run().assert_success()
     mock_run.assert_called()
 
 
 def test_uv_version_os_error(tox_project: ToxProjectCreator, mocker: MockerFixture) -> None:
-    mock_run = mocker.patch("subprocess.run", side_effect=OSError("mock error"))
+    mock_run = mocker.patch("subprocess.run", autospec=True, side_effect=OSError("mock error"))
     tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python --version"}).run().assert_success()
     mock_run.assert_called()
 
@@ -1227,5 +1235,5 @@ def test_uv_bundled_import_error(tox_project: ToxProjectCreator, mocker: MockerF
             raise ImportError(msg)
         return original_import(name, *args, **kwargs)
 
-    mocker.patch("builtins.__import__", side_effect=mock_import)
+    mocker.patch("builtins.__import__", autospec=True, side_effect=mock_import)
     tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python --version"}).run().assert_success()
