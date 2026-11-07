@@ -94,3 +94,20 @@ def test_uv_package_no_pyproject(tox_project: ToxProjectCreator, demo_pkg_no_pyp
     uv_seed = true
     """
     tox_project({"tox.ini": ini}, base=demo_pkg_no_pyproject).run().assert_success()
+
+
+@pytest.mark.parametrize(
+    ("package", "install_flag"),
+    [pytest.param("uv", "--reinstall", id="uv"), pytest.param("uv-editable", "-e", id="uv-editable")],
+)
+def test_uv_package_uses_package_root(tox_project: ToxProjectCreator, package: str, install_flag: str) -> None:
+    project = tox_project({
+        "tox.ini": f"[tox]\npackage_root = sub\n[testenv]\npackage = {package}",
+        "sub": {"pyproject.toml": '[project]\nname = "demo"\nversion = "0.1.0"'},
+    })
+    execute_calls = project.patch_execute(lambda request: 0 if "install" in request.run_id else None)
+
+    project.run("-vv").assert_success()
+
+    cmd = next(call[0][3].cmd for call in execute_calls.call_args_list if call[0][3].run_id == "install_package")
+    assert cmd[-3:-1] == [install_flag, str(project.path / "sub")]
