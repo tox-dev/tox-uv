@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import builtins
 import importlib.util
 import json
 import os
@@ -11,7 +12,7 @@ import subprocess
 import sys
 import sysconfig
 from configparser import ConfigParser
-from typing import TYPE_CHECKING, get_args
+from typing import TYPE_CHECKING, Any, get_args
 
 import pytest
 import tox.tox_env.errors
@@ -1224,9 +1225,6 @@ def test_uv_version_os_error(tox_project: ToxProjectCreator, mocker: MockerFixtu
 
 
 def test_uv_bundled_import_error(tox_project: ToxProjectCreator, mocker: MockerFixture) -> None:
-    import builtins  # ruff:ignore[import-outside-top-level]
-    from typing import Any  # ruff:ignore[import-outside-top-level]
-
     original_import = builtins.__import__
 
     def mock_import(name: str, *args: Any, **kwargs: Any) -> Any:  # ruff:ignore[any-type]

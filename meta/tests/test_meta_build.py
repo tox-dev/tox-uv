@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from meta.hatch_build import CustomMetadataHook
+
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
@@ -60,8 +62,6 @@ def test_wheel_does_not_contain_tox_uv_package(built_wheel: Path) -> None:
 
 
 def test_build_hook_updates_metadata() -> None:
-    from meta.hatch_build import CustomMetadataHook  # ruff:ignore[import-outside-top-level]
-
     hook = CustomMetadataHook("test", {})
     metadata: dict[str, str | list[str]] = {
         "version": "1.2.3",
@@ -73,8 +73,6 @@ def test_build_hook_updates_metadata() -> None:
 
 
 def test_build_hook_preserves_other_dependencies() -> None:
-    from meta.hatch_build import CustomMetadataHook  # ruff:ignore[import-outside-top-level]
-
     hook = CustomMetadataHook("test", {})
     metadata: dict[str, str | list[str]] = {
         "version": "2.0.0",
