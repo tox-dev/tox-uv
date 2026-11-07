@@ -2,6 +2,25 @@
 
 <!-- towncrier release notes start -->
 
+<a name="release-1-37-7"></a>
+
+## 1.37.7 (2026-11-07)
+
+<a name="release-1-37-7-fixed"></a>
+
+### Fixed
+
+- With `uv_resolution` and `dependency_groups` both set, `deps` lines are now kept as written when combined with the
+  groups, so a `-r`/`-c` file, an option or a comment no longer crashes tox with an invalid requirement error.
+
+  Environments with an older dependency cache are recreated once on upgrade
+  ([#424](https://github.com/tox-dev/tox-uv/pull/424)) by [@qodelicious](https://github.com/qodelicious) and
+  [@gaborbernat](https://github.com/gaborbernat).
+
+- `package = uv` and `package = uv-editable` now install the project from `package_root` (`setupdir`) instead of the tox
+  root ([#425](https://github.com/tox-dev/tox-uv/pull/425)) by [@qodelicious](https://github.com/qodelicious) and
+  [@gaborbernat](https://github.com/gaborbernat).
+
 <a name="release-1-37-6"></a>
 
 ## 1.37.6 (2026-11-06)
