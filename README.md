@@ -226,6 +226,9 @@ How to install the source tree package, must be one of:
 With `uv-venv-runner`, prefer `uv`/`uv-editable` when you need non-standard features of `uv`, such as `tool.uv.sources`.
 With `uv-venv-lock-runner`, `uv sync` already handles installation natively so all modes work through it.
 
+With `uv-venv-runner`, `uv` and `uv-editable` install from `package_root` (also named `setupdir`). Set
+`package_root = sub` in `[tox]` when the project's build configuration is in a `sub` directory beside `tox.ini`.
+
 ### `extras`
 
 A list of string that selects, which extra groups you want to install with `uv sync`. By default, it is empty.
