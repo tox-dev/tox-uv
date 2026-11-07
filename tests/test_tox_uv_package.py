@@ -18,7 +18,13 @@ def test_uv_package_use_default_from_file(tox_project: ToxProjectCreator) -> Non
     tox_project({"tox.ini": "[testenv]\npackage=skip", "pyproject.toml": ""}).run("-vv").assert_success()
 
 
-@pytest.mark.parametrize("with_dash", [True, False], ids=["name_dash", "name_underscore"])
+@pytest.mark.parametrize(
+    "extra_ini",
+    [
+        pytest.param("\n[testenv:.pkg]\nset_env = WITH_DASH = 1", id="name_dash"),
+        pytest.param("", id="name_underscore"),
+    ],
+)
 @pytest.mark.parametrize(
     "package",
     [
@@ -30,12 +36,9 @@ def test_uv_package_use_default_from_file(tox_project: ToxProjectCreator) -> Non
     ],
 )
 def test_uv_package_artifact(
-    tox_project: ToxProjectCreator, package: str, demo_pkg_inline: Path, with_dash: bool
+    tox_project: ToxProjectCreator, package: str, demo_pkg_inline: Path, extra_ini: str
 ) -> None:
-    ini = f"[testenv]\npackage={package}"
-    if with_dash:
-        ini += "\n[testenv:.pkg]\nset_env = WITH_DASH = 1"
-    tox_project({"tox.ini": ini}, base=demo_pkg_inline).run().assert_success()
+    tox_project({"tox.ini": f"[testenv]\npackage={package}{extra_ini}"}, base=demo_pkg_inline).run().assert_success()
 
 
 def test_uv_package_editable_legacy(tox_project: ToxProjectCreator, demo_pkg_setuptools: Path) -> None:

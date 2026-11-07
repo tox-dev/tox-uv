@@ -176,21 +176,19 @@ def test_uses_uv_venv(tox_project: ToxProjectCreator, runner: str) -> None:
 
 
 @pytest.mark.parametrize(
-    ("env_val", "promoted"),
+    ("env", "promoted_runner"),
     [
-        pytest.param(None, True, id="default"),
-        pytest.param("1", False, id="disabled"),
+        pytest.param({}, UvVenvPep723Runner, id="default"),
+        pytest.param({"TOX_UV_NO_PEP723": "1"}, None, id="disabled"),
     ],
 )
-def test_pep723_promotion_env_var(monkeypatch: pytest.MonkeyPatch, env_val: str | None, promoted: bool) -> None:
-    if env_val is None:
-        monkeypatch.delenv("TOX_UV_NO_PEP723", raising=False)
-    else:
-        monkeypatch.setenv("TOX_UV_NO_PEP723", env_val)
+def test_pep723_promotion_env_var(
+    monkeypatch: pytest.MonkeyPatch, env: dict[str, str], promoted_runner: type[UvVenvPep723Runner] | None
+) -> None:
+    monkeypatch.delenv("TOX_UV_NO_PEP723", raising=False)
+    for name, value in env.items():
+        monkeypatch.setenv(name, value)
     register = ToxEnvRegister()
     tox_register_tox_env(register)
     assert register._run_envs["uv-venv-pep-723"] is UvVenvPep723Runner  # ruff:ignore[private-member-access] the test checks the internal run env registry
-    if promoted:
-        assert register._run_envs["virtualenv-pep-723"] is UvVenvPep723Runner  # ruff:ignore[private-member-access] the test checks the internal run env registry
-    else:
-        assert register._run_envs.get("virtualenv-pep-723") is None  # ruff:ignore[private-member-access] the test checks the internal run env registry
+    assert register._run_envs.get("virtualenv-pep-723") is promoted_runner  # ruff:ignore[private-member-access] the test checks the internal run env registry

@@ -12,7 +12,7 @@ import subprocess
 import sys
 import sysconfig
 from configparser import ConfigParser
-from typing import TYPE_CHECKING, Any, get_args
+from typing import TYPE_CHECKING, Any, Final, get_args
 
 import pytest
 import tox.tox_env.errors
@@ -25,6 +25,13 @@ from tox_uv._venv import PythonPreference, UvVenv
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
     from tox.pytest import ToxProjectCreator
+
+_THREADED: Final[str] = "t" if sysconfig.get_config_var("Py_GIL_DISABLED") else ""
+_DEBUG: Final[str] = "d" if sysconfig.get_config_var("Py_DEBUG") else ""
+_CONFLICTING_IMPLEMENTATION: Final[str] = "pypy" if platform.python_implementation() == "CPython" else "cpython"
+_BIN_DIR: Final[str] = "Scripts" if sys.platform == "win32" else "bin"
+_PYTHON_EXE: Final[str] = "python.exe" if sys.platform == "win32" else "python"
+_EXE_SUFFIX: Final[str] = ".exe" if sys.platform == "win32" else ""
 
 
 def test_uv_venv_self(tox_project: ToxProjectCreator) -> None:
@@ -52,10 +59,20 @@ def test_uv_venv_pass_env(tox_project: ToxProjectCreator) -> None:
     parser.read_string(result.out)
     pass_through = set(parser["testenv:py"]["pass_env"].splitlines())
 
-    if sys.platform == "darwin":  # pragma: darwin cover
-        assert "MACOSX_DEPLOYMENT_TARGET" in pass_through
     assert "UV_*" in pass_through
     assert "PKG_CONFIG_PATH" in pass_through
+
+
+@pytest.mark.skipif(sys.platform != "darwin", reason="macOS adds its deployment target to pass_env")
+def test_uv_venv_pass_env_macos(tox_project: ToxProjectCreator) -> None:  # pragma: darwin cover
+    result = tox_project({"tox.ini": "[testenv]\npackage=skip"}).run("c", "-k", "pass_env")
+    result.assert_success()
+
+    parser = ConfigParser()
+    parser.read_string(result.out)
+    pass_through = set(parser["testenv:py"]["pass_env"].splitlines())
+
+    assert "MACOSX_DEPLOYMENT_TARGET" in pass_through
 
 
 @pytest.mark.usefixtures("clear_python_preference_env_var")
@@ -354,10 +371,8 @@ def test_uv_venv_explicit_path_in_python_env(
     executable = pathlib.Path(sys.executable)
     # Tox special-cases the exact sys.executable string.
     base_python = executable.parent / ".." / executable.parent.name / executable.name
-    threaded = "t" if sysconfig.get_config_var("Py_GIL_DISABLED") else ""
-    debug = "d" if sysconfig.get_config_var("Py_DEBUG") else ""
     env_name = env_template.format(
-        major=sys.version_info.major, minor=sys.version_info.minor, variant=f"{threaded}{debug}"
+        major=sys.version_info.major, minor=sys.version_info.minor, variant=f"{_THREADED}{_DEBUG}"
     )
     config_values = {
         "runner": runner,
@@ -396,7 +411,7 @@ def test_uv_venv_spec_abs_path_conflict_ver(
 def test_uv_venv_spec_abs_path_conflict_impl(
     tox_project: ToxProjectCreator, other_interpreter_exe: pathlib.Path
 ) -> None:  # pragma: win32 no cover
-    env = "pypy" if platform.python_implementation() == "CPython" else "cpython"
+    env = _CONFLICTING_IMPLEMENTATION
     project = tox_project({"tox.ini": f"[testenv:{env}]\npackage=skip\nbase_python={other_interpreter_exe}"})
     result = project.run("-vv", "-e", env)
     result.assert_failed()
@@ -460,7 +475,7 @@ def test_uv_env_bin_dir(tox_project: ToxProjectCreator) -> None:
     result = project.run("-vv")
     result.assert_success()
 
-    env_bin_dir = str(project.path / ".tox" / "py" / ("Scripts" if sys.platform == "win32" else "bin"))
+    env_bin_dir = str(project.path / ".tox" / "py" / _BIN_DIR)
     assert env_bin_dir in result.out
 
 
@@ -481,8 +496,7 @@ def test_uv_env_python(tox_project: ToxProjectCreator) -> None:
     result = project.run("-vv")
     result.assert_success()
 
-    exe = "python.exe" if sys.platform == "win32" else "python"
-    env_bin_dir = str(project.path / ".tox" / "py" / ("Scripts" if sys.platform == "win32" else "bin") / exe)
+    env_bin_dir = str(project.path / ".tox" / "py" / _BIN_DIR / _PYTHON_EXE)
     assert env_bin_dir in result.out
 
 
@@ -506,8 +520,7 @@ def test_uv_env_python_preference(
     result = project.run("-vv")
     result.assert_success()
 
-    exe = "python.exe" if sys.platform == "win32" else "python"
-    env_bin_dir = str(project.path / ".tox" / "py" / ("Scripts" if sys.platform == "win32" else "bin") / exe)
+    env_bin_dir = str(project.path / ".tox" / "py" / _BIN_DIR / _PYTHON_EXE)
     assert env_bin_dir in result.out
 
 
@@ -535,8 +548,7 @@ def test_uv_env_python_preference_complex(
     result = project.run("-vv", "-e", env)
     result.assert_success()
 
-    exe = "python.exe" if sys.platform == "win32" else "python"
-    env_bin_dir = str(project.path / ".tox" / env / ("Scripts" if sys.platform == "win32" else "bin") / exe)
+    env_bin_dir = str(project.path / ".tox" / env / _BIN_DIR / _PYTHON_EXE)
     assert env_bin_dir in result.out
 
 
@@ -574,9 +586,10 @@ def test_uv_env_site_package_dir_conf(tox_project: ToxProjectCreator) -> None:
 def test_uv_env_python_not_in_path(tox_project: ToxProjectCreator) -> None:
     # Make sure there is no pythonX.Y in the search path
     ver = sys.version_info
-    python_exe = f"python{ver.major}.{ver.minor}{('.exe' if sys.platform == 'win32' else '')}"
+    python_exe = f"python{ver.major}.{ver.minor}{_EXE_SUFFIX}"
     uv_path = shutil.which("uv")
-    uv_dir = str(pathlib.Path(uv_path).parent) if uv_path else None
+    assert uv_path is not None
+    uv_dir = str(pathlib.Path(uv_path).parent)
     env = dict(os.environ)
     env["PATH"] = os.path.pathsep.join(
         path
@@ -769,13 +782,18 @@ def test_uv_venv_variant_cache(tox_project: ToxProjectCreator, env_name: str, ex
     assert (cache["free_threaded"], cache["debug"], environment.py_debug()) == (*expected, expected[1])
 
 
-@pytest.mark.parametrize("env_name", [pytest.param("pypy", id="pypy"), pytest.param("cpython", id="cpython")])
-def test_get_python_abs_path_with_impl(env_name: str, mocker: MockerFixture) -> None:
+@pytest.mark.parametrize(
+    ("env_name", "expected_impl"),
+    [
+        pytest.param("pypy", "pypy", id="pypy"),
+        pytest.param("cpython", "CPython", id="cpython"),
+    ],
+)
+def test_get_python_abs_path_with_impl(env_name: str, expected_impl: str, mocker: MockerFixture) -> None:
     uv_venv = _TestUvVenv(create_args=mocker.create_autospec(ToxEnvCreateArgs, instance=True))
     mocker.patch.object(type(uv_venv), "name", new_callable=mocker.PropertyMock, return_value=env_name)
     python_info = uv_venv.get_python_info(sys.executable)
     assert python_info is not None
-    expected_impl = "CPython" if env_name == "cpython" else env_name
     assert python_info.implementation.lower() == expected_impl.lower()
 
 

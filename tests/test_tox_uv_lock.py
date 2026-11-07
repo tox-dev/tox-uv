@@ -124,15 +124,15 @@ def test_uv_lock_list_dependencies_command(tox_project: ToxProjectCreator) -> No
 
 @pytest.mark.usefixtures("clear_python_preference_env_var")
 @pytest.mark.parametrize(
-    "verbose",
+    ("cli_args", "v_args"),
     [
-        pytest.param("", id="empty"),
-        pytest.param("-v", id="-v"),
-        pytest.param("-vv", id="-vv"),
-        pytest.param("-vvv", id="-vvv"),
+        pytest.param([], [], id="default"),
+        pytest.param(["-v"], [], id="v"),
+        pytest.param(["-vv"], ["-v"], id="vv"),
+        pytest.param(["-vvv"], ["-v"], id="vvv"),
     ],
 )
-def test_uv_lock_command(tox_project: ToxProjectCreator, verbose: str) -> None:
+def test_uv_lock_command(tox_project: ToxProjectCreator, cli_args: list[str], v_args: list[str]) -> None:
     project = tox_project({
         "tox.ini": """
     [testenv]
@@ -144,11 +144,10 @@ def test_uv_lock_command(tox_project: ToxProjectCreator, verbose: str) -> None:
     """
     })
     execute_calls = project.patch_execute(lambda request: 0 if request.run_id != "venv" else None)
-    project.run(*[verbose] if verbose else []).assert_success()
+    project.run(*cli_args).assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
     uv = shutil.which("uv")
-    v_args = ["-v"] if verbose not in {"", "-v"} else []
     prompt = f"{project.path.name}[py]"
     expected = [
         (
@@ -189,7 +188,7 @@ def test_uv_lock_command(tox_project: ToxProjectCreator, verbose: str) -> None:
     ]
     assert calls == expected
     show_uv_output = execute_calls.call_args_list[1].args[4]
-    assert show_uv_output is (bool(verbose))
+    assert show_uv_output is bool(cli_args)
 
 
 @pytest.mark.usefixtures("clear_python_preference_env_var")
@@ -294,8 +293,14 @@ def test_uv_lock_with_install_pkg(tox_project: ToxProjectCreator, name: str) -> 
 
 
 @pytest.mark.usefixtures("clear_python_preference_env_var")
-@pytest.mark.parametrize("uv_sync_locked", [pytest.param(True, id="True"), pytest.param(False, id="False")])
-def test_uv_sync_extra_flags(tox_project: ToxProjectCreator, uv_sync_locked: bool) -> None:
+@pytest.mark.parametrize(
+    ("uv_sync_locked", "locked_flags"),
+    [
+        pytest.param(True, ["--locked"], id="locked"),
+        pytest.param(False, [], id="unlocked"),
+    ],
+)
+def test_uv_sync_extra_flags(tox_project: ToxProjectCreator, uv_sync_locked: bool, locked_flags: list[str]) -> None:
     uv_sync_locked_str = str(uv_sync_locked).lower()
     project = tox_project({
         "tox.ini": f"""
@@ -336,7 +341,7 @@ def test_uv_sync_extra_flags(tox_project: ToxProjectCreator, uv_sync_locked: boo
             [
                 uv,
                 "sync",
-                *(["--locked"] if uv_sync_locked else []),
+                *locked_flags,
                 "--python-preference",
                 "system",
                 "--no-editable",
@@ -406,26 +411,27 @@ def test_uv_sync_extra_flags_toml(tox_project: ToxProjectCreator) -> None:
 
 @pytest.mark.usefixtures("clear_python_preference_env_var")
 @pytest.mark.parametrize(
-    ("uv_frozen_env", "tox_ini_extra"),
+    ("env", "tox_ini_extra"),
     [
-        pytest.param("1", "", id="uv_frozen_env"),
-        pytest.param("1", "uv_sync_locked = false", id="frozen_env_with_locked_disabled"),
-        pytest.param(None, "uv_sync_flags = --frozen", id="frozen_flag"),
+        pytest.param({"UV_FROZEN": "1"}, "", id="uv_frozen_env"),
+        pytest.param({"UV_FROZEN": "1"}, "uv_sync_locked = false", id="frozen_env_with_locked_disabled"),
+        pytest.param({}, "uv_sync_flags = --frozen", id="frozen_flag"),
     ],
 )
 def test_uv_sync_frozen_suppresses_locked(
     tox_project: ToxProjectCreator,
     monkeypatch: pytest.MonkeyPatch,
-    uv_frozen_env: str | None,
+    env: dict[str, str],
     tox_ini_extra: str,
 ) -> None:
-    if uv_frozen_env is not None:
-        monkeypatch.setenv("UV_FROZEN", uv_frozen_env)
+    for name, value in env.items():
+        monkeypatch.setenv(name, value)
     project = tox_project({
         "tox.ini": f"""
     [testenv]
     runner = uv-venv-lock-runner
-    no_default_groups = false{f"{chr(10)}    {tox_ini_extra}" if tox_ini_extra else ""}
+    no_default_groups = false
+    {tox_ini_extra}
     commands = python hello
     """
     })
