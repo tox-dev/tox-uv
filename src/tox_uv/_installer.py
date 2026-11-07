@@ -29,36 +29,13 @@ if TYPE_CHECKING:
 
 _LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
 
-_UV_RESOLUTION_ENV_VARS: frozenset[str] = frozenset({
-    "UV_CONSTRAINT",
-    "UV_DEFAULT_INDEX",
-    "UV_EXCLUDE",
-    "UV_EXCLUDE_NEWER",
-    "UV_EXTRA_INDEX_URL",
-    "UV_FIND_LINKS",
-    "UV_FORK_STRATEGY",
-    "UV_INDEX",
-    "UV_INDEX_STRATEGY",
-    "UV_INDEX_URL",
-    "UV_KEYRING_PROVIDER",
-    "UV_NO_INDEX",
-    "UV_NO_SOURCES",
-    "UV_OFFLINE",
-    "UV_OVERRIDE",
-    "UV_PRERELEASE",
-    "UV_REQUIRE_HASHES",
-    "UV_RESOLUTION",
-    "UV_TORCH_BACKEND",
-})
-
 
 class UvInstaller(Pip):
-    """Pip is a python installer that can install packages as defined by PEP-508 and PEP-517."""
-
+    # Pip is a python installer that can install packages as defined by PEP-508 and PEP-517.
     if TYPE_CHECKING:
         _env: UvVenv
 
-    def __init__(self, tox_env: UvVenv, with_list_deps: bool = True) -> None:  # ruff:ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument]
+    def __init__(self, tox_env: UvVenv, with_list_deps: bool = True) -> None:  # ruff:ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument] a flag callers can set; this class does not read it yet
         self._with_list_deps = with_list_deps
         super().__init__(tox_env)
 
@@ -87,9 +64,9 @@ class UvInstaller(Pip):
             post_process=uv_resolution_post_process,
         )
 
-    def default_install_command(self, conf: Config, env_name: str | None) -> Command:  # ruff:ignore[unused-method-argument]
+    def default_install_command(self, conf: Config, env_name: str | None) -> Command:  # ruff:ignore[unused-method-argument] tox passes both to the hook; the uv command needs neither
         cmd = [self.uv, "pip", "install", "{opts}", "{packages}"]
-        if self._env.options.verbosity > 3:  # ruff:ignore[magic-value-comparison]
+        if self._env.options.verbosity > 3:  # ruff:ignore[magic-value-comparison] uv -v is passed at tox -vv only
             cmd.append("-v")
         return Command(cmd)
 
@@ -113,7 +90,7 @@ class UvInstaller(Pip):
             install_command[opts_at : opts_at + 1] = opts
         return cmd
 
-    def install(self, arguments: Any, section: str, of_type: str) -> None:  # ruff:ignore[any-type]
+    def install(self, arguments: Any, section: str, of_type: str) -> None:  # ruff:ignore[any-type] tox passes requirement lists, requirement files and package lists here
         # can happen if the original python was upgraded to a newer version and
         # the symlinks become orphan.
         if not self._env.env_python().resolve().is_file():
@@ -122,76 +99,35 @@ class UvInstaller(Pip):
 
         if isinstance(arguments, PythonDeps):
             self._install_requirement_file(arguments, section, of_type)
-        elif isinstance(arguments, Sequence):  # pragma: no branch
+        elif isinstance(arguments, Sequence):  # pragma: no branch tox passes a list or PythonDeps; the else is a guard
             self._install_list_of_deps(arguments, section, of_type)
-        else:  # pragma: no cover
-            _LOGGER.warning("uv cannot install %r", arguments)  # pragma: no cover
-            raise SystemExit(1)  # pragma: no cover
+        else:  # pragma: no cover tox does not send any other argument kind
+            _LOGGER.warning("uv cannot install %r", arguments)  # pragma: no cover unreachable, see the else above
+            raise SystemExit(1)  # pragma: no cover unreachable, see the else above
 
-    @cached_property
-    def _sourced_pkg_names(self) -> set[str]:
-        pyproject_file = self._env.conf._conf.src_path.parent / "pyproject.toml"  # ruff:ignore[private-member-access]
-        if not pyproject_file.exists():  # pragma: no cover
-            return set()
-        with pyproject_file.open("rb") as file_handler:
-            pyproject = tomllib.load(file_handler)
-
-        sources = pyproject.get("tool", {}).get("uv", {}).get("sources", {})
-        return {
-            canonicalize_name(name)
-            for name, source in sources.items()
-            if isinstance(source, dict) and source.get("workspace", False)
-        }
-
-    def _install_list_of_deps(  # ruff:ignore[complex-structure, too-many-branches]
+    def _install_list_of_deps(
         self,
         arguments: Sequence[Requirement | Package],
         section: str,
         of_type: str,
     ) -> None:
-        groups: dict[str, list[str]] = defaultdict(list)
-        for arg in arguments:
-            if isinstance(arg, Requirement):  # pragma: no branch
-                groups["req"].append(str(arg))  # pragma: no cover
-            elif isinstance(arg, (WheelPackage, SdistPackage, EditablePackage)):
-                for pkg in arg.deps:
-                    if (
-                        isinstance(pkg, Requirement)
-                        and canonicalize_name(pkg.name) in self._sourced_pkg_names
-                        and "." not in groups["uv_editable"]
-                    ):
-                        groups["uv_editable"].append(".")
-                        continue
-                    groups["req"].append(str(pkg))
-                parser = parse_sdist_filename if isinstance(arg, SdistPackage) else parse_wheel_filename
-                name, *_ = parser(arg.path.name)
-                groups["pkg"].append(f"{name}@{arg.path}")
-            elif isinstance(arg, EditableLegacyPackage):
-                groups["req"].extend(str(pkg) for pkg in arg.deps)
-                groups["dev_pkg"].append(str(arg.path))
-            elif isinstance(arg, UvPackage):
-                extras_suffix = f"[{','.join(arg.extras)}]" if arg.extras else ""
-                groups["uv"].append(f"{arg.path}{extras_suffix}")
-            elif isinstance(arg, UvEditablePackage):
-                extras_suffix = f"[{','.join(arg.extras)}]" if arg.extras else ""
-                groups["uv_editable"].append(f"{arg.path}{extras_suffix}")
-            else:  # pragma: no branch
-                _LOGGER.warning("uv install %r", arg)  # pragma: no cover
-                raise SystemExit(1)  # pragma: no cover
+        groups = self._group_arguments(arguments)
         req_of_type = f"{of_type}_deps" if groups["pkg"] or groups["dev_pkg"] else of_type
         for value in groups.values():
             value.sort()
         constraint_args = self.constraints.as_root_args
         cache_value = {"req": groups["req"], "env": self._install_env_vars(), "constraints": constraint_args}
         with self._env.cache.compare(cache_value, section, req_of_type) as (eq, old):
-            if not eq:  # pragma: no branch
+            if not eq:  # pragma: no branch an equal cache skips the install, so the miss is the path that matters
                 old_req: list[str] = old["req"] if isinstance(old, dict) else (old or [])
-                miss = sorted(set(old_req) - set(groups["req"]))
-                if miss:  # no way yet to know what to uninstall here (transitive dependencies?)  # pragma: no branch
-                    msg = f"dependencies removed: {', '.join(str(i) for i in miss)}"  # pragma: no cover
-                    raise Recreate(msg)  # pragma: no cover
-                new_deps = sorted(set(groups["req"]) - set(old_req)) or list(groups["req"])
-                if new_deps:  # pragma: no branch
+                if miss := sorted(
+                    set(old_req) - set(groups["req"])
+                ):  # no way yet to know what to uninstall here (transitive dependencies?)  # pragma: no branch
+                    msg = f"dependencies removed: {', '.join(str(i) for i in miss)}"  # pragma: no cover needs a rerun
+                    raise Recreate(msg)  # pragma: no cover raised with the removal message above
+                if new_deps := sorted(set(groups["req"]) - set(old_req)) or list(
+                    groups["req"]
+                ):  # pragma: no branch an empty diff reinstalls the whole list
                     new_deps.extend(constraint_args)
                     self._execute_installer(new_deps, req_of_type)
         install_args = ["--reinstall"]
@@ -208,8 +144,84 @@ class UvInstaller(Pip):
                 install_args.extend(("-e", str(entry)))
             self._execute_installer(install_args, of_type)
 
+    def _group_arguments(self, arguments: Sequence[Requirement | Package]) -> dict[str, list[str]]:
+        groups: dict[str, list[str]] = defaultdict(list)
+        for arg in arguments:
+            if isinstance(
+                arg, Requirement
+            ):  # pragma: no branch tox sends requirements inside packages, not on their own
+                groups["req"].append(
+                    str(arg)
+                )  # pragma: no cover tox sends requirements inside packages, not on their own
+            elif isinstance(arg, (WheelPackage, SdistPackage, EditablePackage)):
+                self._add_built_package(arg, groups)
+            elif isinstance(arg, EditableLegacyPackage):
+                groups["req"].extend(str(pkg) for pkg in arg.deps)
+                groups["dev_pkg"].append(str(arg.path))
+            elif isinstance(arg, UvPackage):
+                extras_suffix = f"[{','.join(arg.extras)}]" if arg.extras else ""
+                groups["uv"].append(f"{arg.path}{extras_suffix}")
+            elif isinstance(arg, UvEditablePackage):
+                extras_suffix = f"[{','.join(arg.extras)}]" if arg.extras else ""
+                groups["uv_editable"].append(f"{arg.path}{extras_suffix}")
+            else:  # pragma: no branch unreachable: every argument kind is handled above
+                _LOGGER.warning("uv install %r", arg)  # pragma: no cover unreachable, see the else above
+                raise SystemExit(1)  # pragma: no cover unreachable, see the else above
+        return groups
+
+    def _add_built_package(
+        self, arg: WheelPackage | SdistPackage | EditablePackage, groups: dict[str, list[str]]
+    ) -> None:
+        for pkg in arg.deps:
+            if (
+                isinstance(pkg, Requirement)
+                and canonicalize_name(pkg.name) in self._sourced_pkg_names
+                and "." not in groups["uv_editable"]
+            ):
+                groups["uv_editable"].append(".")
+                continue
+            groups["req"].append(str(pkg))
+        name, *_ = (parse_sdist_filename if isinstance(arg, SdistPackage) else parse_wheel_filename)(arg.path.name)
+        groups["pkg"].append(f"{name}@{arg.path}")
+
+    @cached_property
+    def _sourced_pkg_names(self) -> set[str]:
+        pyproject_file = self._env.conf._conf.src_path.parent / "pyproject.toml"  # ruff:ignore[private-member-access] tox does not expose the config path; the project file sits next to it
+        if not pyproject_file.exists():  # pragma: no cover a uv project always has its pyproject next to the tox config
+            return set()
+        with pyproject_file.open("rb") as file_handler:
+            pyproject = tomllib.load(file_handler)
+
+        sources = pyproject.get("tool", {}).get("uv", {}).get("sources", {})
+        return {
+            canonicalize_name(name)
+            for name, source in sources.items()
+            if isinstance(source, dict) and source.get("workspace", False)
+        }
+
     def _install_env_vars(self) -> dict[str, str]:
-        return {k: v for k, v in self._env.environment_variables.items() if k in _UV_RESOLUTION_ENV_VARS}
+        uv_resolution_env_vars: frozenset[str] = frozenset({
+            "UV_CONSTRAINT",
+            "UV_DEFAULT_INDEX",
+            "UV_EXCLUDE",
+            "UV_EXCLUDE_NEWER",
+            "UV_EXTRA_INDEX_URL",
+            "UV_FIND_LINKS",
+            "UV_FORK_STRATEGY",
+            "UV_INDEX",
+            "UV_INDEX_STRATEGY",
+            "UV_INDEX_URL",
+            "UV_KEYRING_PROVIDER",
+            "UV_NO_INDEX",
+            "UV_NO_SOURCES",
+            "UV_OFFLINE",
+            "UV_OVERRIDE",
+            "UV_PRERELEASE",
+            "UV_REQUIRE_HASHES",
+            "UV_RESOLUTION",
+            "UV_TORCH_BACKEND",
+        })
+        return {k: v for k, v in self._env.environment_variables.items() if k in uv_resolution_env_vars}
 
 
 __all__ = [

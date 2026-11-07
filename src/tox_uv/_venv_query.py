@@ -6,7 +6,7 @@ import sys
 import sysconfig
 from platform import python_implementation
 
-print(  # ruff:ignore[print]
+print(  # ruff:ignore[print] the query script reports its result on stdout for the parent process
     json.dumps({
         "implementation": python_implementation().lower(),
         "version_info": sys.version_info,

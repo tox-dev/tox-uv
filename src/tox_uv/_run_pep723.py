@@ -14,13 +14,6 @@ if TYPE_CHECKING:
 
 
 class UvVenvPep723Runner(Pep723Mixin, UvVenv, RunToxEnv):
-    @staticmethod
-    def id() -> str:
-        return "uv-venv-pep-723"
-
-    def _register_package_conf(self) -> bool:  # ruff:ignore[no-self-use]
-        return False
-
     @property
     def _package_tox_env_type(self) -> str:
         raise NotImplementedError
@@ -28,6 +21,13 @@ class UvVenvPep723Runner(Pep723Mixin, UvVenv, RunToxEnv):
     @property
     def _external_pkg_tox_env_type(self) -> str:
         raise NotImplementedError
+
+    @staticmethod
+    def id() -> str:
+        return "uv-venv-pep-723"
+
+    def _register_package_conf(self) -> bool:  # ruff:ignore[no-self-use] tox calls this hook on the instance
+        return False
 
     def _build_packages(self) -> list[Package]:
         raise NotImplementedError
