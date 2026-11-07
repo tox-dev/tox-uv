@@ -63,7 +63,7 @@ def test_build_hook_updates_metadata() -> None:
     from meta.hatch_build import CustomMetadataHook  # ruff:ignore[import-outside-top-level]
 
     hook = CustomMetadataHook("test", {})
-    metadata: dict[str, object] = {
+    metadata: dict[str, str | list[str]] = {
         "version": "1.2.3",
         "dependencies": ["tox-uv-bare", "uv<1,>=0.9.27"],
     }
@@ -76,7 +76,7 @@ def test_build_hook_preserves_other_dependencies() -> None:
     from meta.hatch_build import CustomMetadataHook  # ruff:ignore[import-outside-top-level]
 
     hook = CustomMetadataHook("test", {})
-    metadata: dict[str, object] = {
+    metadata: dict[str, str | list[str]] = {
         "version": "2.0.0",
         "dependencies": ["other-package>=1.0", "tox-uv-bare", "another-dep"],
     }

@@ -14,7 +14,7 @@ from abc import ABC
 from functools import cached_property
 from importlib.resources import as_file, files
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Final, Literal, TypeAlias, cast
+from typing import TYPE_CHECKING, Final, Literal, TypeAlias, cast
 
 from tox.config.loader.str_convert import StrConvert
 from tox.execute.local_sub_process import LocalSubProcessExecutor
@@ -29,9 +29,10 @@ from virtualenv.discovery.py_spec import PythonSpec
 from ._installer import UvInstaller
 
 if TYPE_CHECKING:
+    from tox.config.main import Config
     from tox.execute.api import Execute
     from tox.tox_env.api import ToxEnvCreateArgs
-    from tox.tox_env.installer import Installer
+    from tox.util.json_types import JsonValue
 
 
 PythonPreference: TypeAlias = Literal[
@@ -72,7 +73,7 @@ class UvVenv(Python, ABC):
         return self._executor
 
     @property
-    def installer(self) -> Installer[Any]:
+    def installer(self) -> UvInstaller:
         if self._installer is None:
             self._installer = UvInstaller(self)
         return self._installer
@@ -151,7 +152,7 @@ class UvVenv(Python, ABC):
             desc="create virtual environments that also have access to globally installed packages.",
         )
 
-        def uv_python_preference_default(conf: object, name: object) -> str:  # ruff:ignore[unused-function-argument]
+        def uv_python_preference_default(conf: Config, name: str | None) -> str:  # ruff:ignore[unused-function-argument]
             return (
                 "none"
                 if {"UV_NO_MANAGED_PYTHON", "UV_MANAGED_PYTHON"} & set(os.environ)
@@ -201,7 +202,7 @@ class UvVenv(Python, ABC):
     def venv_dir(self) -> Path:
         return cast("Path", self.core["tox_root"]) / cast("Path", self.conf["env_dir"])
 
-    def python_cache(self) -> dict[str, Any]:
+    def python_cache(self) -> dict[str, JsonValue]:
         result = super().python_cache()
         result["seed"] = self.conf["uv_seed"]
         result["debug"] = self.base_python.debug
