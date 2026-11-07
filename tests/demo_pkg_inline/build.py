@@ -9,20 +9,20 @@ from textwrap import dedent
 from typing import Final
 from zipfile import ZipFile
 
-name = "demo-pkg-inline" if os.environ.get("WITH_DASH") else "demo_pkg_inline"
-_NAME_IN_ARTIFACT = re.sub(r"[^\w\d.]+", "_", name, flags=re.UNICODE)  # per PEP-427
-version: Final[str] = "1.0.0"
-_DIST_INFO: Final[str] = f"{_NAME_IN_ARTIFACT}-{version}.dist-info"
-_MODULE = _NAME_IN_ARTIFACT
+_NAME: Final[str] = "demo-pkg-inline" if os.environ.get("WITH_DASH") else "demo_pkg_inline"
+_NAME_IN_ARTIFACT: Final[str] = re.sub(r"[^\w\d.]+", "_", _NAME, flags=re.UNICODE)  # per PEP-427
+_VERSION: Final[str] = "1.0.0"
+_DIST_INFO: Final[str] = f"{_NAME_IN_ARTIFACT}-{_VERSION}.dist-info"
+_MODULE: Final[str] = _NAME_IN_ARTIFACT
 _LOGIC: Final[str] = f"{_MODULE}/__init__.py"
-plugin: Final[str] = f"{_MODULE}/example_plugin.py"
-entry_points: Final[str] = f"{_DIST_INFO}/entry_points.txt"
-metadata: Final[str] = f"{_DIST_INFO}/METADATA"
-wheel: Final[str] = f"{_DIST_INFO}/WHEEL"
-RECORD: Final[str] = f"{_DIST_INFO}/RECORD"
-_CONTENT = {
-    _LOGIC: f"def do():\n    print('greetings from {name}')",
-    plugin: """
+_PLUGIN: Final[str] = f"{_MODULE}/example_plugin.py"
+_ENTRY_POINTS: Final[str] = f"{_DIST_INFO}/entry_points.txt"
+_METADATA: Final[str] = f"{_DIST_INFO}/METADATA"
+_WHEEL: Final[str] = f"{_DIST_INFO}/WHEEL"
+_RECORD: Final[str] = f"{_DIST_INFO}/RECORD"
+_CONTENT: Final[dict[str, str]] = {
+    _LOGIC: f"def do():\n    print('greetings from {_NAME}')",
+    _PLUGIN: """
         try:
             from tox.plugin import impl
             from tox.tox_env.python.virtual_env.runner import VirtualEnvRunner
@@ -40,14 +40,14 @@ _CONTENT = {
         """,
 }
 
-_METADATA_FILES = {
-    entry_points: f"""
+_METADATA_FILES: Final[dict[str, str]] = {
+    _ENTRY_POINTS: f"""
         [tox]
         example = {_MODULE}.example_plugin""",
-    metadata: f"""
+    _METADATA: f"""
         Metadata-Version: 2.1
-        Name: {name}
-        Version: {version}
+        Name: {_NAME}
+        Version: {_VERSION}
         Summary: UNKNOWN
         Home-page: UNKNOWN
         Author: UNKNOWN
@@ -57,14 +57,14 @@ _METADATA_FILES = {
 
         UNKNOWN
        """,
-    wheel: f"""
+    _WHEEL: f"""
         Wheel-Version: 1.0
-        Generator: {name}-{version}
+        Generator: {_NAME}-{_VERSION}
         Root-Is-Purelib: true
         Tag: py{sys.version_info[0]}-none-any
        """,
     f"{_DIST_INFO}/top_level.txt": _MODULE,
-    RECORD: f"""
+    _RECORD: f"""
         {_MODULE}/__init__.py,,
         {_DIST_INFO}/METADATA,,
         {_DIST_INFO}/WHEEL,,
@@ -91,7 +91,7 @@ def build_wheel(
     config_settings: dict[str, str] | None,  # ruff:ignore[unused-function-argument]
     metadata_directory: str | None,
 ) -> str:
-    base_name = f"{_NAME_IN_ARTIFACT}-{version}-py{sys.version_info[0]}-none-any.whl"
+    base_name = f"{_NAME_IN_ARTIFACT}-{_VERSION}-py{sys.version_info[0]}-none-any.whl"
     path = Path(wheel_directory) / base_name
     with ZipFile(str(path), "w") as zip_file_handler:
         for arc_name, data in _CONTENT.items():  # pragma: no branch
@@ -109,7 +109,7 @@ def build_wheel(
 
 
 def build_sdist(sdist_directory: str, config_settings: dict[str, str] | None = None) -> str:  # ruff:ignore[unused-function-argument]
-    result = f"{_NAME_IN_ARTIFACT}-{version}.tar.gz"  # pragma: win32 cover
+    result = f"{_NAME_IN_ARTIFACT}-{_VERSION}.tar.gz"  # pragma: win32 cover
     with tarfile.open(str(Path(sdist_directory) / result), "w:gz") as tar:  # pragma: win32 cover
         root = Path(__file__).parent  # pragma: win32 cover
         tar.add(str(root / "build.py"), "build.py")  # pragma: win32 cover
