@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING
-from unittest import mock
+from typing import TYPE_CHECKING, Final
 
 import pytest
 
@@ -12,9 +11,9 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture(autouse=True)
-def mock_settings_env_vars() -> Generator[None, None, None]:
-    """Isolated testing from user's environment."""
-    with mock.patch.dict(os.environ, {"TOX_USER_CONFIG_FILE": os.devnull}):
+def mock_settings_env_vars(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
+    with monkeypatch.context() as patch:
+        patch.setenv("TOX_USER_CONFIG_FILE", os.devnull)
         yield
 
 
@@ -48,6 +47,6 @@ def clear_python_preference_env_var(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("UV_PYTHON_PREFERENCE", raising=False)
 
 
-pytest_plugins = [
+pytest_plugins: Final[list[str]] = [
     "tox.pytest",
 ]

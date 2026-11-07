@@ -339,6 +339,9 @@ are combined into a single install operation. This ensures the resolution strate
 requirements, preventing sequential installations from resolving transitive dependencies before the strategy can apply
 to overlapping direct dependencies.
 
+`deps` can include requirements files (`-r`), constraints files (`-c`), installer options, and comments when combined
+with `dependency_groups`.
+
 ### Cache invalidation for `UV_*` environment variables
 
 tox-uv includes a curated set of `UV_*` environment variables in the install cache key. When any of these variables
