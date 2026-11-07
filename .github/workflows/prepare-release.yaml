@@ -22,7 +22,7 @@ permissions: {}
 jobs:
   prepare:
     name: 🏷️ Prepare Towncrier release
-    uses: tox-dev/github-workflows/.github/workflows/prepare-towncrier-release.yaml@8ad4e0493bb389ee6f3576916c9fdaa17d607477 # 6.6.1
+    uses: tox-dev/github-workflows/.github/workflows/prepare-towncrier-release.yaml@0c4cffd63033d38196319524d101caae1eef925b # 6.7.2
     permissions:
       contents: read
       pull-requests: read # Resolve squash PR authors for the changelog.

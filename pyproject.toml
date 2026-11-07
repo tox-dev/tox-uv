@@ -124,7 +124,9 @@ lint.select = [
 lint.ignore = [
   "CPY",                                       # No copyright statements
   "D",                                         # no documentation for now
+  "docstring-missing-exception",               # rst-missing-raises (simplint SMP924) reads reST fields instead
   "docstring-missing-returns",                 # no support for sphinx
+  "docstring-missing-yields",                  # rst-returns (simplint SMP923) reads reST fields instead
   "escape-sequence-in-docstring",              # Use `r"""` if any backslashes in a docstring
   "hardcoded-bind-all-interfaces",             # Possible binding to all interface
   "incorrect-blank-line-before-class",         # `one-blank-line-before-class` (D203) and `no-blank-line-before-class` (D211) are incompatible
@@ -229,5 +231,9 @@ uploaded-prior-to = "P7D"
 decision-order = "stable"
 matrix.python = ">=3.15,<3.16"
 matrix.platforms = [ "linux_x86_64" ]
-# release-creator 4.4.0 needs a seven-day cutoff exception through 2026-11-09.
+# release-creator 4.4.0 needs a seven-day cutoff exception.
+# expires 2026-11-09
 packages.release-creator.uploaded-prior-to = 2026-11-02T21:45:00Z
+
+[tool.simplint]
+docstring-style = "rst"

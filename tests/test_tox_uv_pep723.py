@@ -15,20 +15,6 @@ if TYPE_CHECKING:
     from tox.pytest import ToxProjectCreator
 
 
-def _tox_ini(runner: str = "uv-venv-pep-723", extra: str = "") -> str:
-    lines = ["[testenv:check]", f"runner = {runner}", "script = check.py"]
-    if extra:
-        lines.append(extra)
-    return "\n".join(lines) + "\n"
-
-
-def _run(project: ToxProjectCreator, files: dict[str, str], *extra_args: str) -> tuple:
-    proj = project(files)
-    execute_calls = proj.patch_execute(lambda r: 0 if "install" in r.run_id else None)
-    result = proj.run("r", "-e", "check", "--discover", sys.executable, *extra_args)
-    return result, execute_calls
-
-
 @pytest.mark.usefixtures("clear_python_preference_env_var")
 def test_deps_installed(tox_project: ToxProjectCreator) -> None:
     script = dedent("""\
@@ -41,6 +27,19 @@ def test_deps_installed(tox_project: ToxProjectCreator) -> None:
     result.assert_success()
     install_cmds = [i[0][3].cmd for i in execute_calls.call_args_list if "install" in i[0][3].run_id]
     assert any("setuptools" in arg for cmd in install_cmds for arg in cmd)
+
+
+def _run(project: ToxProjectCreator, files: dict[str, str], *extra_args: str) -> tuple:
+    proj = project(files)
+    execute_calls = proj.patch_execute(lambda request: 0 if "install" in request.run_id else None)
+    return proj.run("r", "-e", "check", "--discover", sys.executable, *extra_args), execute_calls
+
+
+def _tox_ini(runner: str = "uv-venv-pep-723", extra: str = "") -> str:
+    lines = ["[testenv:check]", f"runner = {runner}", "script = check.py"]
+    if extra:
+        lines.append(extra)
+    return "".join(f"{line}\n" for line in lines)
 
 
 @pytest.mark.usefixtures("clear_python_preference_env_var")
@@ -177,21 +176,19 @@ def test_uses_uv_venv(tox_project: ToxProjectCreator, runner: str) -> None:
 
 
 @pytest.mark.parametrize(
-    ("env_val", "promoted"),
+    ("env", "promoted_runner"),
     [
-        pytest.param(None, True, id="default"),
-        pytest.param("1", False, id="disabled"),
+        pytest.param({}, UvVenvPep723Runner, id="default"),
+        pytest.param({"TOX_UV_NO_PEP723": "1"}, None, id="disabled"),
     ],
 )
-def test_pep723_promotion_env_var(monkeypatch: pytest.MonkeyPatch, env_val: str | None, promoted: bool) -> None:
-    if env_val is None:
-        monkeypatch.delenv("TOX_UV_NO_PEP723", raising=False)
-    else:
-        monkeypatch.setenv("TOX_UV_NO_PEP723", env_val)
+def test_pep723_promotion_env_var(
+    monkeypatch: pytest.MonkeyPatch, env: dict[str, str], promoted_runner: type[UvVenvPep723Runner] | None
+) -> None:
+    monkeypatch.delenv("TOX_UV_NO_PEP723", raising=False)
+    for name, value in env.items():
+        monkeypatch.setenv(name, value)
     register = ToxEnvRegister()
     tox_register_tox_env(register)
-    assert register._run_envs["uv-venv-pep-723"] is UvVenvPep723Runner  # ruff:ignore[private-member-access]
-    if promoted:
-        assert register._run_envs["virtualenv-pep-723"] is UvVenvPep723Runner  # ruff:ignore[private-member-access]
-    else:
-        assert register._run_envs.get("virtualenv-pep-723") is None  # ruff:ignore[private-member-access]
+    assert register._run_envs["uv-venv-pep-723"] is UvVenvPep723Runner  # ruff:ignore[private-member-access] the test checks the internal run env registry
+    assert register._run_envs.get("virtualenv-pep-723") is promoted_runner  # ruff:ignore[private-member-access] the test checks the internal run env registry

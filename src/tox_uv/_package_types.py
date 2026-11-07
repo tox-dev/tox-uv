@@ -10,8 +10,7 @@ if TYPE_CHECKING:
 
 
 class UvBasePackage(PythonPathPackageWithDeps):
-    """Package to be built and installed by uv directly."""
-
+    # Package to be built and installed by uv directly.
     KEY: str
 
     def __init__(self, path: pathlib.Path, extras: Sequence[str]) -> None:
@@ -20,18 +19,17 @@ class UvBasePackage(PythonPathPackageWithDeps):
 
 
 class UvPackage(UvBasePackage):
-    """Package to be built and installed by uv directly as wheel."""
-
+    # Package to be built and installed by uv directly as wheel.
     KEY = "uv"
 
 
 class UvEditablePackage(UvBasePackage):
-    """Package to be built and installed by uv directly as editable wheel."""
-
+    # Package to be built and installed by uv directly as editable wheel.
     KEY = "uv-editable"
 
 
 __all__ = [
+    "UvBasePackage",
     "UvEditablePackage",
     "UvPackage",
 ]
