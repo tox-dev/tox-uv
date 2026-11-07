@@ -254,7 +254,9 @@ def test_uv_venv_system_site_packages_env_var(tox_project: ToxProjectCreator, mo
 
 
 @pytest.fixture
-def other_interpreter_exe() -> pathlib.Path:  # pragma: no cover
+def other_interpreter_exe() -> (
+    pathlib.Path
+):  # pragma: no cover the fixture needs a second interpreter; excluded where none is installed
     # Returns an interpreter executable path that is not the exact same as `sys.executable`.
     #
     # Necessary because `sys.executable` gets short-circuited when used as `base_python`.
@@ -641,7 +643,7 @@ def test_get_python_abs_path_with_python_env_name(mocker: MockerFixture) -> None
 class _TestUvVenv(UvVenv):
     @staticmethod
     def id() -> str:
-        return "uv-venv-test"  # pragma: no cover
+        return "uv-venv-test"  # pragma: no cover tox never looks up the id of this test subclass
 
     def set_base_python(self, python_info: PythonInfo) -> None:
         self._base_python_searched = True
@@ -1227,7 +1229,7 @@ def test_uv_version_os_error(tox_project: ToxProjectCreator, mocker: MockerFixtu
 def test_uv_bundled_import_error(tox_project: ToxProjectCreator, mocker: MockerFixture) -> None:
     original_import = builtins.__import__
 
-    def mock_import(name: str, *args: Any, **kwargs: Any) -> Any:  # ruff:ignore[any-type]
+    def mock_import(name: str, *args: Any, **kwargs: Any) -> Any:  # ruff:ignore[any-type] the replacement takes the untyped arguments of builtins.__import__
         if name == "uv":
             msg = "mocked import error"
             raise ImportError(msg)

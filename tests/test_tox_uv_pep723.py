@@ -189,8 +189,8 @@ def test_pep723_promotion_env_var(monkeypatch: pytest.MonkeyPatch, env_val: str 
         monkeypatch.setenv("TOX_UV_NO_PEP723", env_val)
     register = ToxEnvRegister()
     tox_register_tox_env(register)
-    assert register._run_envs["uv-venv-pep-723"] is UvVenvPep723Runner  # ruff:ignore[private-member-access]
+    assert register._run_envs["uv-venv-pep-723"] is UvVenvPep723Runner  # ruff:ignore[private-member-access] the test checks the internal run env registry
     if promoted:
-        assert register._run_envs["virtualenv-pep-723"] is UvVenvPep723Runner  # ruff:ignore[private-member-access]
+        assert register._run_envs["virtualenv-pep-723"] is UvVenvPep723Runner  # ruff:ignore[private-member-access] the test checks the internal run env registry
     else:
-        assert register._run_envs.get("virtualenv-pep-723") is None  # ruff:ignore[private-member-access]
+        assert register._run_envs.get("virtualenv-pep-723") is None  # ruff:ignore[private-member-access] the test checks the internal run env registry

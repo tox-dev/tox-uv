@@ -23,7 +23,7 @@ class UvVenvRunner(UvVenv, PythonRun):
 
     @property
     def _external_pkg_tox_env_type(self) -> str:
-        return "uv-venv-cmd-builder"  # pragma: no cover
+        return "uv-venv-cmd-builder"  # pragma: no cover tox reads this type name when it builds a package env
 
     @property
     def default_pkg_type(self) -> str:

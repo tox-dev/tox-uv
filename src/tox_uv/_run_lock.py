@@ -31,7 +31,7 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
     def id() -> str:
         return "uv-venv-lock-runner"
 
-    def _register_package_conf(self) -> bool:  # ruff:ignore[no-self-use]
+    def _register_package_conf(self) -> bool:  # ruff:ignore[no-self-use] tox calls this hook on the instance
         return False
 
     def _build_packages(self) -> list[Package]:
@@ -92,7 +92,7 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
                 self._build_uv_sync_cmd(install_pkg),
                 stdin=StdinSource.OFF,
                 run_id="uv-sync",
-                show=self.options.verbosity > 2,  # ruff:ignore[magic-value-comparison]
+                show=self.options.verbosity > 2,  # ruff:ignore[magic-value-comparison] uv output shows from tox -v onwards
             )
             outcome.assert_success()
         if install_pkg is not None:
@@ -122,7 +122,7 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
             cmd.append("--no-install-project")
         if self.conf["recreate"] and "--reinstall" not in self.conf["uv_sync_flags"]:
             cmd.append("--reinstall")
-        if self.options.verbosity > 3:  # ruff:ignore[magic-value-comparison]
+        if self.options.verbosity > 3:  # ruff:ignore[magic-value-comparison] uv -v is passed at tox -vv only
             cmd.append("-v")
         if package in {"wheel", "uv"}:
             cmd.extend(_no_editable_args(package_root))

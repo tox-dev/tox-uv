@@ -7,7 +7,7 @@ import json
 import logging
 import os
 import shutil
-import subprocess  # ruff:ignore[suspicious-subprocess-import]
+import subprocess  # ruff:ignore[suspicious-subprocess-import] only the uv binary runs, with an argument list
 import sys
 import typing
 from abc import ABC
@@ -101,21 +101,25 @@ class UvVenv(Python, ABC):
 
         # Try bundled uv (when installed via tox-uv meta package)
         with contextlib.suppress(ImportError, FileNotFoundError):
-            from uv import find_uv_bin  # type: ignore[import-not-found]  # ruff:ignore[import-outside-top-level]
+            from uv import find_uv_bin  # type: ignore[import-not-found]  # ruff:ignore[import-outside-top-level] uv is optional; import it only when its bundled binary is wanted
 
-            uv_bin = find_uv_bin()  # pragma: no cover
-            _LOGGER.debug("using bundled uv from: %s", uv_bin)  # pragma: no cover
-            return uv_bin  # pragma: no cover
+            uv_bin = (
+                find_uv_bin()
+            )  # pragma: no cover the test env does not install the uv package, so no bundled binary is found
+            _LOGGER.debug("using bundled uv from: %s", uv_bin)  # pragma: no cover the bundled binary path, see above
+            return uv_bin  # pragma: no cover the bundled binary path, see above
 
         # Fall back to system uv (when using tox-uv-bare)
-        if not (uv_path := shutil.which("uv")):  # pragma: no cover
-            msg = (  # pragma: no cover
+        if not (
+            uv_path := shutil.which("uv")
+        ):  # pragma: no cover tests run with uv on PATH; the missing-uv error is not reached
+            msg = (  # pragma: no cover the missing-uv message
                 "uv not found. Either:\n"
                 "  1. Install with bundled uv: pip install tox-uv\n"
                 "  2. Install tox-uv-bare and ensure system uv is in PATH: which uv\n"
                 "  3. Set TOX_UV_PATH environment variable to uv binary location"
             )
-            raise RuntimeError(msg)  # pragma: no cover
+            raise RuntimeError(msg)  # pragma: no cover raised with the missing-uv message above
 
         version = self._get_uv_version(uv_path)
         _LOGGER.debug("using system uv from PATH: %s (%s)", uv_path, version)
@@ -124,7 +128,7 @@ class UvVenv(Python, ABC):
     @staticmethod
     def _get_uv_version(uv_path: str) -> str:
         try:
-            result = subprocess.run(  # ruff:ignore[subprocess-without-shell-equals-true]
+            result = subprocess.run(  # ruff:ignore[subprocess-without-shell-equals-true] the command is an argument list; no shell parses it
                 [uv_path, "--version"],
                 capture_output=True,
                 text=True,
@@ -146,13 +150,13 @@ class UvVenv(Python, ABC):
         self.conf.add_config(
             keys=["system_site_packages", "sitepackages"],
             of_type=bool,
-            default=lambda conf, name: StrConvert().to_bool(  # ruff:ignore[unused-lambda-argument]
+            default=lambda conf, name: StrConvert().to_bool(  # ruff:ignore[unused-lambda-argument] tox calls every default with conf and name; this one needs neither
                 self.environment_variables.get("VIRTUALENV_SYSTEM_SITE_PACKAGES", "False"),
             ),
             desc="create virtual environments that also have access to globally installed packages.",
         )
 
-        def uv_python_preference_default(conf: Config, name: str | None) -> str:  # ruff:ignore[unused-function-argument]
+        def uv_python_preference_default(conf: Config, name: str | None) -> str:  # ruff:ignore[unused-function-argument] tox calls every default with conf and name; this one needs neither
             return (
                 "none"
                 if {"UV_NO_MANAGED_PYTHON", "UV_MANAGED_PYTHON"} & set(os.environ)
@@ -216,7 +220,9 @@ class UvVenv(Python, ABC):
         return result
 
     def _get_python(self, base_python: list[str]) -> PythonInfo | None:
-        for base in base_python:  # pragma: no branch
+        for base in (
+            base_python
+        ):  # pragma: no branch every test finds a match on the first candidate, so the loop never exits empty
             base_path = Path(base)
             if base_path.is_absolute():  # pragma: win32 no cover
                 env_spec = PythonSpec.from_string_spec(self.name)
@@ -243,7 +249,7 @@ class UvVenv(Python, ABC):
                             serial=int(vi.serial),
                         ),
                         version=info.version,
-                        is_64=info.architecture == 64,  # ruff:ignore[magic-value-comparison]
+                        is_64=info.architecture == 64,  # ruff:ignore[magic-value-comparison] virtualenv reports the architecture in bits
                         platform=info.platform,
                         extra={"executable": str(base_path)},
                         free_threaded=bool(info.free_threaded),
@@ -262,7 +268,7 @@ class UvVenv(Python, ABC):
                     serial=0,
                 ),
                 version=str(spec),
-                is_64=spec.architecture == 64,  # ruff:ignore[magic-value-comparison]
+                is_64=spec.architecture == 64,  # ruff:ignore[magic-value-comparison] virtualenv reports the architecture in bits
                 platform=sys.platform,
                 extra={"architecture": spec.architecture, "requested_micro": spec.micro},
                 free_threaded=bool(spec.free_threaded),
@@ -270,7 +276,7 @@ class UvVenv(Python, ABC):
                 machine=spec.machine,
             )
 
-        return None  # pragma: no cover
+        return None  # pragma: no cover reached only when no candidate matches, which the tests do not hit
 
     @staticmethod
     def _get_virtualenv_py_info(path: Path) -> VirtualenvPythonInfo:  # pragma: win32 no cover
@@ -279,7 +285,7 @@ class UvVenv(Python, ABC):
             make_app_data(None, read_only=False, env=os.environ),
             str(path),
         )
-        if result is None:  # pragma: no cover
+        if result is None:  # pragma: no cover virtualenv returns no info only for an interpreter it cannot probe
             msg = f"failed to discover Python info for {path}"
             raise RuntimeError(msg)
         return result
@@ -351,15 +357,15 @@ class UvVenv(Python, ABC):
     def env_bin_dir(self) -> Path:
         if sys.platform == "win32":  # pragma: win32 cover
             return self.venv_dir / "Scripts"
-        else:  # pragma: win32 no cover # ruff:ignore[superfluous-else-return]
+        else:  # pragma: win32 no cover # ruff:ignore[superfluous-else-return] both platform paths stay side by side, each with its coverage pragma
             return self.venv_dir / "bin"
 
     def create_python_env(self) -> None:
         version_spec = self.env_version_spec()
 
         cmd: list[str] = [self.uv, "venv", "-p", version_spec, "--allow-existing"]
-        cmd.append(f"--prompt={self.core._root.name}[{self.name}]")  # ruff:ignore[private-member-access]
-        if self.options.verbosity > 3:  # ruff:ignore[magic-value-comparison]
+        cmd.append(f"--prompt={self.core._root.name}[{self.name}]")  # ruff:ignore[private-member-access] tox has no public accessor for the project root
+        if self.options.verbosity > 3:  # ruff:ignore[magic-value-comparison] uv -v is passed at tox -vv only
             cmd.append("-v")
         if self.conf["uv_seed"]:
             cmd.append("--seed")
