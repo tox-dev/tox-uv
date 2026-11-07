@@ -418,9 +418,9 @@ class UvVenv(Python, ABC):
             )
             uv_machine = machine_map.get((self.base_python.machine or "").lower(), machine_fallback)
             uv_libc = self._LIBC_MAP.get(uv_os, {}).get(self.base_python.extra.get("libc", "").lower(), "none")
-            version_spec = f"{uv_imp}-{version}{variant}" + (
-                f"-{uv_os}-{uv_machine}-{uv_libc}" if all([uv_machine, uv_os, uv_libc]) else ""
-            )
+            version_spec = f"{uv_imp}-{version}{variant}"
+            if all([uv_machine, uv_os, uv_libc]):
+                version_spec = f"{version_spec}-{uv_os}-{uv_machine}-{uv_libc}"
         else:
             version_spec = f"{uv_imp}{version}{variant}"
         return version_spec

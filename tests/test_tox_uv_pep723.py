@@ -39,7 +39,7 @@ def _tox_ini(runner: str = "uv-venv-pep-723", extra: str = "") -> str:
     lines = ["[testenv:check]", f"runner = {runner}", "script = check.py"]
     if extra:
         lines.append(extra)
-    return "\n".join(lines) + "\n"
+    return "".join(f"{line}\n" for line in lines)
 
 
 @pytest.mark.usefixtures("clear_python_preference_env_var")

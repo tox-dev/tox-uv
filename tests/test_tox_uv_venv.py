@@ -233,7 +233,7 @@ def test_uv_venv_system_site_packages_change_recreates(
 
     config = ConfigParser()
     # pyvenv.cfg has no section header, so give it one
-    config.read_string("[cfg]\n" + (project.path / ".tox" / "py" / "pyvenv.cfg").read_text())
+    config.read_string(f"[cfg]\n{(project.path / '.tox' / 'py' / 'pyvenv.cfg').read_text()}")
 
     assert config["cfg"]["include-system-site-packages"].strip() == updated
 
@@ -269,7 +269,7 @@ def other_interpreter_exe() -> pathlib.Path:  # pragma: no cover
     elif exe.suffix == ".exe":
         # python.exe <-> pythonw.exe
         base_python = (
-            exe.with_name(exe.stem[:-1] + ".exe") if exe.stem.endswith("w") else exe.with_name(f"{exe.stem}w.exe")
+            exe.with_name(f"{exe.stem[:-1]}.exe") if exe.stem.endswith("w") else exe.with_name(f"{exe.stem}w.exe")
         )
     if not base_python or not base_python.is_file():
         pytest.fail("Tried to pick a base_python that is not sys.executable, but failed.")
