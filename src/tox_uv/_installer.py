@@ -105,41 +105,13 @@ class UvInstaller(Pip):
             _LOGGER.warning("uv cannot install %r", arguments)  # pragma: no cover
             raise SystemExit(1)  # pragma: no cover
 
-    def _install_list_of_deps(  # ruff:ignore[complex-structure, too-many-branches]
+    def _install_list_of_deps(
         self,
         arguments: Sequence[Requirement | Package],
         section: str,
         of_type: str,
     ) -> None:
-        groups: dict[str, list[str]] = defaultdict(list)
-        for arg in arguments:
-            if isinstance(arg, Requirement):  # pragma: no branch
-                groups["req"].append(str(arg))  # pragma: no cover
-            elif isinstance(arg, (WheelPackage, SdistPackage, EditablePackage)):
-                for pkg in arg.deps:
-                    if (
-                        isinstance(pkg, Requirement)
-                        and canonicalize_name(pkg.name) in self._sourced_pkg_names
-                        and "." not in groups["uv_editable"]
-                    ):
-                        groups["uv_editable"].append(".")
-                        continue
-                    groups["req"].append(str(pkg))
-                parser = parse_sdist_filename if isinstance(arg, SdistPackage) else parse_wheel_filename
-                name, *_ = parser(arg.path.name)
-                groups["pkg"].append(f"{name}@{arg.path}")
-            elif isinstance(arg, EditableLegacyPackage):
-                groups["req"].extend(str(pkg) for pkg in arg.deps)
-                groups["dev_pkg"].append(str(arg.path))
-            elif isinstance(arg, UvPackage):
-                extras_suffix = f"[{','.join(arg.extras)}]" if arg.extras else ""
-                groups["uv"].append(f"{arg.path}{extras_suffix}")
-            elif isinstance(arg, UvEditablePackage):
-                extras_suffix = f"[{','.join(arg.extras)}]" if arg.extras else ""
-                groups["uv_editable"].append(f"{arg.path}{extras_suffix}")
-            else:  # pragma: no branch
-                _LOGGER.warning("uv install %r", arg)  # pragma: no cover
-                raise SystemExit(1)  # pragma: no cover
+        groups = self._group_arguments(arguments)
         req_of_type = f"{of_type}_deps" if groups["pkg"] or groups["dev_pkg"] else of_type
         for value in groups.values():
             value.sort()
@@ -169,6 +141,42 @@ class UvInstaller(Pip):
             for entry in groups["dev_pkg"]:
                 install_args.extend(("-e", str(entry)))
             self._execute_installer(install_args, of_type)
+
+    def _group_arguments(self, arguments: Sequence[Requirement | Package]) -> dict[str, list[str]]:
+        groups: dict[str, list[str]] = defaultdict(list)
+        for arg in arguments:
+            if isinstance(arg, Requirement):  # pragma: no branch
+                groups["req"].append(str(arg))  # pragma: no cover
+            elif isinstance(arg, (WheelPackage, SdistPackage, EditablePackage)):
+                self._add_built_package(arg, groups)
+            elif isinstance(arg, EditableLegacyPackage):
+                groups["req"].extend(str(pkg) for pkg in arg.deps)
+                groups["dev_pkg"].append(str(arg.path))
+            elif isinstance(arg, UvPackage):
+                extras_suffix = f"[{','.join(arg.extras)}]" if arg.extras else ""
+                groups["uv"].append(f"{arg.path}{extras_suffix}")
+            elif isinstance(arg, UvEditablePackage):
+                extras_suffix = f"[{','.join(arg.extras)}]" if arg.extras else ""
+                groups["uv_editable"].append(f"{arg.path}{extras_suffix}")
+            else:  # pragma: no branch
+                _LOGGER.warning("uv install %r", arg)  # pragma: no cover
+                raise SystemExit(1)  # pragma: no cover
+        return groups
+
+    def _add_built_package(
+        self, arg: WheelPackage | SdistPackage | EditablePackage, groups: dict[str, list[str]]
+    ) -> None:
+        for pkg in arg.deps:
+            if (
+                isinstance(pkg, Requirement)
+                and canonicalize_name(pkg.name) in self._sourced_pkg_names
+                and "." not in groups["uv_editable"]
+            ):
+                groups["uv_editable"].append(".")
+                continue
+            groups["req"].append(str(pkg))
+        name, *_ = (parse_sdist_filename if isinstance(arg, SdistPackage) else parse_wheel_filename)(arg.path.name)
+        groups["pkg"].append(f"{name}@{arg.path}")
 
     @cached_property
     def _sourced_pkg_names(self) -> set[str]:
