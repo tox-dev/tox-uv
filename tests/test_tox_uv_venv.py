@@ -27,9 +27,7 @@ if TYPE_CHECKING:
 
 
 def test_uv_venv_self(tox_project: ToxProjectCreator) -> None:
-    project = tox_project({"tox.ini": "[testenv]\npackage=skip"})
-    result = project.run("-vv")
-    result.assert_success()
+    tox_project({"tox.ini": "[testenv]\npackage=skip"}).run("-vv").assert_success()
 
 
 @pytest.mark.parametrize("env_name", ["doc8", "flake8", "check2"])
@@ -43,8 +41,7 @@ def test_uv_venv_non_python_env_name_with_trailing_digit(tox_project: ToxProject
 
 
 def test_uv_venv_pass_env(tox_project: ToxProjectCreator) -> None:
-    project = tox_project({"tox.ini": "[testenv]\npackage=skip"})
-    result = project.run("c", "-k", "pass_env")
+    result = tox_project({"tox.ini": "[testenv]\npackage=skip"}).run("c", "-k", "pass_env")
     result.assert_success()
 
     parser = ConfigParser()
@@ -59,9 +56,8 @@ def test_uv_venv_pass_env(tox_project: ToxProjectCreator) -> None:
 
 @pytest.mark.usefixtures("clear_python_preference_env_var")
 def test_uv_venv_preference_system_by_default(tox_project: ToxProjectCreator) -> None:
-    project = tox_project({"tox.ini": "[testenv]"})
 
-    result = project.run("c", "-k", "uv_python_preference")
+    result = tox_project({"tox.ini": "[testenv]"}).run("c", "-k", "uv_python_preference")
     result.assert_success()
 
     parser = ConfigParser()
@@ -73,9 +69,8 @@ def test_uv_venv_preference_system_by_default(tox_project: ToxProjectCreator) ->
 
 @pytest.mark.usefixtures("clear_python_preference_env_var")
 def test_uv_venv_preference_empty_falls_back_to_system(tox_project: ToxProjectCreator) -> None:
-    project = tox_project({"tox.ini": "[testenv]\nuv_python_preference ="})
 
-    result = project.run("c", "-k", "uv_python_preference")
+    result = tox_project({"tox.ini": "[testenv]\nuv_python_preference ="}).run("c", "-k", "uv_python_preference")
     result.assert_success()
 
     parser = ConfigParser()
@@ -134,16 +129,13 @@ def test_uv_venv_preference_override_via_env_var_and_set_env_depends_on_py(
 
 def test_uv_venv_spec(tox_project: ToxProjectCreator) -> None:
     ver = sys.version_info
-    project = tox_project({"tox.ini": f"[testenv]\npackage=skip\nbase_python={ver.major}.{ver.minor}"})
-    result = project.run("-vv")
+    result = tox_project({"tox.ini": f"[testenv]\npackage=skip\nbase_python={ver.major}.{ver.minor}"}).run("-vv")
     result.assert_success()
 
 
 def test_uv_venv_spec_major_only(tox_project: ToxProjectCreator) -> None:
-    ver = sys.version_info
-    project = tox_project({"tox.ini": f"[testenv]\npackage=skip\nbase_python={ver.major}"})
-    result = project.run("-vv")
-    result.assert_success()
+    project = tox_project({"tox.ini": f"[testenv]\npackage=skip\nbase_python={sys.version_info.major}"})
+    project.run("-vv").assert_success()
 
 
 @pytest.mark.xfail(
@@ -165,22 +157,20 @@ def test_uv_venv_spec_pypy(
     pypy: str,
     expected_uv_pypy: str,
 ) -> None:
-    """Validate that major and minor versions are correctly applied to implementations.
-
-    This test prevents a regression that occurred when the testenv name was "pypy":
-    the uv runner was asked to use "pypyNone" as the Python version.
-
-    The test is dependent on what PyPy interpreters are installed on the system;
-    if any PyPy is available then the "pypy" value will not raise a Skip exception,
-    and STDOUT will be captured in `result.out`.
-
-    However, it is expected that no system will have PyPy v9.x installed,
-    so STDOUT must be read from `capfd` after the Skip exception is caught.
-
-    Since it is unknown whether any PyPy interpreter will be installed,
-    the `else` block's branch coverage is disabled.
-    """
-
+    # Validate that major and minor versions are correctly applied to implementations.
+    #
+    # This test prevents a regression that occurred when the testenv name was "pypy":
+    # the uv runner was asked to use "pypyNone" as the Python version.
+    #
+    # The test is dependent on what PyPy interpreters are installed on the system;
+    # if any PyPy is available then the "pypy" value will not raise a Skip exception,
+    # and STDOUT will be captured in `result.out`.
+    #
+    # However, it is expected that no system will have PyPy v9.x installed,
+    # so STDOUT must be read from `capfd` after the Skip exception is caught.
+    #
+    # Since it is unknown whether any PyPy interpreter will be installed,
+    # the `else` block's branch coverage is disabled.
     project = tox_project({"tox.ini": f"[tox]\nenv_list = {pypy}"})
     try:
         result = project.run("config", "-vv")
@@ -205,19 +195,16 @@ def test_uv_venv_spec_full_implementation(
     expected_implementation: str,
     expected_name: str,
 ) -> None:
-    """Validate that Python implementations are explicitly passed to uv's `-p` argument.
-
-    This test ensures that uv searches for the target Python implementation and version,
-    even if another implementation -- with the same language version --
-    is found on the path first.
-
-    This prevents a regression to a bug that occurred when PyPy 3.10 was on the PATH
-    and tox was invoked with `tox -e py3.10`:
-    uv was invoked with `-p 3.10` and found PyPy 3.10, not CPython 3.10.
-    """
-
-    project = tox_project({})
-    result = project.run("run", "-vve", f"{implementation}9.99")
+    # Validate that Python implementations are explicitly passed to uv's `-p` argument.
+    #
+    # This test ensures that uv searches for the target Python implementation and version,
+    # even if another implementation -- with the same language version --
+    # is found on the path first.
+    #
+    # This prevents a regression to a bug that occurred when PyPy 3.10 was on the PATH
+    # and tox was invoked with `tox -e py3.10`:
+    # uv was invoked with `-p 3.10` and found PyPy 3.10, not CPython 3.10.
+    result = tox_project({}).run("run", "-vve", f"{implementation}9.99")
 
     # Verify that uv was invoked with the full Python implementation and version.
     assert f" -p {expected_implementation}9.99 " in result.out
@@ -228,9 +215,7 @@ def test_uv_venv_spec_full_implementation(
 
 
 def test_uv_venv_system_site_packages(tox_project: ToxProjectCreator) -> None:
-    project = tox_project({"tox.ini": "[testenv]\npackage=skip\nsystem_site_packages=true"})
-    result = project.run("-vv")
-    result.assert_success()
+    tox_project({"tox.ini": "[testenv]\npackage=skip\nsystem_site_packages=true"}).run("-vv").assert_success()
 
 
 @pytest.mark.parametrize(
@@ -269,10 +254,9 @@ def test_uv_venv_system_site_packages_env_var(tox_project: ToxProjectCreator, mo
 
 @pytest.fixture
 def other_interpreter_exe() -> pathlib.Path:  # pragma: no cover
-    """Returns an interpreter executable path that is not the exact same as `sys.executable`.
-
-    Necessary because `sys.executable` gets short-circuited when used as `base_python`."""
-
+    # Returns an interpreter executable path that is not the exact same as `sys.executable`.
+    #
+    # Necessary because `sys.executable` gets short-circuited when used as `base_python`.
     exe = pathlib.Path(sys.executable)
     base_python: pathlib.Path | None = None
     if exe.name in {"python", "python3"}:
@@ -285,7 +269,7 @@ def other_interpreter_exe() -> pathlib.Path:  # pragma: no cover
     elif exe.suffix == ".exe":
         # python.exe <-> pythonw.exe
         base_python = (
-            exe.with_name(exe.stem[:-1] + ".exe") if exe.stem.endswith("w") else exe.with_name(exe.stem + "w.exe")
+            exe.with_name(exe.stem[:-1] + ".exe") if exe.stem.endswith("w") else exe.with_name(f"{exe.stem}w.exe")
         )
     if not base_python or not base_python.is_file():
         pytest.fail("Tried to pick a base_python that is not sys.executable, but failed.")
@@ -299,8 +283,7 @@ def other_interpreter_exe() -> pathlib.Path:  # pragma: no cover
 def test_uv_venv_spec_abs_path(
     tox_project: ToxProjectCreator, other_interpreter_exe: pathlib.Path
 ) -> None:  # pragma: win32 no cover
-    project = tox_project({"tox.ini": f"[testenv]\npackage=skip\nbase_python={other_interpreter_exe}"})
-    result = project.run("-vv")
+    result = tox_project({"tox.ini": f"[testenv]\npackage=skip\nbase_python={other_interpreter_exe}"}).run("-vv")
     result.assert_success()
 
 
@@ -413,8 +396,7 @@ def test_uv_venv_non_python_env_name(tox_project: ToxProjectCreator, env_name: s
     project = tox_project({
         "tox.ini": f"[testenv:{env_name}]\npackage=skip\nskip_install=true\ncommands=python --version"
     })
-    result = project.run("-vve", env_name)
-    result.assert_success()
+    project.run("-vve", env_name).assert_success()
 
 
 def test_uv_venv_na(tox_project: ToxProjectCreator) -> None:
@@ -422,8 +404,7 @@ def test_uv_venv_na(tox_project: ToxProjectCreator) -> None:
     project = tox_project({
         "tox.ini": "[tox]\nskip_missing_interpreters=true\n[testenv]\npackage=skip\nbase_python=1.0"
     })
-    result = project.run("-vv")
-    result.assert_failed(code=1)
+    project.run("-vv").assert_failed(code=1)
 
 
 def test_uv_venv_na_uv_072(tox_project: ToxProjectCreator) -> None:
@@ -431,30 +412,25 @@ def test_uv_venv_na_uv_072(tox_project: ToxProjectCreator) -> None:
     project = tox_project({
         "tox.ini": "[tox]\nskip_missing_interpreters=true\n[testenv]\npackage=skip\nbase_python=1.0\nrequires=uv==0.7.2"
     })
-    result = project.run("-vv")
-    result.assert_failed(code=1)
+    project.run("-vv").assert_failed(code=1)
 
 
 def test_uv_venv_skip_missing_interpreters_fail(tox_project: ToxProjectCreator) -> None:
     project = tox_project({
         "tox.ini": "[tox]\nskip_missing_interpreters=false\n[testenv]\npackage=skip\nbase_python=1.0"
     })
-    result = project.run("-vv")
-    result.assert_failed(code=2)
+    project.run("-vv").assert_failed(code=2)
 
 
 def test_uv_venv_skip_missing_interpreters_pass(tox_project: ToxProjectCreator) -> None:
     project = tox_project({
         "tox.ini": "[tox]\nskip_missing_interpreters=true\n[testenv]\npackage=skip\nbase_python=1.0"
     })
-    result = project.run("-vv")
-    result.assert_failed(code=1)
+    project.run("-vv").assert_failed(code=1)
 
 
 def test_uv_venv_platform_check(tox_project: ToxProjectCreator) -> None:
-    project = tox_project({"tox.ini": f"[testenv]\nplatform={sys.platform}\npackage=skip"})
-    result = project.run("-vv")
-    result.assert_success()
+    tox_project({"tox.ini": f"[testenv]\nplatform={sys.platform}\npackage=skip"}).run("-vv").assert_success()
 
 
 def test_uv_env_bin_dir(tox_project: ToxProjectCreator) -> None:
@@ -469,14 +445,12 @@ def test_uv_env_bin_dir(tox_project: ToxProjectCreator) -> None:
 
 
 def test_uv_env_has_access_to_plugin_uv(tox_project: ToxProjectCreator) -> None:
-    project = tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=uv --version"})
-    result = project.run()
+    result = tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=uv --version"}).run()
 
     result.assert_success()
     uv_path = shutil.which("uv")
     assert uv_path is not None
-    uv_result = subprocess.run([uv_path, "--version"], capture_output=True, text=True, check=True)
-    ver = uv_result.stdout.strip().split()[1]
+    ver = subprocess.run([uv_path, "--version"], capture_output=True, text=True, check=True).stdout.strip().split()[1]
     assert f"uv {ver}" in result.out
 
 
@@ -580,8 +554,7 @@ def test_uv_env_site_package_dir_conf(tox_project: ToxProjectCreator) -> None:
 def test_uv_env_python_not_in_path(tox_project: ToxProjectCreator) -> None:
     # Make sure there is no pythonX.Y in the search path
     ver = sys.version_info
-    exe_ext = ".exe" if sys.platform == "win32" else ""
-    python_exe = f"python{ver.major}.{ver.minor}{exe_ext}"
+    python_exe = f"python{ver.major}.{ver.minor}{('.exe' if sys.platform == 'win32' else '')}"
     uv_path = shutil.which("uv")
     uv_dir = str(pathlib.Path(uv_path).parent) if uv_path else None
     env = dict(os.environ)
@@ -613,8 +586,7 @@ def test_uv_python_set(tox_project: ToxProjectCreator, monkeypatch: pytest.Monke
     project = tox_project({
         "tox.ini": "[testenv]\npackage=skip\ndeps=setuptools\ncommands=python -c 'import setuptools'"
     })
-    result = project.run("-vv")
-    result.assert_success()
+    project.run("-vv").assert_success()
 
 
 def test_uv_pip_constraints(tox_project: ToxProjectCreator) -> None:
@@ -656,6 +628,15 @@ def test_uv_pip_constraints_no(tox_project: ToxProjectCreator) -> None:
     )
 
 
+def test_get_python_abs_path_with_python_env_name() -> None:  # pragma: win32 no cover
+    uv_venv = _TestUvVenv(create_args=mock.Mock())
+    with mock.patch.object(type(uv_venv), "name", new_callable=mock.PropertyMock, return_value="py999"):
+        python_info = uv_venv.get_python_info(sys.executable)
+    assert python_info is not None
+    assert (python_info.version_info.major, python_info.version_info.minor) == (9, 99)
+    assert python_info.implementation == "CPython"
+
+
 class _TestUvVenv(UvVenv):
     @staticmethod
     def id() -> str:
@@ -669,16 +650,6 @@ class _TestUvVenv(UvVenv):
         # These direct probes model an implicit fallback, not configured base_python.
         self._base_python_explicitly_set = False
         return self._get_python([base_python])
-
-
-def test_get_python_abs_path_with_python_env_name() -> None:  # pragma: win32 no cover
-    uv_venv = _TestUvVenv(create_args=mock.Mock())
-    with mock.patch.object(type(uv_venv), "name", new_callable=mock.PropertyMock, return_value="py999"):
-        python_info = uv_venv.get_python_info(sys.executable)
-    assert python_info is not None
-    assert python_info.version_info.major == 9
-    assert python_info.version_info.minor == 99
-    assert python_info.implementation == "CPython"
 
 
 def test_get_python_abs_path_variants(mocker: MockerFixture) -> None:
@@ -713,8 +684,7 @@ def test_get_python_abs_path_variants(mocker: MockerFixture) -> None:
     ("base_python", "architecture"), [("python3.11", None), ("python3.11-32", 32), ("python3.11-64", 64)]
 )
 def test_get_python_architecture(base_python: str, architecture: int | None) -> None:
-    uv_venv = _TestUvVenv(create_args=mock.Mock())
-    python_info = uv_venv.get_python_info(base_python)
+    python_info = _TestUvVenv(create_args=mock.Mock()).get_python_info(base_python)
     assert python_info is not None
     assert python_info.extra["architecture"] == architecture
 
@@ -729,8 +699,7 @@ def test_get_python_architecture(base_python: str, architecture: int | None) -> 
     ],
 )
 def test_get_python_variants(base_python: str, expected: tuple[bool, bool]) -> None:
-    uv_venv = _TestUvVenv(create_args=mock.Mock())
-    python_info = uv_venv.get_python_info(base_python)
+    python_info = _TestUvVenv(create_args=mock.Mock()).get_python_info(base_python)
     assert python_info is not None
     assert (python_info.free_threaded, python_info.debug) == expected
 
@@ -762,8 +731,7 @@ def test_uv_venv_debug_request(tox_project: ToxProjectCreator, env_name: str, ex
     ],
 )
 def test_uv_venv_variant_cache(tox_project: ToxProjectCreator, env_name: str, expected: tuple[bool, bool]) -> None:
-    project = tox_project({"tox.ini": "[testenv]\npackage=skip"})
-    result = project.run("c", "-e", env_name, "-k", "base_python")
+    result = tox_project({"tox.ini": "[testenv]\npackage=skip"}).run("c", "-e", env_name, "-k", "base_python")
     result.assert_success()
 
     environment = result.state.envs[env_name]
@@ -1218,8 +1186,7 @@ allowlist_externals = python
 """,
     })
     (project.path / "sub").mkdir()
-    result = project.run("-e", "demo")
-    result.assert_success()
+    project.run("-e", "demo").assert_success()
 
 
 def test_uv_path_env_var_invalid(tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1233,24 +1200,18 @@ def test_uv_path_env_var_valid(tox_project: ToxProjectCreator, monkeypatch: pyte
     uv_path = shutil.which("uv")
     assert uv_path is not None
     monkeypatch.setenv("TOX_UV_PATH", "uv")
-    project = tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python --version"})
-    result = project.run()
-    result.assert_success()
+    tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python --version"}).run().assert_success()
 
 
 def test_uv_version_timeout(tox_project: ToxProjectCreator, mocker: MockerFixture) -> None:
     mock_run = mocker.patch("subprocess.run", side_effect=subprocess.TimeoutExpired("uv", 5))
-    project = tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python --version"})
-    result = project.run()
-    result.assert_success()
+    tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python --version"}).run().assert_success()
     mock_run.assert_called()
 
 
 def test_uv_version_os_error(tox_project: ToxProjectCreator, mocker: MockerFixture) -> None:
     mock_run = mocker.patch("subprocess.run", side_effect=OSError("mock error"))
-    project = tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python --version"})
-    result = project.run()
-    result.assert_success()
+    tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python --version"}).run().assert_success()
     mock_run.assert_called()
 
 
@@ -1267,6 +1228,4 @@ def test_uv_bundled_import_error(tox_project: ToxProjectCreator, mocker: MockerF
         return original_import(name, *args, **kwargs)
 
     mocker.patch("builtins.__import__", side_effect=mock_import)
-    project = tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python --version"})
-    result = project.run()
-    result.assert_success()
+    tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python --version"}).run().assert_success()

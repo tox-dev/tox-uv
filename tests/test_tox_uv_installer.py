@@ -18,8 +18,7 @@ if TYPE_CHECKING:
 
 def test_uv_install_in_ci_list(tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("CI", "1")
-    project = tox_project({"tox.ini": "[testenv]\ndeps = tomli\npackage=skip"})
-    result = project.run()
+    result = tox_project({"tox.ini": "[testenv]\ndeps = tomli\npackage=skip"}).run()
     result.assert_success()
     report = {i.split("=")[0] for i in result.out.splitlines()[-3][4:].split(",")}
     assert report == {"tomli"}
@@ -27,8 +26,7 @@ def test_uv_install_in_ci_list(tox_project: ToxProjectCreator, monkeypatch: pyte
 
 def test_uv_install_in_ci_seed(tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("CI", "1")
-    project = tox_project({"tox.ini": "[testenv]\npackage=skip\nuv_seed = true"})
-    result = project.run()
+    result = tox_project({"tox.ini": "[testenv]\npackage=skip\nuv_seed = true"}).run()
     result.assert_success()
     report = {i.split("=")[0] for i in result.out.splitlines()[-3][4:].split(",")}
     if sys.version_info >= (3, 12):  # pragma: >=3.12 cover
@@ -38,9 +36,7 @@ def test_uv_install_in_ci_seed(tox_project: ToxProjectCreator, monkeypatch: pyte
 
 
 def test_uv_install_with_pre(tox_project: ToxProjectCreator) -> None:
-    project = tox_project({"tox.ini": "[testenv]\ndeps = tomli\npip_pre = true\npackage=skip"})
-    result = project.run("-vv")
-    result.assert_success()
+    tox_project({"tox.ini": "[testenv]\ndeps = tomli\npip_pre = true\npackage=skip"}).run("-vv").assert_success()
 
 
 def test_uv_install_with_pre_custom_install_cmd(tox_project: ToxProjectCreator) -> None:
@@ -53,8 +49,7 @@ def test_uv_install_with_pre_custom_install_cmd(tox_project: ToxProjectCreator) 
     install_command = uv pip install {packages}
     """
     })
-    result = project.run("-vv")
-    result.assert_success()
+    project.run("-vv").assert_success()
 
 
 def test_uv_install_without_pre_custom_install_cmd(tox_project: ToxProjectCreator) -> None:
@@ -66,8 +61,7 @@ def test_uv_install_without_pre_custom_install_cmd(tox_project: ToxProjectCreato
     install_command = uv pip install {packages}
     """
     })
-    result = project.run("-vv")
-    result.assert_success()
+    project.run("-vv").assert_success()
 
 
 @pytest.mark.parametrize("strategy", ["highest", "lowest", "lowest-direct"])
@@ -75,8 +69,7 @@ def test_uv_install_with_resolution_strategy(tox_project: ToxProjectCreator, str
     project = tox_project({"tox.ini": f"[testenv]\ndeps = tomli>=2.0.1\npackage = skip\nuv_resolution = {strategy}"})
     execute_calls = project.patch_execute(lambda r: 0 if "install" in r.run_id else None)
 
-    result = project.run("-vv")
-    result.assert_success()
+    project.run("-vv").assert_success()
 
     assert execute_calls.call_args[0][3].cmd[2:] == ["install", "--resolution", strategy, "tomli>=2.0.1", "-v"]
 
@@ -102,8 +95,7 @@ def test_uv_install_with_resolution_strategy_custom_install_cmd(tox_project: Tox
     })
     execute_calls = project.patch_execute(lambda r: 0 if "install" in r.run_id else None)
 
-    result = project.run("-vv")
-    result.assert_success()
+    project.run("-vv").assert_success()
 
     assert execute_calls.call_args[0][3].cmd[2:] == ["install", "tomli>=2.0.1", "--resolution", "lowest-direct"]
 
@@ -119,8 +111,7 @@ def test_uv_install_with_resolution_strategy_and_pip_pre(tox_project: ToxProject
     """
     })
     execute_calls = project.patch_execute(lambda r: 0 if "install" in r.run_id else None)
-    result = project.run("-vv")
-    result.assert_success()
+    project.run("-vv").assert_success()
     assert execute_calls.call_args[0][3].cmd[2:] == [
         "install",
         "--prerelease",
@@ -152,8 +143,7 @@ test = ["pytest>=8.0.0"]
     })
     execute_calls = project.patch_execute(lambda r: 0 if "install" in r.run_id else None)
 
-    result = project.run("-vv")
-    result.assert_success()
+    project.run("-vv").assert_success()
 
     install_calls = [call[0][3].cmd for call in execute_calls.call_args_list if "install" in call[0][3].run_id]
     assert len(install_calls) == 1
@@ -215,8 +205,7 @@ test = ["pytest>=8.0.0"]
     })
     execute_calls = project.patch_execute(lambda r: 0 if "install" in r.run_id else None)
 
-    result = project.run("-vv")
-    result.assert_success()
+    project.run("-vv").assert_success()
 
     install_calls = [call[0][3].cmd for call in execute_calls.call_args_list if "install" in call[0][3].run_id]
     assert len(install_calls) == 1
@@ -303,7 +292,7 @@ def test_uv_env_var_change_reinstall(
             [testenv]
             deps = tomli
             package = skip
-            {"setenv = " + initial_setenv if initial_setenv else ""}
+            {f"setenv = {initial_setenv}" if initial_setenv else ""}
         """),
     })
     install_count = 0
@@ -336,7 +325,7 @@ def test_uv_env_var_change_reinstall(
 
 
 def test_uv_install_broken_venv(tox_project: ToxProjectCreator) -> None:
-    """Tests ability to detect that a venv a with broken symlink to python interpreter is recreated."""
+    # Tests ability to detect that a venv a with broken symlink to python interpreter is recreated.
     project = tox_project({
         "tox.ini": """
     [testenv]
@@ -386,8 +375,7 @@ def test_uv_install_with_constraints_for_deps(tox_project: ToxProjectCreator) ->
     })
     execute_calls = project.patch_execute(lambda r: 0 if "install" in r.run_id else None)
 
-    result = project.run("-vv")
-    result.assert_success()
+    project.run("-vv").assert_success()
 
     install_calls = [call[0][3].cmd for call in execute_calls.call_args_list if "install" in call[0][3].run_id]
     assert len(install_calls) == 1

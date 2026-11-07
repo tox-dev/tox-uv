@@ -15,20 +15,6 @@ if TYPE_CHECKING:
     from tox.pytest import ToxProjectCreator
 
 
-def _tox_ini(runner: str = "uv-venv-pep-723", extra: str = "") -> str:
-    lines = ["[testenv:check]", f"runner = {runner}", "script = check.py"]
-    if extra:
-        lines.append(extra)
-    return "\n".join(lines) + "\n"
-
-
-def _run(project: ToxProjectCreator, files: dict[str, str], *extra_args: str) -> tuple:
-    proj = project(files)
-    execute_calls = proj.patch_execute(lambda r: 0 if "install" in r.run_id else None)
-    result = proj.run("r", "-e", "check", "--discover", sys.executable, *extra_args)
-    return result, execute_calls
-
-
 @pytest.mark.usefixtures("clear_python_preference_env_var")
 def test_deps_installed(tox_project: ToxProjectCreator) -> None:
     script = dedent("""\
@@ -41,6 +27,19 @@ def test_deps_installed(tox_project: ToxProjectCreator) -> None:
     result.assert_success()
     install_cmds = [i[0][3].cmd for i in execute_calls.call_args_list if "install" in i[0][3].run_id]
     assert any("setuptools" in arg for cmd in install_cmds for arg in cmd)
+
+
+def _run(project: ToxProjectCreator, files: dict[str, str], *extra_args: str) -> tuple:
+    proj = project(files)
+    execute_calls = proj.patch_execute(lambda r: 0 if "install" in r.run_id else None)
+    return proj.run("r", "-e", "check", "--discover", sys.executable, *extra_args), execute_calls
+
+
+def _tox_ini(runner: str = "uv-venv-pep-723", extra: str = "") -> str:
+    lines = ["[testenv:check]", f"runner = {runner}", "script = check.py"]
+    if extra:
+        lines.append(extra)
+    return "\n".join(lines) + "\n"
 
 
 @pytest.mark.usefixtures("clear_python_preference_env_var")

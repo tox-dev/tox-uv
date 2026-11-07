@@ -19,13 +19,6 @@ if TYPE_CHECKING:
 
 
 class UvVenvLockRunner(UvVenv, RunToxEnv):
-    @staticmethod
-    def id() -> str:
-        return "uv-venv-lock-runner"
-
-    def _register_package_conf(self) -> bool:  # ruff:ignore[no-self-use]
-        return False
-
     @property
     def _package_tox_env_type(self) -> str:
         raise NotImplementedError
@@ -33,6 +26,13 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
     @property
     def _external_pkg_tox_env_type(self) -> str:
         raise NotImplementedError
+
+    @staticmethod
+    def id() -> str:
+        return "uv-venv-lock-runner"
+
+    def _register_package_conf(self) -> bool:  # ruff:ignore[no-self-use]
+        return False
 
     def _build_packages(self) -> list[Package]:
         raise NotImplementedError
@@ -145,17 +145,17 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
         if uv_frozen and not frozen_in_flags:
             cmd.append("--frozen")
 
-    def _add_group_args(self, cmd: list[str]) -> None:
-        for group in sorted(self.conf["dependency_groups"]):
-            cmd.extend(("--group", group))
-        for group in sorted(self.conf["only_groups"]):
-            cmd.extend(("--only-group", group))
-
     @property
     def environment_variables(self) -> dict[str, str]:
         env = super().environment_variables
         env["UV_PROJECT_ENVIRONMENT"] = str(self.venv_dir)
         return env
+
+    def _add_group_args(self, cmd: list[str]) -> None:
+        for group in sorted(self.conf["dependency_groups"]):
+            cmd.extend(("--group", group))
+        for group in sorted(self.conf["only_groups"]):
+            cmd.extend(("--only-group", group))
 
 
 def _no_editable_args(package_root: Path) -> list[str]:

@@ -45,12 +45,94 @@ _LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
 
 
 class UvVenv(Python, ABC):
+    _OS_MAP: typing.ClassVar[typing.Mapping[str, str]] = {
+        "darwin": "macos",
+        "win32": "windows",
+    }
+
+    _LIBC_MAP: typing.ClassVar[typing.Mapping[str, typing.Mapping[str, str]]] = {
+        "linux": {"glibc": "gnu", "musl": "musl", "": "gnu"}
+    }
+
+    _NOMACHINE_FALLBACK: typing.ClassVar[typing.Mapping[str, typing.Mapping[int, str]]] = {
+        "windows": {32: "x86", 64: "x86_64"}
+    }
+
     def __init__(self, create_args: ToxEnvCreateArgs) -> None:
         self._executor: Execute | None = None
         self._installer: UvInstaller | None = None
         self._created = False
         self._displayed_uv_constraint_warning = False
         super().__init__(create_args)
+
+    @property
+    def executor(self) -> Execute:
+        if self._executor is None:
+            self._executor = LocalSubProcessExecutor(self.options.is_colored)
+        return self._executor
+
+    @property
+    def installer(self) -> Installer[Any]:
+        if self._installer is None:
+            self._installer = UvInstaller(self)
+        return self._installer
+
+    @property
+    def runs_on_platform(self) -> str:
+        return sys.platform
+
+    @property
+    def _allow_externals(self) -> list[str]:
+        result = super()._allow_externals
+        result.append(self.uv)
+        return result
+
+    @cached_property
+    def uv(self) -> str:
+        # Check for explicit override first
+        if uv_env := os.environ.get("TOX_UV_PATH"):
+            if not (uv_path := shutil.which(uv_env)):
+                msg = f"TOX_UV_PATH={uv_env} not found in PATH"
+                raise RuntimeError(msg)
+            version = self._get_uv_version(uv_path)
+            _LOGGER.warning("using uv from TOX_UV_PATH: %s (%s)", uv_path, version)
+            return uv_path
+
+        # Try bundled uv (when installed via tox-uv meta package)
+        with contextlib.suppress(ImportError, FileNotFoundError):
+            from uv import find_uv_bin  # type: ignore[import-not-found]  # ruff:ignore[import-outside-top-level]
+
+            uv_bin = find_uv_bin()  # pragma: no cover
+            _LOGGER.debug("using bundled uv from: %s", uv_bin)  # pragma: no cover
+            return uv_bin  # pragma: no cover
+
+        # Fall back to system uv (when using tox-uv-bare)
+        if not (uv_path := shutil.which("uv")):  # pragma: no cover
+            msg = (  # pragma: no cover
+                "uv not found. Either:\n"
+                "  1. Install with bundled uv: pip install tox-uv\n"
+                "  2. Install tox-uv-bare and ensure system uv is in PATH: which uv\n"
+                "  3. Set TOX_UV_PATH environment variable to uv binary location"
+            )
+            raise RuntimeError(msg)  # pragma: no cover
+
+        version = self._get_uv_version(uv_path)
+        _LOGGER.debug("using system uv from PATH: %s (%s)", uv_path, version)
+        return uv_path
+
+    @staticmethod
+    def _get_uv_version(uv_path: str) -> str:
+        try:
+            result = subprocess.run(  # ruff:ignore[subprocess-without-shell-equals-true]
+                [uv_path, "--version"],
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=5,
+            )
+            return result.stdout.strip() if result.returncode == 0 else "unknown"
+        except (subprocess.TimeoutExpired, OSError):
+            return "unknown"
 
     def register_config(self) -> None:
         super().register_config()
@@ -100,6 +182,25 @@ class UvVenv(Python, ABC):
             post_process=uv_python_preference_post_process,
         )
 
+    @property
+    def environment_variables(self) -> dict[str, str]:
+        env = super().environment_variables
+        env.pop("UV_PYTHON", None)  # UV_PYTHON takes precedence over VIRTUAL_ENV
+        env["VIRTUAL_ENV"] = str(self.venv_dir)
+        if "UV_CONSTRAINT" not in env and not self._displayed_uv_constraint_warning:
+            for pip_var in ("PIP_CONSTRAINT", "PIP_CONSTRAINTS"):
+                if pip_var in env:
+                    _LOGGER.warning(
+                        "Found %s defined, you may want to also define UV_CONSTRAINT to match pip behavior.", pip_var
+                    )
+                    self._displayed_uv_constraint_warning = True
+                    break
+        return env
+
+    @property
+    def venv_dir(self) -> Path:
+        return cast("Path", self.core["tox_root"]) / cast("Path", self.conf["env_dir"])
+
     def python_cache(self) -> dict[str, Any]:
         result = super().python_cache()
         result["seed"] = self.conf["uv_seed"]
@@ -112,22 +213,6 @@ class UvVenv(Python, ABC):
         env_dir = cast("Path", self.core["tox_root"]) / cast("Path", self.conf["env_dir"])
         result["venv"] = str(self.venv_dir.relative_to(env_dir))
         return result
-
-    @property
-    def executor(self) -> Execute:
-        if self._executor is None:
-            self._executor = LocalSubProcessExecutor(self.options.is_colored)
-        return self._executor
-
-    @property
-    def installer(self) -> Installer[Any]:
-        if self._installer is None:
-            self._installer = UvInstaller(self)
-        return self._installer
-
-    @property
-    def runs_on_platform(self) -> str:
-        return sys.platform
 
     def _get_python(self, base_python: list[str]) -> PythonInfo | None:
         for base in base_python:  # pragma: no branch
@@ -200,83 +285,15 @@ class UvVenv(Python, ABC):
 
     @classmethod
     def python_spec_for_path(cls, path: Path) -> PythonSpec:
-        """
-        Get the spec for an absolute path to a Python executable.
-
-        :param path: the path investigated
-        :return: the found spec
-        """
+        # Get the spec for an absolute path to a Python executable.
+        #
+        # :param path: the path investigated
+        # :return: the found spec
         info = cls._get_virtualenv_py_info(path)  # pragma: win32 no cover
         return PythonSpec.from_string_spec(  # pragma: win32 no cover
             f"{info.implementation}{info.version_info.major}{info.version_info.minor}"
             f"{'t' if info.free_threaded else ''}{'d' if info.debug_build else ''}-{info.architecture}",
         )
-
-    @staticmethod
-    def _get_uv_version(uv_path: str) -> str:
-        try:
-            result = subprocess.run(  # ruff:ignore[subprocess-without-shell-equals-true]
-                [uv_path, "--version"],
-                capture_output=True,
-                text=True,
-                check=False,
-                timeout=5,
-            )
-            return result.stdout.strip() if result.returncode == 0 else "unknown"
-        except (subprocess.TimeoutExpired, OSError):
-            return "unknown"
-
-    @cached_property
-    def uv(self) -> str:
-        # Check for explicit override first
-        if uv_env := os.environ.get("TOX_UV_PATH"):
-            if not (uv_path := shutil.which(uv_env)):
-                msg = f"TOX_UV_PATH={uv_env} not found in PATH"
-                raise RuntimeError(msg)
-            version = self._get_uv_version(uv_path)
-            _LOGGER.warning("using uv from TOX_UV_PATH: %s (%s)", uv_path, version)
-            return uv_path
-
-        # Try bundled uv (when installed via tox-uv meta package)
-        with contextlib.suppress(ImportError, FileNotFoundError):
-            from uv import find_uv_bin  # type: ignore[import-not-found]  # ruff:ignore[import-outside-top-level]
-
-            uv_bin = find_uv_bin()  # pragma: no cover
-            _LOGGER.debug("using bundled uv from: %s", uv_bin)  # pragma: no cover
-            return uv_bin  # pragma: no cover
-
-        # Fall back to system uv (when using tox-uv-bare)
-        if not (uv_path := shutil.which("uv")):  # pragma: no cover
-            msg = (  # pragma: no cover
-                "uv not found. Either:\n"
-                "  1. Install with bundled uv: pip install tox-uv\n"
-                "  2. Install tox-uv-bare and ensure system uv is in PATH: which uv\n"
-                "  3. Set TOX_UV_PATH environment variable to uv binary location"
-            )
-            raise RuntimeError(msg)  # pragma: no cover
-
-        version = self._get_uv_version(uv_path)
-        _LOGGER.debug("using system uv from PATH: %s (%s)", uv_path, version)
-        return uv_path
-
-    @property
-    def venv_dir(self) -> Path:
-        return cast("Path", self.core["tox_root"]) / cast("Path", self.conf["env_dir"])
-
-    @property
-    def environment_variables(self) -> dict[str, str]:
-        env = super().environment_variables
-        env.pop("UV_PYTHON", None)  # UV_PYTHON takes precedence over VIRTUAL_ENV
-        env["VIRTUAL_ENV"] = str(self.venv_dir)
-        if "UV_CONSTRAINT" not in env and not self._displayed_uv_constraint_warning:
-            for pip_var in ("PIP_CONSTRAINT", "PIP_CONSTRAINTS"):
-                if pip_var in env:
-                    _LOGGER.warning(
-                        "Found %s defined, you may want to also define UV_CONSTRAINT to match pip behavior.", pip_var
-                    )
-                    self._displayed_uv_constraint_warning = True
-                    break
-        return env
 
     def _default_pass_env(self) -> list[str]:
         env = super()._default_pass_env()
@@ -286,6 +303,55 @@ class UvVenv(Python, ABC):
             env.append("MACOSX_DEPLOYMENT_TARGET")  # needed for macOS binary builds
         env.append("PKG_CONFIG_PATH")  # needed for binary builds
         return env
+
+    def env_site_package_dir(self) -> Path:  # pragma: win32 no cover
+        if sys.platform == "win32":  # pragma: win32 cover
+            return self.venv_dir / "Lib" / "site-packages"
+        python_info = self._py_info
+        implementation = "pypy" if python_info.implementation == "pypy" else "python"
+        return (
+            self.venv_dir
+            / "lib"
+            / f"{implementation}{python_info.version_dot}{'t' if python_info.free_threaded else ''}"
+            / "site-packages"
+        )
+
+    @cached_property
+    def _py_info(self) -> PythonInfo:  # pragma: win32 no cover
+        if not self._created and not self.env_python().exists():  # called during config, no environment setup
+            self.create_python_env()
+        if not self._paths:
+            self._paths = self.prepend_env_var_path()
+        with as_file(files("tox_uv") / "_venv_query.py") as filename:
+            cmd = [str(self.env_python()), str(filename)]
+            outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="venv-query", show=False)
+        outcome.assert_success()
+        res = json.loads(outcome.out)
+        extras = {k: v for k, v in {"libc": next(iter(res["libc"]), None)}.items() if v}
+        return PythonInfo(
+            implementation=res["implementation"],
+            version_info=VersionInfo(
+                major=res["version_info"][0],
+                minor=res["version_info"][1],
+                micro=res["version_info"][2],
+                releaselevel=res["version_info"][3],
+                serial=res["version_info"][4],
+            ),
+            version=res["version"],
+            is_64=res["is_64"],
+            platform=sys.platform,
+            extra=extras,
+            free_threaded=res["free_threaded"],
+        )
+
+    def env_python(self) -> Path:
+        return self.env_bin_dir() / f"python{('.exe' if sys.platform == 'win32' else '')}"
+
+    def env_bin_dir(self) -> Path:
+        if sys.platform == "win32":  # pragma: win32 cover
+            return self.venv_dir / "Scripts"
+        else:  # pragma: win32 no cover # ruff:ignore[superfluous-else-return]
+            return self.venv_dir / "bin"
 
     def create_python_env(self) -> None:
         version_spec = self.env_version_spec()
@@ -309,48 +375,6 @@ class UvVenv(Python, ABC):
 
         outcome.assert_success()
         self._created = True
-
-    @property
-    def _allow_externals(self) -> list[str]:
-        result = super()._allow_externals
-        result.append(self.uv)
-        return result
-
-    def prepend_env_var_path(self) -> list[Path]:
-        return [self.env_bin_dir(), Path(self.uv).parent]
-
-    def env_bin_dir(self) -> Path:
-        if sys.platform == "win32":  # pragma: win32 cover
-            return self.venv_dir / "Scripts"
-        else:  # pragma: win32 no cover # ruff:ignore[superfluous-else-return]
-            return self.venv_dir / "bin"
-
-    def env_python(self) -> Path:
-        suffix = ".exe" if sys.platform == "win32" else ""
-        return self.env_bin_dir() / f"python{suffix}"
-
-    def env_site_package_dir(self) -> Path:  # pragma: win32 no cover
-        if sys.platform == "win32":  # pragma: win32 cover
-            return self.venv_dir / "Lib" / "site-packages"
-        python_info = self._py_info
-        implementation = "pypy" if python_info.implementation == "pypy" else "python"
-        return (
-            self.venv_dir
-            / "lib"
-            / f"{implementation}{python_info.version_dot}{'t' if python_info.free_threaded else ''}"
-            / "site-packages"
-        )
-
-    _OS_MAP: typing.ClassVar[typing.Mapping[str, str]] = {
-        "darwin": "macos",
-        "win32": "windows",
-    }
-    _LIBC_MAP: typing.ClassVar[typing.Mapping[str, typing.Mapping[str, str]]] = {
-        "linux": {"glibc": "gnu", "musl": "musl", "": "gnu"}
-    }
-    _NOMACHINE_FALLBACK: typing.ClassVar[typing.Mapping[str, typing.Mapping[int, str]]] = {
-        "windows": {32: "x86", 64: "x86_64"}
-    }
 
     def env_version_spec(self) -> str:
         if executable := self.base_python.extra.get("executable"):
@@ -392,8 +416,7 @@ class UvVenv(Python, ABC):
             machine_fallback = (
                 self._NOMACHINE_FALLBACK.get(uv_os, {}).get(architecture, "") if isinstance(architecture, int) else ""
             )
-            base_python_machine = (self.base_python.machine or "").lower()
-            uv_machine = machine_map.get(base_python_machine, machine_fallback)
+            uv_machine = machine_map.get((self.base_python.machine or "").lower(), machine_fallback)
             uv_libc = self._LIBC_MAP.get(uv_os, {}).get(self.base_python.extra.get("libc", "").lower(), "none")
             version_spec = f"{uv_imp}-{version}{variant}" + (
                 f"-{uv_os}-{uv_machine}-{uv_libc}" if all([uv_machine, uv_os, uv_libc]) else ""
@@ -402,35 +425,11 @@ class UvVenv(Python, ABC):
             version_spec = f"{uv_imp}{version}{variant}"
         return version_spec
 
-    @cached_property
-    def _py_info(self) -> PythonInfo:  # pragma: win32 no cover
-        if not self._created and not self.env_python().exists():  # called during config, no environment setup
-            self.create_python_env()
-        if not self._paths:
-            self._paths = self.prepend_env_var_path()
-        with as_file(files("tox_uv") / "_venv_query.py") as filename:
-            cmd = [str(self.env_python()), str(filename)]
-            outcome = self.execute(cmd, stdin=StdinSource.OFF, run_id="venv-query", show=False)
-        outcome.assert_success()
-        res = json.loads(outcome.out)
-        extras = {k: v for k, v in {"libc": next(iter(res["libc"]), None)}.items() if v}
-        return PythonInfo(
-            implementation=res["implementation"],
-            version_info=VersionInfo(
-                major=res["version_info"][0],
-                minor=res["version_info"][1],
-                micro=res["version_info"][2],
-                releaselevel=res["version_info"][3],
-                serial=res["version_info"][4],
-            ),
-            version=res["version"],
-            is_64=res["is_64"],
-            platform=sys.platform,
-            extra=extras,
-            free_threaded=res["free_threaded"],
-        )
+    def prepend_env_var_path(self) -> list[Path]:
+        return [self.env_bin_dir(), Path(self.uv).parent]
 
 
 __all__ = [
+    "PythonPreference",
     "UvVenv",
 ]

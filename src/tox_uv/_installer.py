@@ -29,32 +29,9 @@ if TYPE_CHECKING:
 
 _LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
 
-_UV_RESOLUTION_ENV_VARS: frozenset[str] = frozenset({
-    "UV_CONSTRAINT",
-    "UV_DEFAULT_INDEX",
-    "UV_EXCLUDE",
-    "UV_EXCLUDE_NEWER",
-    "UV_EXTRA_INDEX_URL",
-    "UV_FIND_LINKS",
-    "UV_FORK_STRATEGY",
-    "UV_INDEX",
-    "UV_INDEX_STRATEGY",
-    "UV_INDEX_URL",
-    "UV_KEYRING_PROVIDER",
-    "UV_NO_INDEX",
-    "UV_NO_SOURCES",
-    "UV_OFFLINE",
-    "UV_OVERRIDE",
-    "UV_PRERELEASE",
-    "UV_REQUIRE_HASHES",
-    "UV_RESOLUTION",
-    "UV_TORCH_BACKEND",
-})
-
 
 class UvInstaller(Pip):
-    """Pip is a python installer that can install packages as defined by PEP-508 and PEP-517."""
-
+    # Pip is a python installer that can install packages as defined by PEP-508 and PEP-517.
     if TYPE_CHECKING:
         _env: UvVenv
 
@@ -128,21 +105,6 @@ class UvInstaller(Pip):
             _LOGGER.warning("uv cannot install %r", arguments)  # pragma: no cover
             raise SystemExit(1)  # pragma: no cover
 
-    @cached_property
-    def _sourced_pkg_names(self) -> set[str]:
-        pyproject_file = self._env.conf._conf.src_path.parent / "pyproject.toml"  # ruff:ignore[private-member-access]
-        if not pyproject_file.exists():  # pragma: no cover
-            return set()
-        with pyproject_file.open("rb") as file_handler:
-            pyproject = tomllib.load(file_handler)
-
-        sources = pyproject.get("tool", {}).get("uv", {}).get("sources", {})
-        return {
-            canonicalize_name(name)
-            for name, source in sources.items()
-            if isinstance(source, dict) and source.get("workspace", False)
-        }
-
     def _install_list_of_deps(  # ruff:ignore[complex-structure, too-many-branches]
         self,
         arguments: Sequence[Requirement | Package],
@@ -186,12 +148,12 @@ class UvInstaller(Pip):
         with self._env.cache.compare(cache_value, section, req_of_type) as (eq, old):
             if not eq:  # pragma: no branch
                 old_req: list[str] = old["req"] if isinstance(old, dict) else (old or [])
-                miss = sorted(set(old_req) - set(groups["req"]))
-                if miss:  # no way yet to know what to uninstall here (transitive dependencies?)  # pragma: no branch
+                if miss := sorted(
+                    set(old_req) - set(groups["req"])
+                ):  # no way yet to know what to uninstall here (transitive dependencies?)  # pragma: no branch
                     msg = f"dependencies removed: {', '.join(str(i) for i in miss)}"  # pragma: no cover
                     raise Recreate(msg)  # pragma: no cover
-                new_deps = sorted(set(groups["req"]) - set(old_req)) or list(groups["req"])
-                if new_deps:  # pragma: no branch
+                if new_deps := sorted(set(groups["req"]) - set(old_req)) or list(groups["req"]):  # pragma: no branch
                     new_deps.extend(constraint_args)
                     self._execute_installer(new_deps, req_of_type)
         install_args = ["--reinstall"]
@@ -208,8 +170,44 @@ class UvInstaller(Pip):
                 install_args.extend(("-e", str(entry)))
             self._execute_installer(install_args, of_type)
 
+    @cached_property
+    def _sourced_pkg_names(self) -> set[str]:
+        pyproject_file = self._env.conf._conf.src_path.parent / "pyproject.toml"  # ruff:ignore[private-member-access]
+        if not pyproject_file.exists():  # pragma: no cover
+            return set()
+        with pyproject_file.open("rb") as file_handler:
+            pyproject = tomllib.load(file_handler)
+
+        sources = pyproject.get("tool", {}).get("uv", {}).get("sources", {})
+        return {
+            canonicalize_name(name)
+            for name, source in sources.items()
+            if isinstance(source, dict) and source.get("workspace", False)
+        }
+
     def _install_env_vars(self) -> dict[str, str]:
-        return {k: v for k, v in self._env.environment_variables.items() if k in _UV_RESOLUTION_ENV_VARS}
+        uv_resolution_env_vars: frozenset[str] = frozenset({
+            "UV_CONSTRAINT",
+            "UV_DEFAULT_INDEX",
+            "UV_EXCLUDE",
+            "UV_EXCLUDE_NEWER",
+            "UV_EXTRA_INDEX_URL",
+            "UV_FIND_LINKS",
+            "UV_FORK_STRATEGY",
+            "UV_INDEX",
+            "UV_INDEX_STRATEGY",
+            "UV_INDEX_URL",
+            "UV_KEYRING_PROVIDER",
+            "UV_NO_INDEX",
+            "UV_NO_SOURCES",
+            "UV_OFFLINE",
+            "UV_OVERRIDE",
+            "UV_PRERELEASE",
+            "UV_REQUIRE_HASHES",
+            "UV_RESOLUTION",
+            "UV_TORCH_BACKEND",
+        })
+        return {k: v for k, v in self._env.environment_variables.items() if k in uv_resolution_env_vars}
 
 
 __all__ = [

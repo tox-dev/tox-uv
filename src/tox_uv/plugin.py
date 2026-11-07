@@ -51,5 +51,6 @@ def tox_append_version_info() -> str:
 
 
 __all__ = [
+    "tox_append_version_info",
     "tox_register_tox_env",
 ]

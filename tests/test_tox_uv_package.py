@@ -11,15 +11,11 @@ if TYPE_CHECKING:
 
 
 def test_uv_package_skip(tox_project: ToxProjectCreator) -> None:
-    project = tox_project({"tox.ini": "[testenv]\npackage=skip"})
-    result = project.run("-vv")
-    result.assert_success()
+    tox_project({"tox.ini": "[testenv]\npackage=skip"}).run("-vv").assert_success()
 
 
 def test_uv_package_use_default_from_file(tox_project: ToxProjectCreator) -> None:
-    project = tox_project({"tox.ini": "[testenv]\npackage=skip", "pyproject.toml": ""})
-    result = project.run("-vv")
-    result.assert_success()
+    tox_project({"tox.ini": "[testenv]\npackage=skip", "pyproject.toml": ""}).run("-vv").assert_success()
 
 
 @pytest.mark.parametrize("with_dash", [True, False], ids=["name_dash", "name_underscore"])
@@ -30,9 +26,7 @@ def test_uv_package_artifact(
     ini = f"[testenv]\npackage={package}"
     if with_dash:
         ini += "\n[testenv:.pkg]\nset_env = WITH_DASH = 1"
-    project = tox_project({"tox.ini": ini}, base=demo_pkg_inline)
-    result = project.run()
-    result.assert_success()
+    tox_project({"tox.ini": ini}, base=demo_pkg_inline).run().assert_success()
 
 
 def test_uv_package_editable_legacy(tox_project: ToxProjectCreator, demo_pkg_setuptools: Path) -> None:
@@ -43,14 +37,11 @@ def test_uv_package_editable_legacy(tox_project: ToxProjectCreator, demo_pkg_set
     [testenv:.pkg]
     uv_seed = true
     """
-    project = tox_project({"tox.ini": ini}, base=demo_pkg_setuptools)
-    result = project.run()
-    result.assert_success()
+    tox_project({"tox.ini": ini}, base=demo_pkg_setuptools).run().assert_success()
 
 
 def test_uv_package_requirements(tox_project: ToxProjectCreator) -> None:
-    project = tox_project({"tox.ini": "[testenv]\npackage=skip\ndeps=-r demo.txt", "demo.txt": "tomli"})
-    result = project.run("-vv")
+    result = tox_project({"tox.ini": "[testenv]\npackage=skip\ndeps=-r demo.txt", "demo.txt": "tomli"}).run("-vv")
     result.assert_success()
 
 
@@ -70,31 +61,26 @@ some-dep = [
 ]
 """
     )
-    result = project.run()
-    result.assert_success()
+    project.run().assert_success()
 
 
 def test_uv_package_workspace(tox_project: ToxProjectCreator, demo_pkg_workspace: Path) -> None:
-    """Tests ability to install uv workspace projects."""
+    # Tests ability to install uv workspace projects.
     ini = """
     [testenv]
 
     [testenv:.pkg]
     uv_seed = true
     """
-    project = tox_project({"tox.ini": ini}, base=demo_pkg_workspace)
-    result = project.run()
-    result.assert_success()
+    tox_project({"tox.ini": ini}, base=demo_pkg_workspace).run().assert_success()
 
 
 def test_uv_package_no_pyproject(tox_project: ToxProjectCreator, demo_pkg_no_pyproject: Path) -> None:
-    """Tests ability to install uv workspace projects."""
+    # Tests ability to install uv workspace projects.
     ini = """
     [testenv]
 
     [testenv:.pkg]
     uv_seed = true
     """
-    project = tox_project({"tox.ini": ini}, base=demo_pkg_no_pyproject)
-    result = project.run()
-    result.assert_success()
+    tox_project({"tox.ini": ini}, base=demo_pkg_no_pyproject).run().assert_success()
