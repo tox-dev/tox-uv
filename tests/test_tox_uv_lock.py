@@ -20,7 +20,7 @@ package_root = src
 """,
     })
     (project.path / "src").mkdir()
-    execute_calls = project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
+    execute_calls = project.patch_execute(lambda request: 0 if request.run_id != "venv" else None)
     project.run("run", "--notest", "-vv").assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
@@ -75,7 +75,7 @@ def test_uv_lock_list_dependencies_command(tox_project: ToxProjectCreator) -> No
     commands = python hello
     """
     })
-    execute_calls = project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
+    execute_calls = project.patch_execute(lambda request: 0 if request.run_id != "venv" else None)
     project.run("--list-dependencies", "-vv").assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
@@ -119,9 +119,7 @@ def test_uv_lock_list_dependencies_command(tox_project: ToxProjectCreator) -> No
         ("py", "freeze", [uv, "--color", "never", "pip", "freeze"]),
         ("py", "commands[0]", ["python", "hello"]),
     ]
-    assert len(calls) == len(expected)
-    for i in range(len(calls)):
-        assert calls[i] == expected[i]
+    assert calls == expected
 
 
 @pytest.mark.usefixtures("clear_python_preference_env_var")
@@ -137,7 +135,7 @@ def test_uv_lock_command(tox_project: ToxProjectCreator, verbose: str) -> None:
     commands = python hello
     """
     })
-    execute_calls = project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
+    execute_calls = project.patch_execute(lambda request: 0 if request.run_id != "venv" else None)
     project.run(*[verbose] if verbose else []).assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
@@ -195,7 +193,7 @@ def test_uv_lock_with_default_groups(tox_project: ToxProjectCreator) -> None:
     no_default_groups = False
     """
     })
-    execute_calls = project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
+    execute_calls = project.patch_execute(lambda request: 0 if request.run_id != "venv" else None)
     project.run("-vv").assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
@@ -238,7 +236,7 @@ def test_uv_lock_with_install_pkg(tox_project: ToxProjectCreator, name: str) -> 
     runner = uv-venv-lock-runner
     """
     })
-    execute_calls = project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
+    execute_calls = project.patch_execute(lambda request: 0 if request.run_id != "venv" else None)
     wheel = project.path / name
     wheel.write_text("")
     project.run("-vv", "run", "--installpkg", str(wheel)).assert_success()
@@ -301,7 +299,7 @@ def test_uv_sync_extra_flags(tox_project: ToxProjectCreator, uv_sync_locked: boo
     commands = python hello
     """
     })
-    execute_calls = project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
+    execute_calls = project.patch_execute(lambda request: 0 if request.run_id != "venv" else None)
     project.run().assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
@@ -355,7 +353,7 @@ def test_uv_sync_extra_flags_toml(tox_project: ToxProjectCreator) -> None:
     commands = [["python", "hello"]]
     """
     })
-    execute_calls = project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
+    execute_calls = project.patch_execute(lambda request: 0 if request.run_id != "venv" else None)
     project.run().assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
@@ -423,7 +421,7 @@ def test_uv_sync_frozen_suppresses_locked(
     commands = python hello
     """
     })
-    execute_calls = project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
+    execute_calls = project.patch_execute(lambda request: 0 if request.run_id != "venv" else None)
     project.run().assert_success()
 
     uv_sync_cmd = next(i[0][3].cmd for i in execute_calls.call_args_list if i[0][3].run_id == "uv-sync")
@@ -442,7 +440,7 @@ def test_uv_sync_dependency_groups(tox_project: ToxProjectCreator) -> None:
     commands = [["python", "hello"]]
     """
     })
-    execute_calls = project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
+    execute_calls = project.patch_execute(lambda request: 0 if request.run_id != "venv" else None)
     project.run().assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
@@ -508,7 +506,7 @@ def test_uv_sync_uv_python_preference(
     uv_python_preference = "{uv_python_preference}"
     """
     })
-    execute_calls = project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
+    execute_calls = project.patch_execute(lambda request: 0 if request.run_id != "venv" else None)
     project.run().assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
@@ -561,7 +559,7 @@ def test_skip_uv_sync(tox_project: ToxProjectCreator, monkeypatch: pytest.Monkey
     commands = [["python", "hello"]]
     """
     })
-    execute_calls = project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
+    execute_calls = project.patch_execute(lambda request: 0 if request.run_id != "venv" else None)
     project.run("run", "--skip-uv-sync").assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
@@ -603,7 +601,7 @@ def test_uv_package_non_editable(tox_project: ToxProjectCreator, monkeypatch: py
             name = "demo"
             """,
     })
-    execute_calls = project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
+    execute_calls = project.patch_execute(lambda request: 0 if request.run_id != "venv" else None)
     project.run("run", "--notest").assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
@@ -658,7 +656,7 @@ def test_uv_package_non_editable_no_pyproject(
             package = "{package}"
             """,
     })
-    project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
+    project.patch_execute(lambda request: 0 if request.run_id != "venv" else None)
 
     project.run("run", "--notest").assert_failed()
 
@@ -672,7 +670,7 @@ def test_uv_package_uv_editable(tox_project: ToxProjectCreator, monkeypatch: pyt
             package = "uv-editable"
             """,
     })
-    execute_calls = project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
+    execute_calls = project.patch_execute(lambda request: 0 if request.run_id != "venv" else None)
     project.run("run", "--notest").assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
@@ -721,7 +719,7 @@ def test_skip_uv_package_skip(tox_project: ToxProjectCreator, monkeypatch: pytes
     package = "skip"
     """
     })
-    execute_calls = project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
+    execute_calls = project.patch_execute(lambda request: 0 if request.run_id != "venv" else None)
     project.run("run", "--notest").assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
@@ -771,7 +769,7 @@ def test_uv_lock_ith_resolution(tox_project: ToxProjectCreator) -> None:
     uv_resolution = highest
     """
     })
-    execute_calls = project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
+    execute_calls = project.patch_execute(lambda request: 0 if request.run_id != "venv" else None)
     project.run("run", "--notest").assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
@@ -809,9 +807,7 @@ def test_uv_lock_ith_resolution(tox_project: ToxProjectCreator) -> None:
             ],
         ),
     ]
-    assert len(calls) == len(expected)
-    for i in range(len(calls)):
-        assert calls[i] == expected[i]
+    assert calls == expected
 
 
 @pytest.mark.usefixtures("clear_python_preference_env_var")
@@ -824,7 +820,7 @@ only_groups = ["ci"]
 commands = [["python", "hello"]]
 """
     })
-    execute_calls = project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
+    execute_calls = project.patch_execute(lambda request: 0 if request.run_id != "venv" else None)
     project.run().assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]
@@ -885,7 +881,7 @@ def test_uv_lock_recreate_reinstall(
     {extra_tox_ini}
     """
     })
-    execute_calls = project.patch_execute(lambda r: 0 if r.run_id != "venv" else None)
+    execute_calls = project.patch_execute(lambda request: 0 if request.run_id != "venv" else None)
     project.run("run", "--notest", *run_args).assert_success()
 
     calls = [(i[0][0].conf.name, i[0][3].run_id, i[0][3].cmd) for i in execute_calls.call_args_list]

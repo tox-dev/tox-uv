@@ -31,7 +31,7 @@ def test_deps_installed(tox_project: ToxProjectCreator) -> None:
 
 def _run(project: ToxProjectCreator, files: dict[str, str], *extra_args: str) -> tuple:
     proj = project(files)
-    execute_calls = proj.patch_execute(lambda r: 0 if "install" in r.run_id else None)
+    execute_calls = proj.patch_execute(lambda request: 0 if "install" in request.run_id else None)
     return proj.run("r", "-e", "check", "--discover", sys.executable, *extra_args), execute_calls
 
 

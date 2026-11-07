@@ -67,7 +67,7 @@ def test_uv_install_without_pre_custom_install_cmd(tox_project: ToxProjectCreato
 @pytest.mark.parametrize("strategy", ["highest", "lowest", "lowest-direct"])
 def test_uv_install_with_resolution_strategy(tox_project: ToxProjectCreator, strategy: str) -> None:
     project = tox_project({"tox.ini": f"[testenv]\ndeps = tomli>=2.0.1\npackage = skip\nuv_resolution = {strategy}"})
-    execute_calls = project.patch_execute(lambda r: 0 if "install" in r.run_id else None)
+    execute_calls = project.patch_execute(lambda request: 0 if "install" in request.run_id else None)
 
     project.run("-vv").assert_success()
 
@@ -93,7 +93,7 @@ def test_uv_install_with_resolution_strategy_custom_install_cmd(tox_project: Tox
     install_command = uv pip install {packages}
     """
     })
-    execute_calls = project.patch_execute(lambda r: 0 if "install" in r.run_id else None)
+    execute_calls = project.patch_execute(lambda request: 0 if "install" in request.run_id else None)
 
     project.run("-vv").assert_success()
 
@@ -110,7 +110,7 @@ def test_uv_install_with_resolution_strategy_and_pip_pre(tox_project: ToxProject
     pip_pre = true
     """
     })
-    execute_calls = project.patch_execute(lambda r: 0 if "install" in r.run_id else None)
+    execute_calls = project.patch_execute(lambda request: 0 if "install" in request.run_id else None)
     project.run("-vv").assert_success()
     assert execute_calls.call_args[0][3].cmd[2:] == [
         "install",
@@ -141,7 +141,7 @@ version = "0.1.0"
 test = ["pytest>=8.0.0"]
 """,
     })
-    execute_calls = project.patch_execute(lambda r: 0 if "install" in r.run_id else None)
+    execute_calls = project.patch_execute(lambda request: 0 if "install" in request.run_id else None)
 
     project.run("-vv").assert_success()
 
@@ -203,7 +203,7 @@ dependencies = ["packaging>=20.0"]
 test = ["pytest>=8.0.0"]
 """,
     })
-    execute_calls = project.patch_execute(lambda r: 0 if "install" in r.run_id else None)
+    execute_calls = project.patch_execute(lambda request: 0 if "install" in request.run_id else None)
 
     project.run("-vv").assert_success()
 
@@ -235,7 +235,7 @@ version = "0.1.0"
 test = ["pytest>=8.0.0"]
 """,
     })
-    execute_calls = project.patch_execute(lambda r: 0 if "install" in r.run_id else None)
+    execute_calls = project.patch_execute(lambda request: 0 if "install" in request.run_id else None)
 
     result = project.run("-vv", "--skip-env-install")
     result.assert_success()
@@ -297,9 +297,9 @@ def test_uv_env_var_change_reinstall(
     })
     install_count = 0
 
-    def handle(r: ExecuteRequest) -> int | None:
+    def handle(request: ExecuteRequest) -> int | None:
         nonlocal install_count
-        if "install" in r.run_id:
+        if "install" in request.run_id:
             install_count += 1
             return 0
         return None
@@ -373,7 +373,7 @@ def test_uv_install_with_constraints_for_deps(tox_project: ToxProjectCreator) ->
         """),
         "constraints.txt": "pytest==8.3.0\n",
     })
-    execute_calls = project.patch_execute(lambda r: 0 if "install" in r.run_id else None)
+    execute_calls = project.patch_execute(lambda request: 0 if "install" in request.run_id else None)
 
     project.run("-vv").assert_success()
 
