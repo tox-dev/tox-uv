@@ -293,9 +293,6 @@ class UvVenv(Python, ABC):
     @classmethod
     def python_spec_for_path(cls, path: Path) -> PythonSpec:
         # Get the spec for an absolute path to a Python executable.
-        #
-        # :param path: the path investigated
-        # :return: the found spec
         info = cls._get_virtualenv_py_info(path)  # pragma: win32 no cover
         return PythonSpec.from_string_spec(  # pragma: win32 no cover
             f"{info.implementation}{info.version_info.major}{info.version_info.minor}"
@@ -352,7 +349,7 @@ class UvVenv(Python, ABC):
         )
 
     def env_python(self) -> Path:
-        return self.env_bin_dir() / f"python{('.exe' if sys.platform == 'win32' else '')}"
+        return self.env_bin_dir() / f"python{'.exe' if sys.platform == 'win32' else ''}"
 
     def env_bin_dir(self) -> Path:
         if sys.platform == "win32":  # pragma: win32 cover
