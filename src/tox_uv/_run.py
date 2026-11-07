@@ -6,8 +6,9 @@ import logging
 from pathlib import Path
 from typing import Final
 
-from packaging.requirements import Requirement
+from tox.tox_env.errors import Recreate
 from tox.tox_env.python.dependency_groups import resolve as resolve_dependency_groups
+from tox.tox_env.python.pip.req_file import PythonDeps
 from tox.tox_env.python.runner import PythonRun
 
 from ._package_types import UvEditablePackage, UvPackage
@@ -41,6 +42,11 @@ class UvVenvRunner(UvVenv, PythonRun):
         return "uv-venv-runner"
 
     def _install_deps(self) -> None:
+        with self.cache.compare(None, PythonRun.__name__, "deps") as (_, old):
+            if old is not None:
+                msg = "dependency install cache format changed"
+                raise Recreate(msg)
+        requirements: PythonDeps = self.conf["deps"]
         groups: set[str] = self.conf["dependency_groups"]
         uv_resolution: str = self.conf["uv_resolution"]
 
@@ -49,17 +55,15 @@ class UvVenvRunner(UvVenv, PythonRun):
                 root = self.core.get("package_root", Path)
             except KeyError:
                 root = self.core.get("tox_root", Path)
-            group_reqs = list(resolve_dependency_groups(root, groups))
-            deps_file = self.conf["deps"]
-            combined_reqs = [Requirement(line) for line in deps_file.lines()] + group_reqs
+            # Preserve tox's environment expansion when combining requirements.
+            requirements += PythonDeps(list(resolve_dependency_groups(root, groups)), requirements.path.parent)
 
             _LOGGER.info(
                 "combining deps and dependency groups for uv_resolution=%s to ensure correct resolution",
                 uv_resolution,
             )
-            self._install(combined_reqs, PythonRun.__name__, "deps")
-        else:
-            super()._install_deps()
+        # Both modes share a cache, separate from earlier releases' list-installer format.
+        self._install(requirements, UvVenvRunner.__name__, "deps")
 
     def _install_dependency_groups(self) -> None:
         groups: set[str] = self.conf["dependency_groups"]

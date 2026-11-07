@@ -229,6 +229,140 @@ test = ["pytest>=8.0.0"]
     assert "pytest>=8.0.0" in cmd
 
 
+@pytest.mark.parametrize(
+    ("deps", "expected"),
+    [
+        pytest.param(
+            "# pinned for the lowest run\n    -r requirements.txt",
+            ["pytest>=8.0.0", "-r", "requirements.txt"],
+            id="requirements",
+        ),
+        pytest.param(
+            "-c requirements.txt\n    packaging",
+            ["packaging", "pytest>=8.0.0", "-c", "requirements.txt"],
+            id="constraints",
+        ),
+        pytest.param("--no-deps\n    packaging", ["packaging", "pytest>=8.0.0", "--no-deps"], id="option"),
+    ],
+)
+def test_uv_install_resolution_dependency_groups_with_deps_options(
+    tox_project: ToxProjectCreator, deps: str, expected: list[str]
+) -> None:
+    project = tox_project({
+        "tox.ini": f"""
+[testenv]
+deps =
+    {deps}
+package = skip
+uv_resolution = lowest-direct
+dependency_groups = test
+""",
+        "requirements.txt": "packaging>=20.0\n",
+        "pyproject.toml": """
+[project]
+name = "test-pkg"
+version = "0.1.0"
+
+[dependency-groups]
+test = ["pytest>=8.0.0"]
+""",
+    })
+    execute_calls = project.patch_execute(lambda request: 0 if "install" in request.run_id else None)
+
+    project.run("-vv").assert_success()
+
+    assert [call[0][3].cmd[2:] for call in execute_calls.call_args_list if "install" in call[0][3].run_id] == [
+        [
+            "install",
+            "--resolution",
+            "lowest-direct",
+            *expected,
+            "-v",
+        ]
+    ]
+
+
+def test_uv_install_resolution_groups_preserves_set_env(tox_project: ToxProjectCreator) -> None:
+    pytest.importorskip("tox", minversion="4.67.5", reason="tox 4.67.5 added set_env expansion in requirements files")
+    project = tox_project({
+        "tox.ini": """
+[testenv]
+deps = -r requirements.txt
+set_env = GROUP_DEP = packaging>=20.0
+package = skip
+uv_resolution = lowest-direct
+dependency_groups = test
+""",
+        "requirements.txt": "${GROUP_DEP}\n",
+        "pyproject.toml": '[dependency-groups]\ntest = ["pytest>=8.0.0"]',
+    })
+    execute_calls = project.patch_execute(lambda request: 0 if "install" in request.run_id else None)
+
+    project.run("-vv").assert_success()
+    execute_calls.reset_mock()
+    project.run("-vv", "-x", "testenv.set_env=GROUP_DEP=packaging>=21.0").assert_success()
+
+    assert [call[0][3].cmd[2:] for call in execute_calls.call_args_list if "install" in call[0][3].run_id] == [
+        ["install", "--resolution", "lowest-direct", "pytest>=8.0.0", "-r", "requirements.txt", "-v"]
+    ]
+
+
+def test_uv_install_resolution_groups_upgrade_cache(tox_project: ToxProjectCreator) -> None:
+    project = tox_project({
+        "tox.ini": "[testenv]\npackage=skip\ndeps=packaging>=20\nuv_resolution=lowest-direct\ndependency_groups=test",
+        "pyproject.toml": '[dependency-groups]\ntest=["pytest>=8"]',
+    })
+    project.patch_execute(lambda request: 0 if "install" in request.run_id else None)
+    result = project.run("-vv")
+    result.assert_success()
+
+    # Earlier releases stored combined dependencies using the list installer's cache format.
+    cache = result.state.envs["py"].cache
+    with (
+        cache.compare({"deps": {"req": ["packaging>=20", "pytest>=8"], "env": {}, "constraints": []}}, "PythonRun"),
+        cache.compare(None, "UvVenvRunner"),
+    ):
+        pass
+    obsolete_package = project.path / ".tox" / "py" / "obsolete-package"
+    obsolete_package.write_text("removed dependency")
+    project.run("-vv").assert_success()
+
+    assert not obsolete_package.exists()
+
+
+@pytest.mark.parametrize(
+    ("initial_groups", "other_groups", "expected"),
+    [
+        pytest.param("", "test", ["packaging==20.0"], id="enable-groups"),
+        pytest.param("test", "", ["packaging==20.0", "pytest>=8"], id="disable-groups"),
+    ],
+)
+def test_uv_install_resolution_groups_switch_cache(
+    tox_project: ToxProjectCreator, initial_groups: str, other_groups: str, expected: list[str]
+) -> None:
+    project = tox_project({
+        "tox.ini": f"""
+[testenv]
+package = skip
+deps = packaging==20.0
+uv_resolution = lowest-direct
+dependency_groups = {initial_groups}
+""",
+        "pyproject.toml": '[dependency-groups]\ntest=["pytest>=8"]',
+    })
+    execute_calls = project.patch_execute(lambda request: 0 if "install" in request.run_id else None)
+    project.run("-vv").assert_success()
+    project.run(
+        "-vv", "-x", "testenv.deps=packaging==21.0", "-x", f"testenv.dependency_groups={other_groups}"
+    ).assert_success()
+    execute_calls.reset_mock()
+    project.run("-vv").assert_success()
+
+    assert [call[0][3].cmd[2:] for call in execute_calls.call_args_list if "install" in call[0][3].run_id] == [
+        ["install", "--resolution", "lowest-direct", *expected, "-v"]
+    ]
+
+
 def test_uv_install_with_skip_env_install(tox_project: ToxProjectCreator) -> None:
     project = tox_project({
         "tox.ini": """
