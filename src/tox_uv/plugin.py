@@ -21,6 +21,11 @@ if TYPE_CHECKING:
 
 @impl
 def tox_register_tox_env(register: ToxEnvRegister) -> None:
+    """
+    Register the uv-backed run environments and package builders with tox.
+
+    :param register: the registry tox adds the environments to
+    """
     register.add_run_env(UvVenvRunner)
     register.add_run_env(UvVenvLockRunner)
     register.add_run_env(UvVenvPep723Runner)
@@ -43,6 +48,11 @@ def tox_add_option(parser: ToxParser) -> None:
 
 
 def tox_append_version_info() -> str:
+    """
+    Return the uv version for tox's version banner, or an empty string when uv is not installed.
+
+    :returns: the banner suffix
+    """
     try:
         uv_version = version("uv")
     except PackageNotFoundError:
