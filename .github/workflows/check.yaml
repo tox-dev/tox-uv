@@ -21,6 +21,7 @@ jobs:
       contents: read
     with:
       tox-install: tox --with .
+      exclude-newer-package: python-sbom=2026-11-08T17:54:00Z
       include: |
         [
           {"env": "3.15", "python": "3.15"},
