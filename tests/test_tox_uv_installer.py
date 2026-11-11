@@ -27,6 +27,19 @@ _BROKEN_VENV_EXECUTABLES: Final[tuple[str, ...]] = (
 )
 
 
+@pytest.mark.parametrize("package", [pytest.param("wheel", id="wheel"), pytest.param("sdist", id="sdist")])
+def test_uv_install_built_package_in_path_with_hash(
+    tox_project: ToxProjectCreator, demo_pkg_setuptools: Path, tmp_path: Path, package: str
+) -> None:
+    project = tox_project(
+        {"tox.ini": f'[testenv]\npackage = {package}\ncommands = python -c "import demo_pkg_setuptools"'},
+        base=demo_pkg_setuptools,
+        prj_path=tmp_path / "project#test",
+    )
+
+    project.run().assert_success()
+
+
 def test_uv_install_in_ci_list(tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("CI", "1")
     result = tox_project({"tox.ini": "[testenv]\ndeps = tomli\npackage=skip"}).run()
@@ -622,4 +635,4 @@ def test_uv_install_wheel_without_pyproject(tox_project: ToxProjectCreator, tmp_
 
     install_calls = [call.args[3].cmd[2:] for call in execute_calls.call_args_list if "install" in call.args[3].run_id]
     assert ["install", "packaging>=20"] in install_calls
-    assert ["install", "--reinstall", "--no-deps", f"demo-root@{wheel}"] in install_calls
+    assert ["install", "--reinstall", "--no-deps", f"demo-root@{wheel.as_uri()}"] in install_calls
