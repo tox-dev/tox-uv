@@ -182,7 +182,7 @@ class UvInstaller(Pip):
                 continue
             groups["req"].append(str(pkg))
         name, *_ = (parse_sdist_filename if isinstance(arg, SdistPackage) else parse_wheel_filename)(arg.path.name)
-        groups["pkg"].append(f"{name}@{arg.path}")
+        groups["pkg"].append(f"{name}@{arg.path.as_uri()}")
 
     @cached_property
     def _sourced_pkg_names(self) -> set[str]:
