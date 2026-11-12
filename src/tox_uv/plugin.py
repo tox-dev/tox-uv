@@ -1,4 +1,4 @@
-"""GitHub Actions integration."""
+"""Register uv-backed environments with tox."""
 
 from __future__ import annotations
 
@@ -30,14 +30,20 @@ def tox_register_tox_env(register: ToxEnvRegister) -> None:
     register.add_run_env(UvVenvLockRunner)
     register.add_run_env(UvVenvPep723Runner)
     if not StrConvert.to_bool(os.environ.get("TOX_UV_NO_PEP723", "false")):
-        register._run_envs["virtualenv-pep-723"] = UvVenvPep723Runner  # ruff:ignore[private-member-access] tox has no public API to register a run env under a second name
+        # tox has no public API for a second runner name.
+        register._run_envs["virtualenv-pep-723"] = UvVenvPep723Runner  # ruff:ignore[private-member-access]
     register.add_package_env(UvVenvPep517Packager)
     register.add_package_env(UvVenvCmdBuilder)
-    register._default_run_env = UvVenvRunner.id()  # ruff:ignore[private-member-access] tox has no public setter for the default run env
+    register.default_env_runner = UvVenvRunner.id()
 
 
 @impl
 def tox_add_option(parser: ToxParser) -> None:
+    """
+    Add the option that skips lockfile synchronization.
+
+    :param parser: tox's command-line parser
+    """
     for key in ("run", "exec"):
         parser.handlers[key][0].add_argument(
             "--skip-uv-sync",

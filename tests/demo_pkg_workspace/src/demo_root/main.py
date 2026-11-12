@@ -1,4 +1,4 @@
-from __future__ import annotations
+from __future__ import annotations  # simplint: ignore[entrypoint-module-name]  # tox fixture executes this file
 
 
 def main() -> None:

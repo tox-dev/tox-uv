@@ -16,11 +16,24 @@ if TYPE_CHECKING:
 
 
 class UvVenvPep517Packager(Pep517VenvPackager, UvVenv):
+    """Build packages for uv-backed tox environments."""
+
     @staticmethod
     def id() -> str:
+        """
+        Identify the uv PEP 517 package environment to tox.
+
+        :returns: tox's package environment identifier
+        """
         return "uv-venv-pep-517"
 
     def perform_packaging(self, for_env: EnvConfigSet) -> list[Package]:
+        """
+        Select uv package types and delegate other types to tox.
+
+        :param for_env: environment requesting the package
+        :returns: packages to install into that environment
+        """
         of_type: str = for_env["package"]
         root: Path = self.core["tox_root"] / self.root  # tox before 4.67.5 leaves package_root relative
         if of_type == UvPackage.KEY:
@@ -31,8 +44,15 @@ class UvVenvPep517Packager(Pep517VenvPackager, UvVenv):
 
 
 class UvVenvCmdBuilder(VenvCmdBuilder, UvVenv):
+    """Build external package commands in a uv-backed environment."""
+
     @staticmethod
     def id() -> str:
+        """
+        Identify the uv command builder to tox.
+
+        :returns: tox's package environment identifier
+        """
         return "uv-venv-cmd-builder"
 
 

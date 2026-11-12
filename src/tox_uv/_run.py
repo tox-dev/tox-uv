@@ -1,4 +1,4 @@
-"""GitHub Actions integration."""
+"""uv-backed tox runner."""
 
 from __future__ import annotations
 
@@ -18,16 +18,19 @@ _LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
 
 
 class UvVenvRunner(UvVenv, PythonRun):
+    """Run tox environments using uv for creation and installation."""
+
     @property
     def _package_tox_env_type(self) -> str:
         return "uv-venv-pep-517"
 
     @property
     def _external_pkg_tox_env_type(self) -> str:
-        return "uv-venv-cmd-builder"  # pragma: no cover tox reads this type name when it builds a package env
+        return "uv-venv-cmd-builder"
 
     @property
     def default_pkg_type(self) -> str:
+        """Skip packaging when the project has no package metadata."""
         tox_root: Path = self.core["tox_root"]
         if not (any((tox_root / i).exists() for i in ("pyproject.toml", "setup.py", "setup.cfg"))):
             return "skip"
@@ -39,6 +42,11 @@ class UvVenvRunner(UvVenv, PythonRun):
 
     @staticmethod
     def id() -> str:
+        """
+        Identify the uv runner to tox.
+
+        :returns: tox's run environment identifier
+        """
         return "uv-venv-runner"
 
     def _install_deps(self) -> None:

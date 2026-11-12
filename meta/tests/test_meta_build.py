@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import zipfile
 from pathlib import Path
-from subprocess import check_call
+from shutil import which
+from subprocess import check_call  # ruff:ignore[suspicious-subprocess-import] controlled build command
 from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING
 
@@ -19,7 +20,10 @@ def built_wheel() -> Iterator[Path]:
     with TemporaryDirectory() as tmp_dir:
         dist_dir = Path(tmp_dir)
         meta_dir = Path(__file__).parent.parent
-        check_call(["uv", "build", "--wheel", str(meta_dir), "--out-dir", str(dist_dir)], cwd=meta_dir)
+        uv = which("uv")
+        assert uv is not None
+        # The test invokes the resolved binary with fixed arguments.
+        check_call([uv, "build", "--wheel", str(meta_dir), "--out-dir", str(dist_dir)], cwd=meta_dir)  # ruff: ignore[subprocess-without-shell-equals-true]
         wheels = list(dist_dir.glob("tox_uv-*.whl"))
         assert len(wheels) == 1
         yield wheels[0]

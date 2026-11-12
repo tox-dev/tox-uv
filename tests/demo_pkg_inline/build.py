@@ -74,7 +74,8 @@ _METADATA_FILES: Final[dict[str, str]] = {
 }
 
 
-def get_requires_for_build_wheel(config_settings: dict[str, str] | None = None) -> list[str]:  # ruff:ignore[unused-function-argument] PEP 517 fixes the hook signature; this backend needs no settings
+# PEP 517 requires the config_settings parameter.
+def get_requires_for_build_wheel(config_settings: dict[str, str] | None = None) -> list[str]:  # ruff: ignore[unused-function-argument]
     return []  # pragma: no cover # only executed in non-host pythons
 
 
@@ -88,8 +89,8 @@ def build_editable(
 
 def build_wheel(
     wheel_directory: str,
-    config_settings: dict[str, str] | None,  # ruff:ignore[unused-function-argument] PEP 517 fixes the hook signature; this backend needs no settings
-    metadata_directory: str | None,
+    config_settings: dict[str, str] | None = None,  # ruff: ignore[unused-function-argument] fixture backend ignores frontend settings
+    metadata_directory: str | None = None,
 ) -> str:
     base_name = f"{_NAME_IN_ARTIFACT}-{_VERSION}-py{sys.version_info[0]}-none-any.whl"
     path = Path(wheel_directory) / base_name
@@ -97,9 +98,7 @@ def build_wheel(
         for (
             arc_name,
             data,
-        ) in (
-            _CONTENT.items()
-        ):  # pragma: no branch the content table is never empty, so the exit side is the same for every build
+        ) in _CONTENT.items():
             zip_file_handler.writestr(arc_name, dedent(data).strip())
         if metadata_directory is not None:
             for sub_directory, _, filenames in os.walk(metadata_directory):
@@ -109,11 +108,12 @@ def build_wheel(
         else:
             for arc_name, data in _METADATA_FILES.items():
                 zip_file_handler.writestr(arc_name, dedent(data).strip())
-    print(f"created wheel {path}")  # ruff:ignore[print] build frontends show the artifact path from stdout
+    print(f"created wheel {path}")  # ruff:ignore[print] build frontend reads stdout
     return base_name
 
 
-def build_sdist(sdist_directory: str, config_settings: dict[str, str] | None = None) -> str:  # ruff:ignore[unused-function-argument] PEP 517 fixes the hook signature; this backend needs no settings
+# PEP 517 requires the config_settings parameter.
+def build_sdist(sdist_directory: str, config_settings: dict[str, str] | None = None) -> str:  # ruff: ignore[unused-function-argument]
     result = f"{_NAME_IN_ARTIFACT}-{_VERSION}.tar.gz"  # pragma: win32 cover
     with tarfile.open(str(Path(sdist_directory) / result), "w:gz") as tar:  # pragma: win32 cover
         root = Path(__file__).parent  # pragma: win32 cover
@@ -122,5 +122,6 @@ def build_sdist(sdist_directory: str, config_settings: dict[str, str] | None = N
     return result  # pragma: win32 cover
 
 
-def get_requires_for_build_sdist(config_settings: dict[str, str] | None = None) -> list[str]:  # ruff:ignore[unused-function-argument] PEP 517 fixes the hook signature; this backend needs no settings
+# PEP 517 requires the config_settings parameter.
+def get_requires_for_build_sdist(config_settings: dict[str, str] | None = None) -> list[str]:  # ruff: ignore[unused-function-argument]
     return []  # pragma: no cover # only executed in non-host pythons

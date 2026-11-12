@@ -1,4 +1,4 @@
-"""GitHub Actions integration."""
+"""uv lockfile-backed tox runner."""
 
 from __future__ import annotations
 
@@ -19,6 +19,8 @@ if TYPE_CHECKING:
 
 
 class UvVenvLockRunner(UvVenv, RunToxEnv):
+    """Run tox environments from a uv lockfile."""
+
     @property
     def _package_tox_env_type(self) -> str:
         raise NotImplementedError
@@ -29,15 +31,21 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
 
     @staticmethod
     def id() -> str:
+        """
+        Identify the uv lockfile runner to tox.
+
+        :returns: tox's run environment identifier
+        """
         return "uv-venv-lock-runner"
 
-    def _register_package_conf(self) -> bool:  # ruff:ignore[no-self-use] tox calls this hook on the instance
+    def _register_package_conf(self) -> bool:  # ruff:ignore[no-self-use] tox instance hook
         return False
 
     def _build_packages(self) -> list[Package]:
         raise NotImplementedError
 
     def register_config(self) -> None:
+        """Register lockfile sync options with tox."""
         super().register_config()
         add_extras_to_env(self.conf)
         self.conf.add_config(
@@ -92,7 +100,7 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
                 self._build_uv_sync_cmd(install_pkg),
                 stdin=StdinSource.OFF,
                 run_id="uv-sync",
-                show=self.options.verbosity > 2,  # ruff:ignore[magic-value-comparison] uv output shows from tox -v onwards
+                show=self.options.verbosity > 2,  # ruff:ignore[magic-value-comparison] tox -v
             )
             outcome.assert_success()
         if install_pkg is not None:
@@ -122,7 +130,7 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
             cmd.append("--no-install-project")
         if self.conf["recreate"] and "--reinstall" not in self.conf["uv_sync_flags"]:
             cmd.append("--reinstall")
-        if self.options.verbosity > 3:  # ruff:ignore[magic-value-comparison] uv -v is passed at tox -vv only
+        if self.options.verbosity > 3:  # ruff:ignore[magic-value-comparison] tox -vv
             cmd.append("-v")
         if package in {"wheel", "uv"}:
             cmd.extend(_no_editable_args(package_root))
@@ -147,6 +155,7 @@ class UvVenvLockRunner(UvVenv, RunToxEnv):
 
     @property
     def environment_variables(self) -> dict[str, str]:
+        """Set the variables needed by uv's lockfile workflow."""
         env = super().environment_variables
         env["UV_PROJECT_ENVIRONMENT"] = str(self.venv_dir)
         return env

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from runpy import run_path
+from tarfile import open as open_tar
 from typing import TYPE_CHECKING
+from zipfile import ZipFile
 
 import pytest
 
@@ -75,7 +78,6 @@ some-dep = [
 
 
 def test_uv_package_workspace(tox_project: ToxProjectCreator, demo_pkg_workspace: Path) -> None:
-    # Tests ability to install uv workspace projects.
     ini = """
     [testenv]
 
@@ -83,6 +85,33 @@ def test_uv_package_workspace(tox_project: ToxProjectCreator, demo_pkg_workspace
     uv_seed = true
     """
     tox_project({"tox.ini": ini}, base=demo_pkg_workspace).run().assert_success()
+
+
+def test_demo_inline_backend_optional_settings(demo_pkg_inline: Path, tmp_path: Path) -> None:
+    with ZipFile(tmp_path / run_path(str(demo_pkg_inline / "build.py"))["build_wheel"](str(tmp_path))) as archive:
+        assert "demo_pkg_inline/__init__.py" in archive.namelist()
+
+
+def test_demo_inline_backend_editable(demo_pkg_inline: Path, tmp_path: Path) -> None:
+    with ZipFile(tmp_path / run_path(str(demo_pkg_inline / "build.py"))["build_editable"](str(tmp_path))) as archive:
+        assert "demo_pkg_inline/__init__.py" in archive.namelist()
+
+
+def test_demo_inline_backend_metadata_directory(demo_pkg_inline: Path, tmp_path: Path) -> None:
+    metadata_dir = tmp_path / "prepared-metadata"
+    metadata_dir.mkdir()
+    (metadata_dir / "marker.txt").write_text("prepared metadata")
+    wheel = run_path(str(demo_pkg_inline / "build.py"))["build_wheel"](
+        str(tmp_path), metadata_directory=str(metadata_dir)
+    )
+    with ZipFile(tmp_path / wheel) as archive:
+        assert any(archive.read(name) == b"prepared metadata" for name in archive.namelist())
+
+
+def test_demo_inline_backend_sdist(demo_pkg_inline: Path, tmp_path: Path) -> None:
+    archive_path = tmp_path / run_path(str(demo_pkg_inline / "build.py"))["build_sdist"](str(tmp_path))
+    with open_tar(archive_path, "r:gz") as archive:
+        assert {"build.py", "pyproject.toml"} <= set(archive.getnames())
 
 
 def test_uv_package_no_pyproject(tox_project: ToxProjectCreator, demo_pkg_no_pyproject: Path) -> None:

@@ -41,7 +41,7 @@ repos:
         alias: ruff
         args: ["--exit-non-zero-on-fix"]
   - repo: https://github.com/gaborbernat/simplint-pre-commit
-    rev: "c8719dca99c13381570bc69f8955c9448fc271b7" # frozen: v0.7.1
+    rev: "5f12b15e1199c42bdeb3e13ea1c8b45952fbd802" # frozen: v0.11.0
     hooks:
       - id: simplint
         priority: 6

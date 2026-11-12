@@ -10,7 +10,8 @@ if TYPE_CHECKING:
     from collections.abc import Generator
 
 
-@pytest.fixture(autouse=True)
+# Every test must ignore the user's tox configuration.
+@pytest.fixture(autouse=True)  # ruff:ignore[pytest-fixture-autouse]
 def mock_settings_env_vars(monkeypatch: pytest.MonkeyPatch) -> Generator[None, None, None]:
     with monkeypatch.context() as patch:
         patch.setenv("TOX_USER_CONFIG_FILE", os.devnull)

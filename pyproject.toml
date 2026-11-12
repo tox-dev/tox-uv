@@ -126,38 +126,31 @@ lint.select = [
 ]
 lint.ignore = [
   "CPY",                                       # No copyright statements
-  "D",                                         # no documentation for now
-  "docstring-missing-exception",               # rst-missing-raises (simplint SMP924) reads reST fields instead
+  "docstring-missing-exception",               # rst-missing-raises (simplint) reads reST fields instead
   "docstring-missing-returns",                 # no support for sphinx
-  "docstring-missing-yields",                  # rst-returns (simplint SMP923) reads reST fields instead
-  "escape-sequence-in-docstring",              # Use `r"""` if any backslashes in a docstring
-  "hardcoded-bind-all-interfaces",             # Possible binding to all interface
-  "incorrect-blank-line-before-class",         # `one-blank-line-before-class` (D203) and `no-blank-line-before-class` (D211) are incompatible
-  "missing-blank-line-after-summary",          # 1 blank line required between summary line and description
+  "docstring-missing-yields",                  # rst-returns (simplint) reads reST fields instead
+  "incorrect-blank-line-before-class",         # incompatible with blank-line-before-class
   "missing-trailing-comma",                    # Conflict with formatter
-  "multi-line-summary-first-line",             # `multi-line-summary-first-line` (D212) and `multi-line-summary-second-line` (D213) are incompatible
-  "non-empty-init-module",                     # `__init__` module should only contain docstrings and re-exports
-  "non-imperative-mood",                       # First line of docstring should be in imperative mood
+  "multi-line-summary-first-line",             # multi-line summaries start on the next line
   "single-line-implicit-string-concatenation", # Conflict with formatter
+  "undocumented-magic-method",                 # function-docstring and undocumented-public-api own class and function documentation to avoid conflicting fixes
+  "undocumented-public-class",
+  "undocumented-public-function",
+  "undocumented-public-init",
+  "undocumented-public-method",
+  "undocumented-public-nested-class",
+  "unnecessary-regular-expression-compile",    # conflicts with simplint inline-regex
 ]
 lint.per-file-ignores."meta/tests/**/*.py" = [
   "assert",                     # asserts allowed in tests...
-  "D",                          # don't care about documentation in tests
-  "FBT",                        # don't care about booleans as positional arguments in tests
   "implicit-namespace-package", # no implicit namespace
-  "import-private-name",        # private import is fine
-  "magic-value-comparison",     # Magic value used in comparison, consider replacing with a constant variable
-  "S",                          # no safety concerns
+  "undocumented-public-module", # test modules do not need docstrings
 ]
 lint.per-file-ignores."tests/**/*.py" = [
-  "assert",                     # asserts allowed in tests...
-  "D",                          # don't care about documentation in tests
-  "FBT",                        # don't care about booleans as positional arguments in tests
-  "implicit-namespace-package", # no implicit namespace
-  "import-private-name",        # private import is fine
-  "magic-value-comparison",     # Magic value used in comparison, consider replacing with a constant variable
-  "pytest-fixture-autouse",     # shared setup fixtures are meant to apply to every test
-  "S",                          # no safety concerns
+  "assert",                      # asserts allowed in tests...
+  "implicit-namespace-package",  # no implicit namespace
+  "undocumented-public-module",  # test modules do not need docstrings
+  "undocumented-public-package", # test fixture packages do not need docstrings
 ]
 lint.isort = { known-first-party = [
   "tox_uv",
@@ -176,7 +169,6 @@ count = true
 max_supported_python = "3.15"
 
 [tool.ty]
-src.exclude = [ "meta" ]
 environment.python-version = "3.15"
 
 [tool.pytest]
