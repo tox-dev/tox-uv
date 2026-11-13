@@ -482,6 +482,5 @@ class UvVenv(Python, ABC):
 
 
 __all__ = [
-    "PythonPreference",
     "UvVenv",
 ]

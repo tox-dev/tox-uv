@@ -31,6 +31,30 @@ if TYPE_CHECKING:
 
 _LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
 
+_UV_RESOLUTION_ENV_VARS: Final[frozenset[str]] = (  # simplint: ignore[single-user-constant]  # reused across installs
+    frozenset({
+        "UV_CONSTRAINT",
+        "UV_DEFAULT_INDEX",
+        "UV_EXCLUDE",
+        "UV_EXCLUDE_NEWER",
+        "UV_EXTRA_INDEX_URL",
+        "UV_FIND_LINKS",
+        "UV_FORK_STRATEGY",
+        "UV_INDEX",
+        "UV_INDEX_STRATEGY",
+        "UV_INDEX_URL",
+        "UV_KEYRING_PROVIDER",
+        "UV_NO_INDEX",
+        "UV_NO_SOURCES",
+        "UV_OFFLINE",
+        "UV_OVERRIDE",
+        "UV_PRERELEASE",
+        "UV_REQUIRE_HASHES",
+        "UV_RESOLUTION",
+        "UV_TORCH_BACKEND",
+    })
+)
+
 
 class UvInstaller(Pip):
     # Pip is a python installer that can install packages as defined by PEP-508 and PEP-517.
@@ -197,28 +221,9 @@ class UvInstaller(Pip):
         }
 
     def _install_env_vars(self) -> dict[str, str]:
-        uv_resolution_env_vars: frozenset[str] = frozenset({
-            "UV_CONSTRAINT",
-            "UV_DEFAULT_INDEX",
-            "UV_EXCLUDE",
-            "UV_EXCLUDE_NEWER",
-            "UV_EXTRA_INDEX_URL",
-            "UV_FIND_LINKS",
-            "UV_FORK_STRATEGY",
-            "UV_INDEX",
-            "UV_INDEX_STRATEGY",
-            "UV_INDEX_URL",
-            "UV_KEYRING_PROVIDER",
-            "UV_NO_INDEX",
-            "UV_NO_SOURCES",
-            "UV_OFFLINE",
-            "UV_OVERRIDE",
-            "UV_PRERELEASE",
-            "UV_REQUIRE_HASHES",
-            "UV_RESOLUTION",
-            "UV_TORCH_BACKEND",
-        })
-        return {k: v for k, v in self._env.environment_variables.items() if k in uv_resolution_env_vars}
+        return {
+            name: value for name, value in self._env.environment_variables.items() if name in _UV_RESOLUTION_ENV_VARS
+        }
 
 
 __all__ = [
