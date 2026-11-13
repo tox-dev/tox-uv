@@ -6,6 +6,7 @@ import sys
 import tarfile
 from pathlib import Path
 from textwrap import dedent
+from types import MappingProxyType
 from typing import Final
 from zipfile import ZipFile
 
@@ -20,7 +21,7 @@ _ENTRY_POINTS: Final[str] = f"{_DIST_INFO}/entry_points.txt"
 _METADATA: Final[str] = f"{_DIST_INFO}/METADATA"
 _WHEEL: Final[str] = f"{_DIST_INFO}/WHEEL"
 _RECORD: Final[str] = f"{_DIST_INFO}/RECORD"
-_CONTENT: Final[dict[str, str]] = {
+_CONTENT: Final[MappingProxyType[str, str]] = MappingProxyType({
     _LOGIC: f"def do():\n    print('greetings from {_NAME}')",
     _PLUGIN: """
         try:
@@ -38,9 +39,9 @@ _CONTENT: Final[dict[str, str]] = {
             def tox_register_tox_env(register: ToxEnvRegister) -> None:
                 register.add_run_env(ExampleVirtualEnvRunner)
         """,
-}
+})
 
-_METADATA_FILES: Final[dict[str, str]] = {
+_METADATA_FILES: Final[MappingProxyType[str, str]] = MappingProxyType({
     _ENTRY_POINTS: f"""
         [tox]
         example = {_MODULE}.example_plugin""",
@@ -71,7 +72,7 @@ _METADATA_FILES: Final[dict[str, str]] = {
         {_DIST_INFO}/top_level.txt,,
         {_DIST_INFO}/RECORD,,
        """,
-}
+})
 
 
 # PEP 517 requires the config_settings parameter.

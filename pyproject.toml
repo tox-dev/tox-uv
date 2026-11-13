@@ -139,7 +139,6 @@ lint.ignore = [
   "undocumented-public-init",
   "undocumented-public-method",
   "undocumented-public-nested-class",
-  "unnecessary-regular-expression-compile",    # conflicts with simplint inline-regex
 ]
 lint.per-file-ignores."meta/tests/**/*.py" = [
   "assert",                     # asserts allowed in tests...
