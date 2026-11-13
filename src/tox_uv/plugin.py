@@ -53,7 +53,7 @@ def tox_add_option(parser: ToxParser) -> None:
         )
 
 
-def tox_append_version_info() -> str:
+def tox_append_version_info() -> str:  # simplint: ignore[missing-from-all]  # tox calls this hook by name
     """
     Return the uv version for tox's version banner, or an empty string when uv is not installed.
 
@@ -67,6 +67,5 @@ def tox_append_version_info() -> str:
 
 
 __all__ = [
-    "tox_append_version_info",
     "tox_register_tox_env",
 ]

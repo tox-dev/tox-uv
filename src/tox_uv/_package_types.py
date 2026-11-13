@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
-class UvBasePackage(PythonPathPackageWithDeps):
+class UvBasePackage(PythonPathPackageWithDeps):  # simplint: ignore[missing-from-all]  # module-local base
     # Package to be built and installed by uv directly.
     KEY: str
 
@@ -29,7 +29,6 @@ class UvEditablePackage(UvBasePackage):
 
 
 __all__ = [
-    "UvBasePackage",
     "UvEditablePackage",
     "UvPackage",
 ]
