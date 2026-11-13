@@ -27,6 +27,19 @@ _BROKEN_VENV_EXECUTABLES: Final[tuple[str, ...]] = (
 )
 
 
+@pytest.mark.parametrize("package", [pytest.param("wheel", id="wheel"), pytest.param("sdist", id="sdist")])
+def test_uv_install_built_package_in_path_with_hash(
+    tox_project: ToxProjectCreator, demo_pkg_setuptools: Path, tmp_path: Path, package: str
+) -> None:
+    project = tox_project(
+        {"tox.ini": f'[testenv]\npackage = {package}\ncommands = python -c "import demo_pkg_setuptools"'},
+        base=demo_pkg_setuptools,
+        prj_path=tmp_path / "project#test",
+    )
+
+    project.run().assert_success()
+
+
 def test_uv_install_in_ci_list(tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("CI", "1")
     result = tox_project({"tox.ini": "[testenv]\ndeps = tomli\npackage=skip"}).run()
