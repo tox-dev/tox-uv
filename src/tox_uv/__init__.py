@@ -1,4 +1,4 @@
-"""GitHub Actions integration."""
+"""uv-backed tox environments."""
 
 from __future__ import annotations
 

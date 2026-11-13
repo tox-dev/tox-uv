@@ -1,4 +1,4 @@
-"""GitHub Actions integration."""
+"""Install tox packages and dependencies with uv."""
 
 from __future__ import annotations
 
@@ -8,7 +8,8 @@ from collections import defaultdict
 from collections.abc import Sequence
 from functools import cached_property
 from itertools import chain
-from typing import TYPE_CHECKING, Any, Final
+from pathlib import Path
+from typing import TYPE_CHECKING, Final
 
 from packaging.requirements import Requirement
 from packaging.utils import canonicalize_name, parse_sdist_filename, parse_wheel_filename
@@ -22,6 +23,7 @@ from ._package_types import UvEditablePackage, UvPackage
 
 if TYPE_CHECKING:
     from tox.config.main import Config
+    from tox.tox_env.installer import InstallArguments
     from tox.tox_env.package import Package
 
     from ._venv import UvVenv
@@ -35,7 +37,8 @@ class UvInstaller(Pip):
     if TYPE_CHECKING:
         _env: UvVenv
 
-    def __init__(self, tox_env: UvVenv, with_list_deps: bool = True) -> None:  # ruff:ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument] a flag callers can set; this class does not read it yet
+    # Match Pip's positional constructor signature.
+    def __init__(self, tox_env: UvVenv, with_list_deps: bool = True) -> None:  # ruff: ignore[boolean-type-hint-positional-argument, boolean-default-value-positional-argument]
         self._with_list_deps = with_list_deps
         super().__init__(tox_env)
 
@@ -64,9 +67,10 @@ class UvInstaller(Pip):
             post_process=uv_resolution_post_process,
         )
 
-    def default_install_command(self, conf: Config, env_name: str | None) -> Command:  # ruff:ignore[unused-method-argument] tox passes both to the hook; the uv command needs neither
+    # tox calls this override with both arguments.
+    def default_install_command(self, conf: Config, env_name: str | None) -> Command:  # ruff: ignore[unused-method-argument]
         cmd = [self.uv, "pip", "install", "{opts}", "{packages}"]
-        if self._env.options.verbosity > 3:  # ruff:ignore[magic-value-comparison] uv -v is passed at tox -vv only
+        if self._env.options.verbosity > 3:  # ruff:ignore[magic-value-comparison] tox -vv
             cmd.append("-v")
         return Command(cmd)
 
@@ -90,7 +94,7 @@ class UvInstaller(Pip):
             install_command[opts_at : opts_at + 1] = opts
         return cmd
 
-    def install(self, arguments: Any, section: str, of_type: str) -> None:  # ruff:ignore[any-type] tox passes requirement lists, requirement files and package lists here
+    def install(self, arguments: InstallArguments, section: str, of_type: str) -> None:
         # can happen if the original python was upgraded to a newer version and
         # the symlinks become orphan.
         if not self._env.env_python().resolve().is_file():
@@ -99,11 +103,11 @@ class UvInstaller(Pip):
 
         if isinstance(arguments, PythonDeps):
             self._install_requirement_file(arguments, section, of_type)
-        elif isinstance(arguments, Sequence):  # pragma: no branch tox passes a list or PythonDeps; the else is a guard
+        elif isinstance(arguments, Sequence):
             self._install_list_of_deps(arguments, section, of_type)
-        else:  # pragma: no cover tox does not send any other argument kind
-            _LOGGER.warning("uv cannot install %r", arguments)  # pragma: no cover unreachable, see the else above
-            raise SystemExit(1)  # pragma: no cover unreachable, see the else above
+        else:
+            _LOGGER.warning("uv cannot install %r", arguments)
+            raise SystemExit(1)
 
     def _install_list_of_deps(
         self,
@@ -118,16 +122,13 @@ class UvInstaller(Pip):
         constraint_args = self.constraints.as_root_args
         cache_value = {"req": groups["req"], "env": self._install_env_vars(), "constraints": constraint_args}
         with self._env.cache.compare(cache_value, section, req_of_type) as (eq, old):
-            if not eq:  # pragma: no branch an equal cache skips the install, so the miss is the path that matters
+            if not eq:  # pragma: no branch tox skips this installer call when the dependency cache matches
                 old_req: list[str] = old["req"] if isinstance(old, dict) else (old or [])
-                if miss := sorted(
-                    set(old_req) - set(groups["req"])
-                ):  # no way yet to know what to uninstall here (transitive dependencies?)  # pragma: no branch
-                    msg = f"dependencies removed: {', '.join(str(i) for i in miss)}"  # pragma: no cover needs a rerun
-                    raise Recreate(msg)  # pragma: no cover raised with the removal message above
-                if new_deps := sorted(set(groups["req"]) - set(old_req)) or list(
-                    groups["req"]
-                ):  # pragma: no branch an empty diff reinstalls the whole list
+                if miss := sorted(set(old_req) - set(groups["req"])):
+                    # Recreate so removed requirements cannot leave transitive dependencies installed.
+                    msg = f"dependencies removed: {', '.join(miss)}"
+                    raise Recreate(msg)
+                if new_deps := sorted(set(groups["req"]) - set(old_req)) or list(groups["req"]):
                     new_deps.extend(constraint_args)
                     self._execute_installer(new_deps, req_of_type)
         install_args = ["--reinstall"]
@@ -147,12 +148,8 @@ class UvInstaller(Pip):
     def _group_arguments(self, arguments: Sequence[Requirement | Package]) -> dict[str, list[str]]:
         groups: dict[str, list[str]] = defaultdict(list)
         for arg in arguments:
-            if isinstance(
-                arg, Requirement
-            ):  # pragma: no branch tox sends requirements inside packages, not on their own
-                groups["req"].append(
-                    str(arg)
-                )  # pragma: no cover tox sends requirements inside packages, not on their own
+            if isinstance(arg, Requirement):
+                groups["req"].append(str(arg))
             elif isinstance(arg, (WheelPackage, SdistPackage, EditablePackage)):
                 self._add_built_package(arg, groups)
             elif isinstance(arg, EditableLegacyPackage):
@@ -164,9 +161,9 @@ class UvInstaller(Pip):
             elif isinstance(arg, UvEditablePackage):
                 extras_suffix = f"[{','.join(arg.extras)}]" if arg.extras else ""
                 groups["uv_editable"].append(f"{arg.path}{extras_suffix}")
-            else:  # pragma: no branch unreachable: every argument kind is handled above
-                _LOGGER.warning("uv install %r", arg)  # pragma: no cover unreachable, see the else above
-                raise SystemExit(1)  # pragma: no cover unreachable, see the else above
+            else:
+                _LOGGER.warning("uv install %r", arg)
+                raise SystemExit(1)
         return groups
 
     def _add_built_package(
@@ -186,8 +183,8 @@ class UvInstaller(Pip):
 
     @cached_property
     def _sourced_pkg_names(self) -> set[str]:
-        pyproject_file = self._env.conf._conf.src_path.parent / "pyproject.toml"  # ruff:ignore[private-member-access] tox does not expose the config path; the project file sits next to it
-        if not pyproject_file.exists():  # pragma: no cover a uv project always has its pyproject next to the tox config
+        pyproject_file = self._env.core.get("config_file_path", Path).parent / "pyproject.toml"
+        if not pyproject_file.exists():
             return set()
         with pyproject_file.open("rb") as file_handler:
             pyproject = tomllib.load(file_handler)

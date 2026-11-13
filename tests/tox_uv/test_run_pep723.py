@@ -8,7 +8,8 @@ from typing import TYPE_CHECKING
 import pytest
 from tox.tox_env.register import ToxEnvRegister
 
-from tox_uv._run_pep723 import UvVenvPep723Runner
+# This test mirrors the private source module.
+from tox_uv._run_pep723 import UvVenvPep723Runner  # ruff:ignore[import-private-name]
 from tox_uv.plugin import tox_register_tox_env
 
 if TYPE_CHECKING:
@@ -190,5 +191,5 @@ def test_pep723_promotion_env_var(
         monkeypatch.setenv(name, value)
     register = ToxEnvRegister()
     tox_register_tox_env(register)
-    assert register._run_envs["uv-venv-pep-723"] is UvVenvPep723Runner  # ruff:ignore[private-member-access] the test checks the internal run env registry
-    assert register._run_envs.get("virtualenv-pep-723") is promoted_runner  # ruff:ignore[private-member-access] the test checks the internal run env registry
+    assert register.runner("uv-venv-pep-723") is UvVenvPep723Runner
+    assert ("virtualenv-pep-723" in register.env_runners) is (promoted_runner is not None)

@@ -14,6 +14,8 @@ if TYPE_CHECKING:
 
 
 class UvVenvPep723Runner(Pep723Mixin, UvVenv, RunToxEnv):
+    """Run scripts with PEP 723 dependencies through uv."""
+
     @property
     def _package_tox_env_type(self) -> str:
         raise NotImplementedError
@@ -24,9 +26,14 @@ class UvVenvPep723Runner(Pep723Mixin, UvVenv, RunToxEnv):
 
     @staticmethod
     def id() -> str:
+        """
+        Identify the PEP 723 runner to tox.
+
+        :returns: tox's run environment identifier
+        """
         return "uv-venv-pep-723"
 
-    def _register_package_conf(self) -> bool:  # ruff:ignore[no-self-use] tox calls this hook on the instance
+    def _register_package_conf(self) -> bool:  # ruff:ignore[no-self-use] tox instance hook
         return False
 
     def _build_packages(self) -> list[Package]:

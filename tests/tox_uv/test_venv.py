@@ -8,10 +8,11 @@ import os.path
 import pathlib
 import platform
 import shutil
-import subprocess
+import subprocess  # ruff:ignore[suspicious-subprocess-import] controlled commands
 import sys
 import sysconfig
 from configparser import ConfigParser
+from types import ModuleType
 from typing import TYPE_CHECKING, Any, Final, get_args
 
 import pytest
@@ -20,7 +21,8 @@ from tox.tox_env.api import ToxEnvCreateArgs
 from tox.tox_env.python.api import PythonInfo, VersionInfo
 from virtualenv.discovery.py_info import PythonInfo as VirtualenvPythonInfo
 
-from tox_uv._venv import PythonPreference, UvVenv
+# This test mirrors the private source module.
+from tox_uv._venv import PythonPreference, UvVenv  # ruff:ignore[import-private-name]
 
 if TYPE_CHECKING:
     from pytest_mock import MockerFixture
@@ -485,8 +487,9 @@ def test_uv_env_has_access_to_plugin_uv(tox_project: ToxProjectCreator) -> None:
     result.assert_success()
     uv_path = shutil.which("uv")
     assert uv_path is not None
-    ver = subprocess.run([uv_path, "--version"], capture_output=True, text=True, check=True).stdout.strip().split()[1]
-    assert f"uv {ver}" in result.out
+    # The test invokes the resolved binary with fixed arguments.
+    uv_version = subprocess.check_output([uv_path, "--version"], text=True)  # ruff: ignore[subprocess-without-shell-equals-true]
+    assert uv_version.strip() in result.out
 
 
 def test_uv_env_python(tox_project: ToxProjectCreator) -> None:
@@ -611,7 +614,8 @@ def test_uv_env_python_not_in_path(tox_project: ToxProjectCreator) -> None:
     })
     tox_ini = project.path / "tox.ini"
     assert tox_ini.is_file()
-    subprocess.check_call([sys.executable, "-m", "tox", "-c", tox_ini], env=env)
+    # The test invokes the current Python with fixed arguments.
+    subprocess.check_call([sys.executable, "-m", "tox", "-c", tox_ini], env=env)  # ruff: ignore[subprocess-without-shell-equals-true]
 
 
 def test_uv_python_set(tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -679,10 +683,10 @@ class _TestUvVenv(UvVenv):
         self._base_python_searched = True
         self._base_python = python_info
 
-    def get_python_info(self, base_python: str) -> PythonInfo | None:
+    def get_python_info(self, base_python: str | list[str]) -> PythonInfo | None:
         # These direct probes model an implicit fallback, not configured base_python.
         self._base_python_explicitly_set = False
-        return self._get_python([base_python])
+        return self._get_python([base_python] if isinstance(base_python, str) else base_python)
 
 
 def test_get_python_abs_path_variants(mocker: MockerFixture) -> None:
@@ -690,8 +694,9 @@ def test_get_python_abs_path_variants(mocker: MockerFixture) -> None:
         UvVenv,
         "_get_virtualenv_py_info",
         autospec=True,
-        return_value=mocker.MagicMock(
-            spec=VirtualenvPythonInfo,
+        return_value=mocker.create_autospec(
+            VirtualenvPythonInfo,
+            instance=True,
             implementation="CPython",
             version_info=VersionInfo(3, 13, 0, "final", 0),
             version="3.13.0",
@@ -711,6 +716,24 @@ def test_get_python_abs_path_variants(mocker: MockerFixture) -> None:
         (True, True),
         (True, True),
     )
+
+
+@pytest.mark.parametrize(
+    ("candidates", "expected"),
+    [
+        pytest.param([], None, id="none"),
+        pytest.param(["3.11"], VersionInfo(3, 11, 0, "", 0), id="available"),
+    ],
+)
+def test_get_python_candidates(candidates: list[str], expected: VersionInfo | None, mocker: MockerFixture) -> None:
+    uv_venv = _TestUvVenv(create_args=mocker.create_autospec(ToxEnvCreateArgs, instance=True))
+    assert getattr(uv_venv.get_python_info(candidates), "version_info", None) == expected
+
+
+def test_python_spec_for_unreadable_interpreter(tmp_path: pathlib.Path, mocker: MockerFixture) -> None:
+    mocker.patch("tox_uv._venv.from_exe", autospec=True, return_value=None)
+    with pytest.raises(RuntimeError, match="failed to discover Python info"):
+        UvVenv.python_spec_for_path(tmp_path / "missing-python")
 
 
 @pytest.mark.parametrize(
@@ -861,7 +884,7 @@ def test_env_version_spec_architecture_configured(architecture: int, mocker: Moc
             serial=0,
         ),
         version="",
-        is_64=architecture == 64,
+        is_64=architecture == 64,  # ruff:ignore[magic-value-comparison] bits
         platform="win32",
         extra={"architecture": architecture},
     )
@@ -1254,6 +1277,24 @@ def test_uv_path_env_var_valid(tox_project: ToxProjectCreator, monkeypatch: pyte
     tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python --version"}).run().assert_success()
 
 
+def test_uv_bundled_binary(mocker: MockerFixture) -> None:
+    uv_module = ModuleType("uv")
+    uv_module.__dict__["find_uv_bin"] = lambda: "bundled-uv"
+    mocker.patch.dict(sys.modules, {"uv": uv_module})
+
+    uv_venv = _TestUvVenv(create_args=mocker.create_autospec(ToxEnvCreateArgs, instance=True))
+    assert uv_venv.uv == "bundled-uv"
+
+
+def test_uv_missing_binary(mocker: MockerFixture) -> None:
+    mocker.patch.dict(sys.modules, {"uv": None})
+    mocker.patch("tox_uv._venv.shutil.which", autospec=True, return_value=None)
+
+    uv_venv = _TestUvVenv(create_args=mocker.create_autospec(ToxEnvCreateArgs, instance=True))
+    with pytest.raises(RuntimeError, match="uv not found"):
+        _ = uv_venv.uv
+
+
 def test_uv_version_timeout(tox_project: ToxProjectCreator, mocker: MockerFixture) -> None:
     mock_run = mocker.patch("subprocess.run", autospec=True, side_effect=subprocess.TimeoutExpired("uv", 5))
     tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python --version"}).run().assert_success()
@@ -1269,7 +1310,8 @@ def test_uv_version_os_error(tox_project: ToxProjectCreator, mocker: MockerFixtu
 def test_uv_bundled_import_error(tox_project: ToxProjectCreator, mocker: MockerFixture) -> None:
     original_import = builtins.__import__
 
-    def mock_import(name: str, *args: Any, **kwargs: Any) -> Any:  # ruff:ignore[any-type] the replacement takes the untyped arguments of builtins.__import__
+    # Mirror the untyped arguments of builtins.__import__.
+    def mock_import(name: str, *args: Any, **kwargs: Any) -> Any:  # ruff: ignore[any-type]
         if name == "uv":
             msg = "mocked import error"
             raise ImportError(msg)

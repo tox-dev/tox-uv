@@ -1,4 +1,4 @@
-"""GitHub Actions integration."""
+"""uv-backed Python environment support."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import json
 import logging
 import os
 import shutil
-import subprocess  # ruff:ignore[suspicious-subprocess-import] only the uv binary runs, with an argument list
+import subprocess  # ruff:ignore[suspicious-subprocess-import] only uv runs with fixed arguments
 import sys
 import typing
 from abc import ABC
@@ -68,18 +68,21 @@ class UvVenv(Python, ABC):
 
     @property
     def executor(self) -> Execute:
+        """Run uv commands through tox's local subprocess executor."""
         if self._executor is None:
             self._executor = LocalSubProcessExecutor(self.options.is_colored)
         return self._executor
 
     @property
     def installer(self) -> UvInstaller:
+        """Install dependencies and packages with uv."""
         if self._installer is None:
             self._installer = UvInstaller(self)
         return self._installer
 
     @property
     def runs_on_platform(self) -> str:
+        """Report the host platform used by the uv environment."""
         return sys.platform
 
     @property
@@ -90,6 +93,11 @@ class UvVenv(Python, ABC):
 
     @cached_property
     def uv(self) -> str:
+        """
+        Find the configured, bundled, or system uv executable.
+
+        :raises RuntimeError: when the configured or system executable cannot be found
+        """
         # Check for explicit override first
         if uv_env := os.environ.get("TOX_UV_PATH"):
             if not (uv_path := shutil.which(uv_env)):
@@ -101,25 +109,22 @@ class UvVenv(Python, ABC):
 
         # Try bundled uv (when installed via tox-uv meta package)
         with contextlib.suppress(ImportError, FileNotFoundError):
-            from uv import find_uv_bin  # type: ignore[import-not-found]  # ruff:ignore[import-outside-top-level] uv is optional; import it only when its bundled binary is wanted
+            # uv is optional in the bare distribution.
+            from uv import find_uv_bin  # ruff:ignore[import-outside-top-level]
 
-            uv_bin = (
-                find_uv_bin()
-            )  # pragma: no cover the test env does not install the uv package, so no bundled binary is found
-            _LOGGER.debug("using bundled uv from: %s", uv_bin)  # pragma: no cover the bundled binary path, see above
-            return uv_bin  # pragma: no cover the bundled binary path, see above
+            uv_bin = find_uv_bin()
+            _LOGGER.debug("using bundled uv from: %s", uv_bin)
+            return uv_bin
 
         # Fall back to system uv (when using tox-uv-bare)
-        if not (
-            uv_path := shutil.which("uv")
-        ):  # pragma: no cover tests run with uv on PATH; the missing-uv error is not reached
-            msg = (  # pragma: no cover the missing-uv message
+        if not (uv_path := shutil.which("uv")):
+            msg = (
                 "uv not found. Either:\n"
                 "  1. Install with bundled uv: pip install tox-uv\n"
                 "  2. Install tox-uv-bare and ensure system uv is in PATH: which uv\n"
                 "  3. Set TOX_UV_PATH environment variable to uv binary location"
             )
-            raise RuntimeError(msg)  # pragma: no cover raised with the missing-uv message above
+            raise RuntimeError(msg)
 
         version = self._get_uv_version(uv_path)
         _LOGGER.debug("using system uv from PATH: %s (%s)", uv_path, version)
@@ -128,7 +133,7 @@ class UvVenv(Python, ABC):
     @staticmethod
     def _get_uv_version(uv_path: str) -> str:
         try:
-            result = subprocess.run(  # ruff:ignore[subprocess-without-shell-equals-true] the command is an argument list; no shell parses it
+            result = subprocess.run(  # ruff:ignore[subprocess-without-shell-equals-true] no shell
                 [uv_path, "--version"],
                 capture_output=True,
                 text=True,
@@ -140,6 +145,7 @@ class UvVenv(Python, ABC):
             return "unknown"
 
     def register_config(self) -> None:
+        """Register uv environment settings with tox."""
         super().register_config()
         self.conf.add_config(
             keys=["uv_seed"],
@@ -150,13 +156,15 @@ class UvVenv(Python, ABC):
         self.conf.add_config(
             keys=["system_site_packages", "sitepackages"],
             of_type=bool,
-            default=lambda conf, name: StrConvert().to_bool(  # ruff:ignore[unused-lambda-argument] tox calls every default with conf and name; this one needs neither
+            # tox passes both callback arguments.
+            default=lambda conf, name: StrConvert().to_bool(  # ruff:ignore[unused-lambda-argument]
                 self.environment_variables.get("VIRTUALENV_SYSTEM_SITE_PACKAGES", "False"),
             ),
             desc="create virtual environments that also have access to globally installed packages.",
         )
 
-        def uv_python_preference_default(conf: Config, name: str | None) -> str:  # ruff:ignore[unused-function-argument] tox calls every default with conf and name; this one needs neither
+        # tox passes both callback arguments.
+        def uv_python_preference_default(conf: Config, name: str | None) -> str:  # ruff: ignore[unused-function-argument]
             return (
                 "none"
                 if {"UV_NO_MANAGED_PYTHON", "UV_MANAGED_PYTHON"} & set(os.environ)
@@ -189,6 +197,7 @@ class UvVenv(Python, ABC):
 
     @property
     def environment_variables(self) -> dict[str, str]:
+        """Pass uv settings and identify the active virtual environment."""
         env = super().environment_variables
         env.pop("UV_PYTHON", None)  # UV_PYTHON takes precedence over VIRTUAL_ENV
         env["VIRTUAL_ENV"] = str(self.venv_dir)
@@ -204,9 +213,15 @@ class UvVenv(Python, ABC):
 
     @property
     def venv_dir(self) -> Path:
+        """Resolve the virtual environment directory from tox's root."""
         return cast("Path", self.core["tox_root"]) / cast("Path", self.conf["env_dir"])
 
     def python_cache(self) -> dict[str, JsonValue]:
+        """
+        Include uv creation settings in tox's environment cache key.
+
+        :returns: cache values for the selected Python and uv settings
+        """
         result = super().python_cache()
         result["seed"] = self.conf["uv_seed"]
         result["debug"] = self.base_python.debug
@@ -220,9 +235,7 @@ class UvVenv(Python, ABC):
         return result
 
     def _get_python(self, base_python: list[str]) -> PythonInfo | None:
-        for base in (
-            base_python
-        ):  # pragma: no branch every test finds a match on the first candidate, so the loop never exits empty
+        for base in base_python:
             base_path = Path(base)
             if base_path.is_absolute():  # pragma: win32 no cover
                 env_spec = PythonSpec.from_string_spec(self.name)
@@ -249,7 +262,7 @@ class UvVenv(Python, ABC):
                             serial=int(vi.serial),
                         ),
                         version=info.version,
-                        is_64=info.architecture == 64,  # ruff:ignore[magic-value-comparison] virtualenv reports the architecture in bits
+                        is_64=info.architecture == 64,  # ruff:ignore[magic-value-comparison] 64-bit width
                         platform=info.platform,
                         extra={"executable": str(base_path)},
                         free_threaded=bool(info.free_threaded),
@@ -268,7 +281,7 @@ class UvVenv(Python, ABC):
                     serial=0,
                 ),
                 version=str(spec),
-                is_64=spec.architecture == 64,  # ruff:ignore[magic-value-comparison] virtualenv reports the architecture in bits
+                is_64=spec.architecture == 64,  # ruff:ignore[magic-value-comparison] 64-bit width
                 platform=sys.platform,
                 extra={"architecture": spec.architecture, "requested_micro": spec.micro},
                 free_threaded=bool(spec.free_threaded),
@@ -276,7 +289,7 @@ class UvVenv(Python, ABC):
                 machine=spec.machine,
             )
 
-        return None  # pragma: no cover reached only when no candidate matches, which the tests do not hit
+        return None
 
     @staticmethod
     def _get_virtualenv_py_info(path: Path) -> VirtualenvPythonInfo:  # pragma: win32 no cover
@@ -285,13 +298,19 @@ class UvVenv(Python, ABC):
             make_app_data(None, read_only=False, env=os.environ),
             str(path),
         )
-        if result is None:  # pragma: no cover virtualenv returns no info only for an interpreter it cannot probe
+        if result is None:
             msg = f"failed to discover Python info for {path}"
             raise RuntimeError(msg)
         return result
 
     @classmethod
     def python_spec_for_path(cls, path: Path) -> PythonSpec:
+        """
+        Describe an interpreter path using virtualenv's Python specification.
+
+        :param path: absolute path to the Python executable
+        :returns: the executable's implementation, version, and architecture
+        """
         # Get the spec for an absolute path to a Python executable.
         info = cls._get_virtualenv_py_info(path)  # pragma: win32 no cover
         return PythonSpec.from_string_spec(  # pragma: win32 no cover
@@ -309,6 +328,11 @@ class UvVenv(Python, ABC):
         return env
 
     def env_site_package_dir(self) -> Path:  # pragma: win32 no cover
+        """
+        Locate the environment's site-packages directory.
+
+        :returns: path to the installed packages
+        """
         if sys.platform == "win32":  # pragma: win32 cover
             return self.venv_dir / "Lib" / "site-packages"
         python_info = self._py_info
@@ -349,20 +373,34 @@ class UvVenv(Python, ABC):
         )
 
     def env_python(self) -> Path:
+        """
+        Locate the environment's Python executable.
+
+        :returns: path to the executable
+        """
         return self.env_bin_dir() / f"python{'.exe' if sys.platform == 'win32' else ''}"
 
     def env_bin_dir(self) -> Path:
+        """
+        Locate the environment's executable directory.
+
+        :returns: path to the bin or Scripts directory
+        """
         if sys.platform == "win32":  # pragma: win32 cover
             return self.venv_dir / "Scripts"
-        else:  # pragma: win32 no cover # ruff:ignore[superfluous-else-return] both platform paths stay side by side, each with its coverage pragma
-            return self.venv_dir / "bin"
+        return self.venv_dir / "bin"  # pragma: win32 no cover
 
     def create_python_env(self) -> None:
+        """
+        Create the environment with uv venv.
+
+        :raises Skip: when tox allows a missing interpreter and uv cannot find it
+        """
         version_spec = self.env_version_spec()
 
         cmd: list[str] = [self.uv, "venv", "-p", version_spec, "--allow-existing"]
-        cmd.append(f"--prompt={self.core._root.name}[{self.name}]")  # ruff:ignore[private-member-access] tox has no public accessor for the project root
-        if self.options.verbosity > 3:  # ruff:ignore[magic-value-comparison] uv -v is passed at tox -vv only
+        cmd.append(f"--prompt={self.core['tox_root_name']}[{self.name}]")
+        if self.options.verbosity > 3:  # ruff:ignore[magic-value-comparison] tox -vv threshold
             cmd.append("-v")
         if self.conf["uv_seed"]:
             cmd.append("--seed")
@@ -381,6 +419,11 @@ class UvVenv(Python, ABC):
         self._created = True
 
     def env_version_spec(self) -> str:
+        """
+        Translate tox's interpreter request into a uv version selector.
+
+        :returns: an executable path or uv interpreter selector
+        """
         if executable := self.base_python.extra.get("executable"):
             return executable
         base = self.base_python.version_info
@@ -430,6 +473,11 @@ class UvVenv(Python, ABC):
         return version_spec
 
     def prepend_env_var_path(self) -> list[Path]:
+        """
+        Make the environment and uv executables available on PATH.
+
+        :returns: directories to prepend to PATH
+        """
         return [self.env_bin_dir(), Path(self.uv).parent]
 
 

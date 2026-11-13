@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sys
-from subprocess import check_output
+from subprocess import check_output  # ruff:ignore[suspicious-subprocess-import] fixed Python command
 from typing import TYPE_CHECKING
 
 from tox_uv import __version__
