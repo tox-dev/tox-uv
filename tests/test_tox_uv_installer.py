@@ -10,6 +10,7 @@ from packaging.requirements import Requirement
 from tox.config.sets import CoreConfigSet
 from tox.tox_env.errors import Recreate
 from tox.tox_env.package import Package
+from tox.tox_env.python.virtual_env.package.cmd_builder import VenvCmdBuilder
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -38,6 +39,24 @@ def test_uv_install_built_package_in_path_with_hash(
     )
 
     project.run().assert_success()
+
+
+def test_uv_install_external_package_from_relative_glob(
+    tox_project: ToxProjectCreator, demo_pkg_setuptools: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # tox before 4.67.13 hands the package_glob match over unresolved, relative to the working directory
+    monkeypatch.setattr(VenvCmdBuilder, "_package_glob_relative_to_tox_root", lambda _, value: value)
+    ini = """
+    [testenv]
+    package = external
+    commands = python -c "import demo_pkg_setuptools"
+    [testenv:.pkg_external]
+    deps = build
+    commands = python -m build --wheel --outdir dist .
+    package_glob = dist/*.whl
+    """
+
+    tox_project({"tox.ini": dedent(ini)}, base=demo_pkg_setuptools).run().assert_success()
 
 
 def test_uv_install_in_ci_list(tox_project: ToxProjectCreator, monkeypatch: pytest.MonkeyPatch) -> None:
