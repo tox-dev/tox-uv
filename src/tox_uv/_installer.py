@@ -139,7 +139,7 @@ class UvInstaller(Pip):
         section: str,
         of_type: str,
     ) -> None:
-        groups = self._group_arguments(arguments)
+        groups = self._group_uv_arguments(arguments)
         req_of_type = f"{of_type}_deps" if groups["pkg"] or groups["dev_pkg"] else of_type
         for value in groups.values():
             value.sort()
@@ -169,7 +169,7 @@ class UvInstaller(Pip):
                 install_args.extend(("-e", str(entry)))
             self._execute_installer(install_args, of_type)
 
-    def _group_arguments(self, arguments: Sequence[Requirement | Package]) -> dict[str, list[str]]:
+    def _group_uv_arguments(self, arguments: Sequence[Requirement | Package]) -> dict[str, list[str]]:
         groups: dict[str, list[str]] = defaultdict(list)
         for arg in arguments:
             if isinstance(arg, Requirement):
