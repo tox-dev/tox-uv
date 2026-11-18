@@ -2,6 +2,26 @@
 
 <!-- towncrier release notes start -->
 
+<a name="release-1-37-8"></a>
+
+## 1.37.8 (2026-11-18)
+
+<a name="release-1-37-8-fixed"></a>
+
+### Fixed
+
+- Install built wheels and source distributions from paths containing URI-special characters such as `#`
+  ([#431](https://github.com/tox-dev/tox-uv/pull/431)) by [@subotac](https://github.com/subotac) and
+  [@gaborbernat](https://github.com/gaborbernat).
+
+<a name="release-1-37-8-packaging"></a>
+
+### Packaging
+
+- Every wheel now carries a [PEP 770](https://peps.python.org/pep-0770/) CycloneDX SBOM in its `.dist-info/sboms`
+  directory, written at build time by [python-sbom](https://github.com/tox-dev/python-sbom)
+  ([#428](https://github.com/tox-dev/tox-uv/pull/428)) by [@gaborbernat](https://github.com/gaborbernat).
+
 <a name="release-1-37-7"></a>
 
 ## 1.37.7 (2026-11-07)
