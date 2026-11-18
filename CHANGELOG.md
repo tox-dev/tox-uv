@@ -2,6 +2,17 @@
 
 <!-- towncrier release notes start -->
 
+<a name="release-1-37-9"></a>
+
+## 1.37.9 (2026-11-18)
+
+<a name="release-1-37-9-packaging"></a>
+
+### Packaging
+
+- Include a CycloneDX SBOM in the `tox-uv` wheel, alongside the existing SBOM in `tox-uv-bare`
+  ([#442](https://github.com/tox-dev/tox-uv/pull/442)) by [@gaborbernat](https://github.com/gaborbernat).
+
 <a name="release-1-37-8"></a>
 
 ## 1.37.8 (2026-11-18)
