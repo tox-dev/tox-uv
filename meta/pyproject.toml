@@ -4,6 +4,7 @@ requires = [
   "hatch-fancy-pypi-readme>=25.1",
   "hatch-vcs>=0.5",
   "hatchling>=1.28",
+  "python-sbom[hatch]>=0.1.2",
 ]
 
 [project]
@@ -61,7 +62,11 @@ metadata.hooks.fancy-pypi-readme.substitutions = [
     \)
     ''', replacement = '[\g<label>](https://github.com/tox-dev/tox-uv/blob/main/\g<path>)' },
 ]
+build.hooks.python-sbom = {}
 build.targets.wheel.force-include."__init__.py" = "tox_uv_meta/__init__.py"
 
 [tool.uv]
 sources.tox-uv-bare = { workspace = true }
+
+[tool.python-sbom]
+supplier = { name = "tox-dev", url = [ "https://github.com/tox-dev" ] }

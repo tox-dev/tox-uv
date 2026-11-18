@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import zipfile
 from pathlib import Path
 from shutil import which
@@ -57,6 +58,14 @@ def test_uv_dependency_present(wheel_metadata: str) -> None:
 def test_wheel_contains_placeholder_module(built_wheel: Path) -> None:
     with zipfile.ZipFile(built_wheel) as whl:
         assert "tox_uv_meta/__init__.py" in whl.namelist()
+
+
+def test_wheel_contains_sbom(built_wheel: Path) -> None:
+    with zipfile.ZipFile(built_wheel) as whl:
+        sboms = [name for name in whl.namelist() if name.endswith(".dist-info/sboms/tox-uv.cdx.json")]
+        assert len(sboms) == 1
+        document = json.loads(whl.read(sboms[0]))
+        assert (document["bomFormat"], document["metadata"]["component"]["name"]) == ("CycloneDX", "tox-uv")
 
 
 def test_wheel_does_not_contain_tox_uv_package(built_wheel: Path) -> None:
