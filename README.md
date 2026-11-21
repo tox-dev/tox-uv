@@ -149,10 +149,11 @@ runner = virtualenv-pep-723
 script = tools/check.py
 ```
 
-When `tox-uv` is installed, `virtualenv-pep-723` is transparently backed by uv. You can also use
-`runner = uv-venv-pep-723` to explicitly request the uv-backed runner regardless of plugin installation.
+When `tox-uv` is installed, `virtualenv-pep-723` is transparently backed by uv. Set `TOX_UV_NO_PEP723=1` to disable that
+automatic selection and use tox's built-in virtualenv and pip implementation instead.
 
-To disable the automatic promotion and use tox's built-in virtualenv+pip implementation, set `TOX_UV_NO_PEP723=1`.
+Use `runner = uv-venv-pep-723` to explicitly select the uv-backed runner. This runner requires `tox-uv` to be installed,
+and it remains available when `TOX_UV_NO_PEP723=1`.
 
 Run with `tox r -e check`. Positional arguments are forwarded: `tox r -e check -- --verbose`.
 
