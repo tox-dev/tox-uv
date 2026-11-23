@@ -117,8 +117,8 @@ This package will provide the following new tox environments:
 - `uv-venv-lock-runner` is the ID for the tox environments [runner](https://tox.wiki/en/4.12.1/config.html#runner) for
   environments using `uv.lock` (note we can’t detect the presence of the `uv.lock` file to enable this because that
   would break environments not using the lock file - such as your linter).
-- `uv-venv-pep-723` is the ID for the [PEP 723](https://peps.python.org/pep-0723/) inline script metadata runner. When
-  `tox-uv` is installed, `virtualenv-pep-723` is also transparently backed by uv.
+- `uv-venv-pep-723` is the ID for the [PEP 723](https://peps.python.org/pep-0723/) inline script metadata runner. See
+  [how to select it](#pep-723-inline-script-metadata).
 - `uv-venv-pep-517` is the ID for the PEP-517 packaging environment.
 - `uv-venv-cmd-builder` is the ID for the external cmd builder.
 
@@ -149,11 +149,11 @@ runner = virtualenv-pep-723
 script = tools/check.py
 ```
 
-When `tox-uv` is installed, `virtualenv-pep-723` is transparently backed by uv. Set `TOX_UV_NO_PEP723=1` to disable that
-automatic selection and use tox's built-in virtualenv and pip implementation instead.
+With the tox-uv plugin installed, `virtualenv-pep-723` uses uv by default. Set `TOX_UV_NO_PEP723=1` to use tox's
+built-in virtualenv and pip implementation for this runner.
 
-Use `runner = uv-venv-pep-723` to explicitly select the uv-backed runner. This runner requires `tox-uv` to be installed,
-and it remains available when `TOX_UV_NO_PEP723=1`.
+Use `runner = uv-venv-pep-723` to select uv explicitly, even when `TOX_UV_NO_PEP723=1`. Install the plugin in tox's
+environment with either `tox-uv` or `tox-uv-bare` (see [installation options](#installation-options)).
 
 Run with `tox r -e check`. Positional arguments are forwarded: `tox r -e check -- --verbose`.
 
