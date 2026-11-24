@@ -348,15 +348,16 @@ with `dependency_groups`.
 
 ### Cache invalidation for `UV_*` environment variables
 
-tox-uv includes a curated set of `UV_*` environment variables in the install cache key. When any of these variables
-change via `set_env`, the cached environment is invalidated and packages are reinstalled so that uv can re-resolve with
-the new settings. The tracked variables are:
+tox-uv records a curated set of `UV_*` environment variables, `uv_resolution`, and `pip_pre` with the environment. When
+any of them changes, via `set_env` or in the environment tox passes through, the environment is recreated so that uv
+resolves with the new settings; `uv pip install` keeps installed versions that still satisfy the requirements.
+Credentials in index URLs are ignored, so a rotated token does not recreate the environment. The tracked variables are:
 
 `UV_CONSTRAINT`, `UV_DEFAULT_INDEX`, `UV_EXCLUDE`, `UV_EXCLUDE_NEWER`, `UV_EXTRA_INDEX_URL`, `UV_FIND_LINKS`,
 `UV_FORK_STRATEGY`, `UV_INDEX`, `UV_INDEX_STRATEGY`, `UV_INDEX_URL`, `UV_KEYRING_PROVIDER`, `UV_NO_INDEX`,
 `UV_NO_SOURCES`, `UV_OFFLINE`, `UV_OVERRIDE`, `UV_PRERELEASE`, `UV_REQUIRE_HASHES`, `UV_RESOLUTION`, `UV_TORCH_BACKEND`.
 
 Variables that do not affect resolution (e.g. `UV_CONCURRENT_DOWNLOADS`, `UV_NO_PROGRESS`, `UV_CACHE_DIR`) are not
-tracked and changing them will not trigger a reinstall.
+tracked and changing them will not recreate the environment.
 
 [resolution strategy]: https://github.com/astral-sh/uv/blob/0.1.20/README.md#resolution-strategy

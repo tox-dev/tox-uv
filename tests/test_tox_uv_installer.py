@@ -548,6 +548,67 @@ def test_uv_env_var_change_reinstall(
     assert install_count == expected_installs
 
 
+@pytest.mark.parametrize(
+    ("initial", "changed", "reason"),
+    [
+        pytest.param("", "set_env = UV_EXCLUDE_NEWER = 2024-01-01", "UV_EXCLUDE_NEWER", id="env_var_added"),
+        pytest.param("set_env = UV_EXCLUDE_NEWER = 2024-01-01", "", "UV_EXCLUDE_NEWER", id="env_var_removed"),
+        pytest.param("", "uv_resolution = lowest-direct", "uv_resolution", id="uv_resolution"),
+        pytest.param("", "pip_pre = true", "pip_pre", id="pip_pre"),
+        pytest.param(
+            "set_env = UV_INDEX_URL = https://user:token@one.example/simple",
+            "set_env = UV_INDEX_URL = https://user:token@two.example/simple",
+            "UV_INDEX_URL",
+            id="index_host",
+        ),
+    ],
+)
+def test_uv_resolution_settings_change_recreates(
+    tox_project: ToxProjectCreator, initial: str, changed: str, reason: str
+) -> None:
+    # uv pip install keeps installed versions that still satisfy the requirements, so only a fresh environment
+    # picks up the new resolution
+    ini = "[testenv]\npackage = skip\ndeps = tomli\n"
+    project = tox_project({"tox.ini": f"{ini}{initial}\n"})
+    project.patch_execute(lambda request: 0 if "install" in request.run_id else None)
+    project.run("r").assert_success()
+
+    (project.path / "tox.ini").write_text(f"{ini}{changed}\n")
+    result = project.run("r")
+
+    result.assert_success()
+    assert f"recreate env because resolution settings changed: {reason}" in result.out
+
+
+@pytest.mark.parametrize(
+    ("initial", "changed"),
+    [
+        pytest.param("uv_resolution = lowest-direct", "uv_resolution = lowest-direct", id="same_settings"),
+        pytest.param(
+            "set_env = UV_CONCURRENT_DOWNLOADS = 4",
+            "set_env = UV_CONCURRENT_DOWNLOADS = 8",
+            id="non_resolution_env_var",
+        ),
+        pytest.param(
+            "set_env = UV_INDEX_URL = https://user:old@pypi.example/simple",
+            "set_env = UV_INDEX_URL = https://user:new@pypi.example/simple",
+            id="index_credentials",
+        ),
+    ],
+)
+def test_uv_resolution_settings_unchanged_keeps_env(tox_project: ToxProjectCreator, initial: str, changed: str) -> None:
+    ini = "[testenv]\npackage = skip\ndeps = tomli\n"
+    project = tox_project({"tox.ini": f"{ini}{initial}\n"})
+    project.patch_execute(lambda request: 0 if "install" in request.run_id else None)
+    project.run("r").assert_success()
+
+    (project.path / "tox.ini").write_text(f"{ini}{changed}\n")
+    result = project.run("r")
+
+    result.assert_success()
+    assert "recreate env because" not in result.out
+
+
 def test_uv_install_broken_venv(tox_project: ToxProjectCreator) -> None:
     # Tests ability to detect that a venv a with broken symlink to python interpreter is recreated.
     project = tox_project({

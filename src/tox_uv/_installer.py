@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 import tomllib
 from collections import defaultdict
 from collections.abc import Sequence
@@ -30,6 +31,7 @@ if TYPE_CHECKING:
 
 
 _LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
+_URL_CREDENTIALS: Final[re.Pattern[str]] = re.compile(r"(?<=://)[^/@\s]*@")
 
 _UV_RESOLUTION_ENV_VARS: Final[frozenset[str]] = (  # simplint: ignore[single-user-constant]  # reused across installs
     frozenset({
@@ -124,6 +126,7 @@ class UvInstaller(Pip):
         if not self._env.env_python().resolve().is_file():
             msg = "existing venv is broken"
             raise Recreate(msg)
+        self._recreate_if_resolution_changed()
 
         if isinstance(arguments, PythonDeps):
             self._install_requirement_file(arguments, section, of_type)
@@ -132,6 +135,26 @@ class UvInstaller(Pip):
         else:
             _LOGGER.warning("uv cannot install %r", arguments)
             raise SystemExit(1)
+
+    def _recreate_if_resolution_changed(self) -> None:
+        # uv pip install keeps installed versions that still satisfy the requirements, so a new resolution needs a
+        # fresh environment
+        # index tokens rotate, so credentials in URLs do not count as a change
+        settings = {
+            **{name: _URL_CREDENTIALS.sub("", value) for name, value in self._install_env_vars().items()},
+            "pip_pre": self._env.conf["pip_pre"],
+            "uv_resolution": self._env.conf["uv_resolution"],
+        }
+        with self._env.cache.compare(settings, "resolution") as (eq, old):
+            if not eq and old is not None:
+                changed = sorted(key for key in settings.keys() | old.keys() if settings.get(key) != old.get(key))
+                msg = f"resolution settings changed: {', '.join(changed)}"
+                raise Recreate(msg)
+
+    def _install_env_vars(self) -> dict[str, str]:
+        return {
+            name: value for name, value in self._env.environment_variables.items() if name in _UV_RESOLUTION_ENV_VARS
+        }
 
     def _install_list_of_deps(
         self,
@@ -218,11 +241,6 @@ class UvInstaller(Pip):
             canonicalize_name(name)
             for name, source in sources.items()
             if isinstance(source, dict) and source.get("workspace", False)
-        }
-
-    def _install_env_vars(self) -> dict[str, str]:
-        return {
-            name: value for name, value in self._env.environment_variables.items() if name in _UV_RESOLUTION_ENV_VARS
         }
 
 
