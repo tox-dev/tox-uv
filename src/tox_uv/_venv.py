@@ -243,24 +243,6 @@ class UvVenv(Python, ABC):
         # and a single entry fails exactly as before when no download is possible.
         return candidates[0] if candidates else None
 
-    def _uv_python_available(self, version_spec: str) -> bool:
-        # Best-effort probe: any failure to ask uv means the candidate cannot be confirmed, not that it is missing.
-        try:
-            if not version_spec:
-                return False
-            cmd = [self.uv, "python", "find", version_spec]
-            if self.conf["uv_python_preference"] != "none":
-                cmd.extend(["--python-preference", self.conf["uv_python_preference"]])
-            result = subprocess.run(  # ruff:ignore[subprocess-without-shell-equals-true] no shell
-                cmd,
-                capture_output=True,
-                check=False,
-                timeout=30,
-            )
-        except Exception:  # ruff:ignore[blind-except] a probe must not break interpreter selection
-            return False
-        return result.returncode == 0
-
     def _python_info_for_base(self, base: str) -> PythonInfo | None:
         base_path = Path(base)
         if base_path.is_absolute():  # pragma: win32 no cover
@@ -329,6 +311,71 @@ class UvVenv(Python, ABC):
             msg = f"failed to discover Python info for {path}"
             raise RuntimeError(msg)
         return result
+
+    def _uv_python_available(self, version_spec: str) -> bool:
+        # Best-effort probe: any failure to ask uv means the candidate cannot be confirmed, not that it is missing.
+        try:
+            if not version_spec:
+                return False
+            cmd = [self.uv, "python", "find", version_spec]
+            if self.conf["uv_python_preference"] != "none":
+                cmd.extend(["--python-preference", self.conf["uv_python_preference"]])
+            result = subprocess.run(  # ruff:ignore[subprocess-without-shell-equals-true] no shell
+                cmd,
+                capture_output=True,
+                check=False,
+                timeout=30,
+            )
+        except Exception:  # ruff:ignore[blind-except] a probe must not break interpreter selection
+            return False
+        return result.returncode == 0
+
+    def _version_spec(self, base_python: PythonInfo) -> str:
+        if executable := base_python.extra.get("executable"):
+            return executable
+        base = base_python.version_info
+        imp = base_python.impl_lower
+        architecture = base_python.extra.get("architecture")
+
+        uv_imp = imp or ""
+        variant = f"{'+freethreaded' if base_python.free_threaded else ''}{'+debug' if base_python.debug else ''}"
+        version = f"{base.major}.{base.minor}"
+        if (micro := base_python.extra.get("requested_micro")) is not None:
+            version = f"{version}.{micro}"
+        if not base.major:  # pragma: win32 no cover
+            version_spec = f"{uv_imp}"
+        elif not base.minor:
+            version_spec = f"{uv_imp}{base.major}{variant}"
+        elif architecture or base_python.machine:
+
+            def normalise_os(raw_os: str) -> str:
+                return self._OS_MAP.get(raw_os, raw_os)
+
+            uv_os = normalise_os(base_python.platform.lower())
+            machine_map = {
+                "arm64": "aarch64",
+                "aarch64": "aarch64",
+                "amd64": "x86_64",
+                "x86_64": (
+                    {"macos": {32: "i686"}}.get(uv_os, {}).get(architecture, "x86_64")
+                    if isinstance(architecture, int)
+                    else "x86_64"
+                ),
+                "x86": {"windows": "x86"}.get(uv_os, "i686"),
+                "i386": "i686",
+                "i686": "i686",
+            }
+            machine_fallback = (
+                self._NOMACHINE_FALLBACK.get(uv_os, {}).get(architecture, "") if isinstance(architecture, int) else ""
+            )
+            uv_machine = machine_map.get((base_python.machine or "").lower(), machine_fallback)
+            uv_libc = self._LIBC_MAP.get(uv_os, {}).get(base_python.extra.get("libc", "").lower(), "none")
+            version_spec = f"{uv_imp}-{version}{variant}"
+            if all([uv_machine, uv_os, uv_libc]):
+                version_spec = f"{version_spec}-{uv_os}-{uv_machine}-{uv_libc}"
+        else:
+            version_spec = f"{uv_imp}{version}{variant}"
+        return version_spec
 
     @classmethod
     def python_spec_for_path(cls, path: Path) -> PythonSpec:
@@ -452,53 +499,6 @@ class UvVenv(Python, ABC):
         :returns: an executable path or uv interpreter selector
         """
         return self._version_spec(self.base_python)
-
-    def _version_spec(self, base_python: PythonInfo) -> str:
-        if executable := base_python.extra.get("executable"):
-            return executable
-        base = base_python.version_info
-        imp = base_python.impl_lower
-        architecture = base_python.extra.get("architecture")
-
-        uv_imp = imp or ""
-        variant = f"{'+freethreaded' if base_python.free_threaded else ''}{'+debug' if base_python.debug else ''}"
-        version = f"{base.major}.{base.minor}"
-        if (micro := base_python.extra.get("requested_micro")) is not None:
-            version = f"{version}.{micro}"
-        if not base.major:  # pragma: win32 no cover
-            version_spec = f"{uv_imp}"
-        elif not base.minor:
-            version_spec = f"{uv_imp}{base.major}{variant}"
-        elif architecture or base_python.machine:
-
-            def normalise_os(raw_os: str) -> str:
-                return self._OS_MAP.get(raw_os, raw_os)
-
-            uv_os = normalise_os(base_python.platform.lower())
-            machine_map = {
-                "arm64": "aarch64",
-                "aarch64": "aarch64",
-                "amd64": "x86_64",
-                "x86_64": (
-                    {"macos": {32: "i686"}}.get(uv_os, {}).get(architecture, "x86_64")
-                    if isinstance(architecture, int)
-                    else "x86_64"
-                ),
-                "x86": {"windows": "x86"}.get(uv_os, "i686"),
-                "i386": "i686",
-                "i686": "i686",
-            }
-            machine_fallback = (
-                self._NOMACHINE_FALLBACK.get(uv_os, {}).get(architecture, "") if isinstance(architecture, int) else ""
-            )
-            uv_machine = machine_map.get((base_python.machine or "").lower(), machine_fallback)
-            uv_libc = self._LIBC_MAP.get(uv_os, {}).get(base_python.extra.get("libc", "").lower(), "none")
-            version_spec = f"{uv_imp}-{version}{variant}"
-            if all([uv_machine, uv_os, uv_libc]):
-                version_spec = f"{version_spec}-{uv_os}-{uv_machine}-{uv_libc}"
-        else:
-            version_spec = f"{uv_imp}{version}{variant}"
-        return version_spec
 
     def prepend_env_var_path(self) -> list[Path]:
         """
