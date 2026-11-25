@@ -1319,3 +1319,11 @@ def test_uv_bundled_import_error(tox_project: ToxProjectCreator, mocker: MockerF
 
     mocker.patch("builtins.__import__", autospec=True, side_effect=mock_import)
     tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python --version"}).run().assert_success()
+
+
+def test_uv_venv_base_python_fallback(tox_project: ToxProjectCreator) -> None:
+    # The first base_python entry is not available, so the next one must be used.
+    spec = f"py{sys.version_info.major}{sys.version_info.minor}"
+    ini = f"[testenv]\npackage=skip\nskip_missing_interpreters=false\nbase_python =\n    py3990\n    {spec}\n"
+    project = tox_project({"tox.ini": ini})
+    project.run().assert_success()

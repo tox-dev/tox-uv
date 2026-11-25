@@ -235,61 +235,88 @@ class UvVenv(Python, ABC):
         return result
 
     def _get_python(self, base_python: list[str]) -> PythonInfo | None:
-        for base in base_python:
-            base_path = Path(base)
-            if base_path.is_absolute():  # pragma: win32 no cover
-                env_spec = PythonSpec.from_string_spec(self.name)
-                has_python_factor = any(
-                    PY_FACTORS_RE.match(f) or PY_FACTORS_RE_EXPLICIT_VERSION.match(f) for f in self.name.split("-")
-                )
-                if not self._base_python_explicitly_set and env_spec.major is not None and has_python_factor:
-                    spec = env_spec
-                elif (
-                    not self._base_python_explicitly_set
-                    and (base_from_name := self.extract_base_python(self.name)) is not None
-                ):
-                    spec = PythonSpec.from_string_spec(base_from_name)
-                else:
-                    info = self._get_virtualenv_py_info(base_path)
-                    vi = info.version_info
-                    return PythonInfo(
-                        implementation=info.implementation,
-                        version_info=VersionInfo(
-                            major=int(vi.major),
-                            minor=int(vi.minor),
-                            micro=int(vi.micro),
-                            releaselevel=str(vi.releaselevel),
-                            serial=int(vi.serial),
-                        ),
-                        version=info.version,
-                        is_64=info.architecture == 64,  # ruff:ignore[magic-value-comparison] 64-bit width
-                        platform=info.platform,
-                        extra={"executable": str(base_path)},
-                        free_threaded=bool(info.free_threaded),
-                        debug=bool(info.debug_build),
-                        machine=info.machine,
-                    )
-            else:
-                spec = PythonSpec.from_string_spec(base)
-            return PythonInfo(
-                implementation=spec.implementation or "CPython",
-                version_info=VersionInfo(
-                    major=spec.major or 0,
-                    minor=spec.minor or 0,
-                    micro=spec.micro or 0,
-                    releaselevel="",
-                    serial=0,
-                ),
-                version=str(spec),
-                is_64=spec.architecture == 64,  # ruff:ignore[magic-value-comparison] 64-bit width
-                platform=sys.platform,
-                extra={"architecture": spec.architecture, "requested_micro": spec.micro},
-                free_threaded=bool(spec.free_threaded),
-                debug=bool(spec.debug),
-                machine=spec.machine,
-            )
+        candidates = [info for base in base_python if (info := self._python_info_for_base(base)) is not None]
+        for info in candidates:
+            if self._uv_python_available(self._version_spec(info)):
+                return info
+        # No candidate is available locally: keep the first so uv can still fetch a managed interpreter for it,
+        # and a single entry fails exactly as before when no download is possible.
+        return candidates[0] if candidates else None
 
-        return None
+    def _uv_python_available(self, version_spec: str) -> bool:
+        # Best-effort probe: any failure to ask uv means the candidate cannot be confirmed, not that it is missing.
+        try:
+            if not version_spec:
+                return False
+            cmd = [self.uv, "python", "find", version_spec]
+            if self.conf["uv_python_preference"] != "none":
+                cmd.extend(["--python-preference", self.conf["uv_python_preference"]])
+            result = subprocess.run(  # ruff:ignore[subprocess-without-shell-equals-true] no shell
+                cmd,
+                capture_output=True,
+                check=False,
+                timeout=30,
+            )
+        except Exception:  # ruff:ignore[blind-except] a probe must not break interpreter selection
+            return False
+        return result.returncode == 0
+
+    def _python_info_for_base(self, base: str) -> PythonInfo | None:
+        base_path = Path(base)
+        if base_path.is_absolute():  # pragma: win32 no cover
+            env_spec = PythonSpec.from_string_spec(self.name)
+            has_python_factor = any(
+                PY_FACTORS_RE.match(f) or PY_FACTORS_RE_EXPLICIT_VERSION.match(f) for f in self.name.split("-")
+            )
+            if not self._base_python_explicitly_set and env_spec.major is not None and has_python_factor:
+                spec = env_spec
+            elif (
+                not self._base_python_explicitly_set
+                and (base_from_name := self.extract_base_python(self.name)) is not None
+            ):
+                spec = PythonSpec.from_string_spec(base_from_name)
+            else:
+                try:
+                    info = self._get_virtualenv_py_info(base_path)
+                except RuntimeError:
+                    return None
+                vi = info.version_info
+                return PythonInfo(
+                    implementation=info.implementation,
+                    version_info=VersionInfo(
+                        major=int(vi.major),
+                        minor=int(vi.minor),
+                        micro=int(vi.micro),
+                        releaselevel=str(vi.releaselevel),
+                        serial=int(vi.serial),
+                    ),
+                    version=info.version,
+                    is_64=info.architecture == 64,  # ruff:ignore[magic-value-comparison] 64-bit width
+                    platform=info.platform,
+                    extra={"executable": str(base_path)},
+                    free_threaded=bool(info.free_threaded),
+                    debug=bool(info.debug_build),
+                    machine=info.machine,
+                )
+        else:
+            spec = PythonSpec.from_string_spec(base)
+        return PythonInfo(
+            implementation=spec.implementation or "CPython",
+            version_info=VersionInfo(
+                major=spec.major or 0,
+                minor=spec.minor or 0,
+                micro=spec.micro or 0,
+                releaselevel="",
+                serial=0,
+            ),
+            version=str(spec),
+            is_64=spec.architecture == 64,  # ruff:ignore[magic-value-comparison] 64-bit width
+            platform=sys.platform,
+            extra={"architecture": spec.architecture, "requested_micro": spec.micro},
+            free_threaded=bool(spec.free_threaded),
+            debug=bool(spec.debug),
+            machine=spec.machine,
+        )
 
     @staticmethod
     def _get_virtualenv_py_info(path: Path) -> VirtualenvPythonInfo:  # pragma: win32 no cover
@@ -424,29 +451,30 @@ class UvVenv(Python, ABC):
 
         :returns: an executable path or uv interpreter selector
         """
-        if executable := self.base_python.extra.get("executable"):
+        return self._version_spec(self.base_python)
+
+    def _version_spec(self, base_python: PythonInfo) -> str:
+        if executable := base_python.extra.get("executable"):
             return executable
-        base = self.base_python.version_info
-        imp = self.base_python.impl_lower
-        architecture = self.base_python.extra.get("architecture")
+        base = base_python.version_info
+        imp = base_python.impl_lower
+        architecture = base_python.extra.get("architecture")
 
         uv_imp = imp or ""
-        variant = (
-            f"{'+freethreaded' if self.base_python.free_threaded else ''}{'+debug' if self.base_python.debug else ''}"
-        )
+        variant = f"{'+freethreaded' if base_python.free_threaded else ''}{'+debug' if base_python.debug else ''}"
         version = f"{base.major}.{base.minor}"
-        if (micro := self.base_python.extra.get("requested_micro")) is not None:
+        if (micro := base_python.extra.get("requested_micro")) is not None:
             version = f"{version}.{micro}"
         if not base.major:  # pragma: win32 no cover
             version_spec = f"{uv_imp}"
         elif not base.minor:
             version_spec = f"{uv_imp}{base.major}{variant}"
-        elif architecture or self.base_python.machine:
+        elif architecture or base_python.machine:
 
             def normalise_os(raw_os: str) -> str:
                 return self._OS_MAP.get(raw_os, raw_os)
 
-            uv_os = normalise_os(self.base_python.platform.lower())
+            uv_os = normalise_os(base_python.platform.lower())
             machine_map = {
                 "arm64": "aarch64",
                 "aarch64": "aarch64",
@@ -463,8 +491,8 @@ class UvVenv(Python, ABC):
             machine_fallback = (
                 self._NOMACHINE_FALLBACK.get(uv_os, {}).get(architecture, "") if isinstance(architecture, int) else ""
             )
-            uv_machine = machine_map.get((self.base_python.machine or "").lower(), machine_fallback)
-            uv_libc = self._LIBC_MAP.get(uv_os, {}).get(self.base_python.extra.get("libc", "").lower(), "none")
+            uv_machine = machine_map.get((base_python.machine or "").lower(), machine_fallback)
+            uv_libc = self._LIBC_MAP.get(uv_os, {}).get(base_python.extra.get("libc", "").lower(), "none")
             version_spec = f"{uv_imp}-{version}{variant}"
             if all([uv_machine, uv_os, uv_libc]):
                 version_spec = f"{version_spec}-{uv_os}-{uv_machine}-{uv_libc}"
