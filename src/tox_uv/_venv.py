@@ -185,7 +185,7 @@ class UvVenv(Python, ABC):
             desc=(
                 "Whether to prefer using Python installations that are already"
                 " present on the system, or those that are downloaded and"
-                " installed by uv [possible values: none, only-managed, installed,"
+                " installed by uv [possible values: none, only-managed,"
                 " managed, system, only-system]. Use none to use uv's"
                 " default. Our default value is 'system', while uv's default"
                 " value is 'managed' because we prefer using same python"
