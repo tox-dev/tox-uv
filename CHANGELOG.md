@@ -2,6 +2,33 @@
 
 <!-- towncrier release notes start -->
 
+<a name="release-1-37-10"></a>
+
+## 1.37.10 (2026-11-27)
+
+<a name="release-1-37-10-fixed"></a>
+
+### Fixed
+
+- Recreate the environment when `uv_resolution`, `pip_pre`, or a resolution-affecting `UV_*` variable changes, as
+  `uv pip install` kept the installed versions that still satisfied the requirements
+  ([#451](https://github.com/tox-dev/tox-uv/pull/451)) by [@mansur-akhmadi](https://github.com/mansur-akhmadi) and
+  [@gaborbernat](https://github.com/gaborbernat).
+- tox-uv now tries each `base_python` entry in order and uses the first one uv finds installed, as tox's virtualenv
+  runner does; before, it only ever used the first entry. When uv finds none of them, the first entry is used, so uv can
+  still download a managed interpreter for it ([#453](https://github.com/tox-dev/tox-uv/pull/453)) by
+  [@draarivpatel-ui](https://github.com/draarivpatel-ui) and [@gaborbernat](https://github.com/gaborbernat).
+
+<a name="release-1-37-10-documentation"></a>
+
+### Documentation
+
+- Clarify that `uv-venv-pep-723` requires the tox-uv plugin and remains available when `TOX_UV_NO_PEP723=1`
+  ([#445](https://github.com/tox-dev/tox-uv/pull/445)) by [@akzarma](https://github.com/akzarma) and
+  [@gaborbernat](https://github.com/gaborbernat).
+- Drop `installed` from the `uv_python_preference` values listed in the option description, as current uv rejects it
+  ([#454](https://github.com/tox-dev/tox-uv/pull/454)) by [@gaborbernat](https://github.com/gaborbernat).
+
 <a name="release-1-37-9"></a>
 
 ## 1.37.9 (2026-11-18)
