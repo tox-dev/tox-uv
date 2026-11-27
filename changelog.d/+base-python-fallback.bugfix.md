@@ -1,3 +1,3 @@
-Multiple `base_python` entries are tried in order again: a missing interpreter no longer stops the run when a later
-entry is available. The first entry is still used when no entry is available locally, so uv can download a managed
-interpreter for it.
+tox-uv now tries each `base_python` entry in order and uses the first one uv finds installed, as tox's virtualenv runner
+does; before, it only ever used the first entry. When uv finds none of them, the first entry is used, so uv can still
+download a managed interpreter for it.

@@ -236,11 +236,10 @@ class UvVenv(Python, ABC):
 
     def _get_python(self, base_python: list[str]) -> PythonInfo | None:
         candidates = [info for base in base_python if (info := self._python_info_for_base(base)) is not None]
-        for info in candidates:
-            if self._uv_python_available(self._version_spec(info)):
-                return info
-        # No candidate is available locally: keep the first so uv can still fetch a managed interpreter for it,
-        # and a single entry fails exactly as before when no download is possible.
+        if len(candidates) > 1:
+            # With nothing installed locally the first entry wins, so uv can still download a managed interpreter.
+            available = (info for info in candidates if self._uv_python_available(self._version_spec(info)))
+            return next(available, candidates[0])
         return candidates[0] if candidates else None
 
     def _python_info_for_base(self, base: str) -> PythonInfo | None:
@@ -262,15 +261,15 @@ class UvVenv(Python, ABC):
                     info = self._get_virtualenv_py_info(base_path)
                 except RuntimeError:
                     return None
-                vi = info.version_info
+                version_info = info.version_info
                 return PythonInfo(
                     implementation=info.implementation,
                     version_info=VersionInfo(
-                        major=int(vi.major),
-                        minor=int(vi.minor),
-                        micro=int(vi.micro),
-                        releaselevel=str(vi.releaselevel),
-                        serial=int(vi.serial),
+                        major=int(version_info.major),
+                        minor=int(version_info.minor),
+                        micro=int(version_info.micro),
+                        releaselevel=str(version_info.releaselevel),
+                        serial=int(version_info.serial),
                     ),
                     version=info.version,
                     is_64=info.architecture == 64,  # ruff:ignore[magic-value-comparison] 64-bit width
@@ -313,20 +312,19 @@ class UvVenv(Python, ABC):
         return result
 
     def _uv_python_available(self, version_spec: str) -> bool:
-        # Best-effort probe: any failure to ask uv means the candidate cannot be confirmed, not that it is missing.
+        # uv venv skips virtualenv interpreters, so the probe must skip them too.
+        cmd = [self.uv, "python", "find", "--system", version_spec]
+        if self.conf["uv_python_preference"] != "none":
+            cmd.extend(["--python-preference", self.conf["uv_python_preference"]])
+        # Runs with os.environ, as set_env may reference {env_site_packages_dir}, which needs the base_python we pick.
         try:
-            if not version_spec:
-                return False
-            cmd = [self.uv, "python", "find", version_spec]
-            if self.conf["uv_python_preference"] != "none":
-                cmd.extend(["--python-preference", self.conf["uv_python_preference"]])
             result = subprocess.run(  # ruff:ignore[subprocess-without-shell-equals-true] no shell
                 cmd,
                 capture_output=True,
                 check=False,
                 timeout=30,
             )
-        except Exception:  # ruff:ignore[blind-except] a probe must not break interpreter selection
+        except (subprocess.TimeoutExpired, OSError):
             return False
         return result.returncode == 0
 
@@ -334,10 +332,9 @@ class UvVenv(Python, ABC):
         if executable := base_python.extra.get("executable"):
             return executable
         base = base_python.version_info
-        imp = base_python.impl_lower
         architecture = base_python.extra.get("architecture")
 
-        uv_imp = imp or ""
+        uv_imp = base_python.impl_lower
         variant = f"{'+freethreaded' if base_python.free_threaded else ''}{'+debug' if base_python.debug else ''}"
         version = f"{base.major}.{base.minor}"
         if (micro := base_python.extra.get("requested_micro")) is not None:
@@ -347,11 +344,8 @@ class UvVenv(Python, ABC):
         elif not base.minor:
             version_spec = f"{uv_imp}{base.major}{variant}"
         elif architecture or base_python.machine:
-
-            def normalise_os(raw_os: str) -> str:
-                return self._OS_MAP.get(raw_os, raw_os)
-
-            uv_os = normalise_os(base_python.platform.lower())
+            raw_os = base_python.platform.lower()
+            uv_os = self._OS_MAP.get(raw_os, raw_os)
             machine_map = {
                 "arm64": "aarch64",
                 "aarch64": "aarch64",
