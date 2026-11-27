@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 import tomllib
 from collections import defaultdict
 from collections.abc import Sequence
@@ -30,6 +31,7 @@ if TYPE_CHECKING:
 
 
 _LOGGER: Final[logging.Logger] = logging.getLogger(__name__)
+_URL_CREDENTIALS: Final[re.Pattern[str]] = re.compile(r"(?<=://)[^/@\s]*@")
 
 _UV_RESOLUTION_ENV_VARS: Final[frozenset[str]] = (  # simplint: ignore[single-user-constant]  # reused across installs
     frozenset({
@@ -126,12 +128,37 @@ class UvInstaller(Pip):
             raise Recreate(msg)
 
         if isinstance(arguments, PythonDeps):
+            self._recreate_if_resolution_changed()
             self._install_requirement_file(arguments, section, of_type)
         elif isinstance(arguments, Sequence):
             self._install_list_of_deps(arguments, section, of_type)
         else:
             _LOGGER.warning("uv cannot install %r", arguments)
             raise SystemExit(1)
+
+    def _recreate_if_resolution_changed(self) -> None:
+        # uv pip install keeps installed versions that still satisfy the requirements, so new settings need a new env.
+        settings = {
+            # Index tokens rotate, so credentials in URLs do not count as a change; the skipped variables only affect
+            # how packages are fetched, and going offline must not drop a working environment.
+            **{
+                name: _URL_CREDENTIALS.sub("", value)
+                for name, value in self._install_env_vars().items()
+                if name not in {"UV_KEYRING_PROVIDER", "UV_OFFLINE", "UV_REQUIRE_HASHES"}
+            },
+            "pip_pre": self._env.conf["pip_pre"],
+            "uv_resolution": self._env.conf["uv_resolution"],
+        }
+        with self._env.cache.compare(settings, "resolution") as (eq, old):
+            if not eq and old is not None:
+                changed = sorted(key for key in settings.keys() | old.keys() if settings.get(key) != old.get(key))
+                msg = f"resolution settings changed: {', '.join(changed)}"
+                raise Recreate(msg)
+
+    def _install_env_vars(self) -> dict[str, str]:
+        return {
+            name: value for name, value in self._env.environment_variables.items() if name in _UV_RESOLUTION_ENV_VARS
+        }
 
     def _install_list_of_deps(
         self,
@@ -140,6 +167,9 @@ class UvInstaller(Pip):
         of_type: str,
     ) -> None:
         groups = self._group_uv_arguments(arguments)
+        # A --no-deps package install resolves nothing, so it gives no reason to recreate.
+        if any(groups[key] for key in ("req", "uv", "uv_editable")):
+            self._recreate_if_resolution_changed()
         req_of_type = f"{of_type}_deps" if groups["pkg"] or groups["dev_pkg"] else of_type
         for value in groups.values():
             value.sort()
@@ -155,19 +185,7 @@ class UvInstaller(Pip):
                 if new_deps := sorted(set(groups["req"]) - set(old_req)) or list(groups["req"]):
                     new_deps.extend(constraint_args)
                     self._execute_installer(new_deps, req_of_type)
-        install_args = ["--reinstall"]
-        if groups["uv"]:
-            self._execute_installer(install_args + groups["uv"] + constraint_args, of_type)
-        if groups["uv_editable"]:
-            requirements = list(chain.from_iterable(("-e", entry) for entry in groups["uv_editable"]))
-            self._execute_installer(install_args + requirements + constraint_args, of_type)
-        install_args.append("--no-deps")
-        if groups["pkg"]:
-            self._execute_installer(install_args + groups["pkg"], of_type)
-        if groups["dev_pkg"]:
-            for entry in groups["dev_pkg"]:
-                install_args.extend(("-e", str(entry)))
-            self._execute_installer(install_args, of_type)
+        self._install_local_packages(groups, constraint_args, of_type)
 
     def _group_uv_arguments(self, arguments: Sequence[Requirement | Package]) -> dict[str, list[str]]:
         groups: dict[str, list[str]] = defaultdict(list)
@@ -220,10 +238,20 @@ class UvInstaller(Pip):
             if isinstance(source, dict) and source.get("workspace", False)
         }
 
-    def _install_env_vars(self) -> dict[str, str]:
-        return {
-            name: value for name, value in self._env.environment_variables.items() if name in _UV_RESOLUTION_ENV_VARS
-        }
+    def _install_local_packages(self, groups: dict[str, list[str]], constraint_args: list[str], of_type: str) -> None:
+        install_args = ["--reinstall"]
+        if groups["uv"]:
+            self._execute_installer(install_args + groups["uv"] + constraint_args, of_type)
+        if groups["uv_editable"]:
+            requirements = list(chain.from_iterable(("-e", entry) for entry in groups["uv_editable"]))
+            self._execute_installer(install_args + requirements + constraint_args, of_type)
+        install_args.append("--no-deps")
+        if groups["pkg"]:
+            self._execute_installer(install_args + groups["pkg"], of_type)
+        if groups["dev_pkg"]:
+            for entry in groups["dev_pkg"]:
+                install_args.extend(("-e", str(entry)))
+            self._execute_installer(install_args, of_type)
 
 
 __all__ = [
