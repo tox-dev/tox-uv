@@ -1319,3 +1319,60 @@ def test_uv_bundled_import_error(tox_project: ToxProjectCreator, mocker: MockerF
 
     mocker.patch("builtins.__import__", autospec=True, side_effect=mock_import)
     tox_project({"tox.ini": "[testenv]\npackage=skip\ncommands=python --version"}).run().assert_success()
+
+
+@pytest.mark.parametrize(
+    ("missing", "preference"),
+    [
+        pytest.param("py3990", "system", id="version"),
+        pytest.param(str(pathlib.Path(sys.executable).parent / "missing-python"), "system", id="path"),
+        pytest.param("py3990", "none", id="no-preference"),
+    ],
+)
+def test_uv_venv_base_python_fallback(tox_project: ToxProjectCreator, missing: str, preference: str) -> None:
+    ini = (
+        f"[testenv]\npackage=skip\nskip_missing_interpreters=false\nuv_python_preference={preference}\n"
+        f"base_python =\n    {missing}\n    {sys.version_info.major}.{sys.version_info.minor}\n"
+    )
+    tox_project({"tox.ini": ini}).run().assert_success()
+
+
+def test_uv_venv_base_python_fallback_none_found(tox_project: ToxProjectCreator) -> None:
+    ini = "[testenv]\npackage=skip\nskip_missing_interpreters=false\nbase_python =\n    py3990\n    py3991\n"
+    result = tox_project({"tox.ini": ini}).run()
+
+    result.assert_failed()
+    assert "cpython3.990" in result.out
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        pytest.param(OSError(), id="os-error"),
+        pytest.param(subprocess.TimeoutExpired("uv", 30), id="timeout"),
+    ],
+)
+def test_uv_venv_base_python_probe_error(
+    tox_project: ToxProjectCreator, mocker: MockerFixture, error: Exception
+) -> None:
+    mocker.patch("tox_uv._venv.subprocess.run", autospec=True, side_effect=error)
+    spec = f"{sys.version_info.major}.{sys.version_info.minor}"
+    ini = f"[testenv]\npackage=skip\nskip_missing_interpreters=false\nbase_python =\n    py3990\n    {spec}\n"
+    result = tox_project({"tox.ini": ini}).run()
+
+    result.assert_failed()
+    assert "cpython3.990" in result.out
+
+
+@pytest.mark.usefixtures("clear_python_preference_env_var")
+def test_uv_venv_base_python_probe_command(tox_project: ToxProjectCreator, mocker: MockerFixture) -> None:
+    run = mocker.patch(
+        "tox_uv._venv.subprocess.run", autospec=True, return_value=subprocess.CompletedProcess([], returncode=1)
+    )
+    ini = "[testenv]\npackage=skip\nskip_missing_interpreters=false\nbase_python =\n    py3990\n    py3991\n"
+    tox_project({"tox.ini": ini}).run()
+
+    assert [call.args[0][1:] for call in run.call_args_list if "find" in call.args[0]] == [
+        ["python", "find", "--system", "cpython3.990", "--python-preference", "system"],
+        ["python", "find", "--system", "cpython3.991", "--python-preference", "system"],
+    ]

@@ -300,6 +300,12 @@ We use `uv venv` to create virtual environments. This process can be configured 
 Use `py313d` to request a debug CPython build or `py313td` to request a free-threaded debug build. A matching
 interpreter must be available to [uv](https://docs.astral.sh/uv/concepts/python-versions/#requesting-a-version).
 
+With several `base_python` entries, tox-uv uses the first one `uv` finds installed under the
+[`uv_python_preference`](#uv_python_preference) setting. When none is installed, it picks the first entry, skipping
+absolute paths that are not interpreters, and `uv` may download it as a managed interpreter. The check reads tox's own
+environment variables, not the `set_env` and `pass_env` view `uv venv` gets, so an interpreter location such as
+`UV_PYTHON_INSTALL_DIR` or `XDG_DATA_HOME` set differently in the two can change which entry is picked.
+
 ### `uv_seed`
 
 This flag, set on a tox environment level, controls if the created virtual environment injects `pip`, `setuptools` and
